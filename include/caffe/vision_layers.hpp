@@ -454,6 +454,44 @@ class CuDNNPoolingLayer : public PoolingLayer<Dtype> {
 #endif
 
 /**
+ * @brief Unpools the input max pooling map by putting the pooled values at the positions indicated by a POOLING layer mask.
+ *
+ * TODO(dox): thorough documentation for Forward, Backward, and proto params.
+ */
+template <typename Dtype>
+class UnpoolingLayer : public Layer<Dtype> {
+ public:
+  explicit UnpoolingLayer(const LayerParameter& param)
+      : Layer<Dtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual inline const char* type() const { return "Unpooling"; }
+  virtual inline int ExactNumBottomBlobs() const { return 2; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
+
+ protected:
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  
+  int kernel_h_, kernel_w_;
+  int stride_h_, stride_w_;
+  int pad_h_, pad_w_;
+  int channels_;
+  int pooled_height_, pooled_width_;
+  int unpooled_height_, unpooled_width_;
+  int pooled_count_;
+};
+
+/**
  * @brief Does spatial pyramid pooling on the input image
  *        by taking the max, average, etc. within regions
  *        so that the result vector of different sized
