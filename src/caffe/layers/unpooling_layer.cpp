@@ -79,7 +79,7 @@ void UnpoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         for (int pw = 0; pw < pooled_width_; ++pw) {
           const int pooled_index = ph * pooled_width_ + pw;
           const int unpooled_index = mask[pooled_index];
-          top_data[unpooled_index] += bottom_data[pooled_index];  // TODO: shouldn't this be = rather that += ?
+          top_data[unpooled_index] = bottom_data[pooled_index];
         }
       }
       bottom_data += bottom[0]->offset(0, 1);
