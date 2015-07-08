@@ -185,25 +185,7 @@ layer {
   }
 }
 
-# Reconstruction loss at input level
-layer {
-  name: "l2rec"
-  type: "EuclideanLoss"
-  bottom: "data"
-  bottom: "deconv2"
-  top: "l2rec"
-  loss_weight: 0.01 # lambdaL2rec
-}
 
-# Intermediate L2 constraints (here, only one)
-layer {
-  name: "l2m"
-  type: "EuclideanLoss"
-  bottom: "pool1"
-  bottom: "deconv1"
-  top: "l2m"
-  loss_weight: 0.01 # lambdaL2M
-}
 
 # Discriminative loss (computed the same way as original MNIST LeNet)
 layer {
@@ -254,6 +236,8 @@ layer {
     }
   }
 }
+
+##### LOSS #####
 layer {
   name: "accuracy"
   type: "Accuracy"
@@ -264,6 +248,7 @@ layer {
     phase: TEST
   }
 }
+
 layer {
   name: "nll"
   type: "SoftmaxWithLoss"
@@ -271,4 +256,24 @@ layer {
   bottom: "label"
   top: "nll"
   loss_weight: 1 # lambdaNLL
+}
+
+# Reconstruction loss at input level
+layer {
+  name: "l2rec"
+  type: "EuclideanLoss"
+  bottom: "data"
+  bottom: "deconv2"
+  top: "l2rec"
+  loss_weight: 0 #0.01 # lambdaL2rec
+}
+
+# Intermediate L2 constraints (here, only one)
+layer {
+  name: "l2m"
+  type: "EuclideanLoss"
+  bottom: "pool1"
+  bottom: "deconv1"
+  top: "l2m"
+  loss_weight: 0 #0.01 # lambdaL2M
 }
