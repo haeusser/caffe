@@ -82,16 +82,20 @@ void UnpoolingLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   pooled_width_ = bottom[0]->width();
   unpooled_height_ = static_cast<int>((pooled_height_ - 1) * stride_h_ - 2 * pad_h_ + kernel_h_);
   unpooled_width_  = static_cast<int>((pooled_width_  - 1) * stride_w_ - 2 * pad_w_ + kernel_w_);
-/*  LOG(INFO) << "channels_ = " << channels_;
-  LOG(INFO) << "bottom[0]->num_axes() = " << bottom[0]->num_axes();
-  LOG(INFO) << "pooled_count_ = " << pooled_count_;
-  LOG(INFO) << "pooled_height_ = " << pooled_height_;
-  LOG(INFO) << "pooled_width_ = " << pooled_width_;
-  LOG(INFO) << "unpooled_height_ = " << unpooled_height_;
-  LOG(INFO) << "unpooled_width_ = " << unpooled_width_;
-  LOG(INFO) << "ceil(pooled_height_ - 1) = " << ceil(pooled_height_ - 1);
-  LOG(INFO) << "pad_h_ = " << pad_h_;
-  LOG(INFO) << "kernel_h_ = " << kernel_h_*/;
+
+//   LOG(INFO) << "bottom[0]->num_axes() = " << bottom[0]->num_axes();
+//   LOG(INFO) << "channels_ = " << channels_;  
+//   LOG(INFO) << "pooled_count_ = " << pooled_count_;
+//   LOG(INFO) << "pooled_height_ = " << pooled_height_;
+//   LOG(INFO) << "pooled_width_ = " << pooled_width_;
+//   LOG(INFO) << "unpooled_height_ = " << unpooled_height_;
+//   LOG(INFO) << "unpooled_width_ = " << unpooled_width_;
+//   LOG(INFO) << "pad_h_ = " << pad_h_;
+//   LOG(INFO) << "pad_w_ = " << pad_w_;
+//   LOG(INFO) << "kernel_h_ = " << kernel_h_;
+//   LOG(INFO) << "kernel_w_ = " << kernel_w_;
+//   LOG(INFO) << "stride_h_ = " << stride_h_;
+//   LOG(INFO) << "stride_w_ = " << stride_w_;
 
   top[0]->Reshape(bottom[0]->num(), channels_, unpooled_height_,
       unpooled_width_);
@@ -150,8 +154,8 @@ void UnpoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   }
   // max pool over top_diff and output bottom_diff and mask_diff
   
-  const Dtype* top_diff = top[0]->cpu_diff();  // const Dtype* bottom_data = bottom[0]->cpu_data();
-  Dtype* bottom_data_diff = bottom[0]->mutable_cpu_diff();  // Dtype* top_data = top[0]->mutable_cpu_data();
+  const Dtype* top_diff = top[0]->cpu_diff();
+  Dtype* bottom_data_diff = bottom[0]->mutable_cpu_diff();
   Dtype* mask_diff = bottom[1]->mutable_cpu_diff();
   
   const int bottom_count = bottom[0]->count();

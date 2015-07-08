@@ -26,14 +26,20 @@ class UnpoolingLayerTest : public MultiDeviceTest<TypeParam> {
     Caffe::set_random_seed(1701);
     blob_bottom_->Reshape(2, 3, 6, 5);
     blob_bottom_mask_->Reshape(2, 3, 6, 5);
-    // fill the values
+    // fill the values for the pooled map
     FillerParameter filler_param;
     GaussianFiller<Dtype> filler(filler_param);
     filler.Fill(this->blob_bottom_);
-    filler.Fill(this->blob_bottom_mask_);
+    // fill the values for the mask
+    FillerParameter ufiller_param;
+    ufiller_param.set_max(29);
+    UniformFiller<Dtype> uniform_filler(ufiller_param);
+    uniform_filler.Fill(this->blob_bottom_mask_);
+    
     blob_bottom_vec_.push_back(blob_bottom_);
     blob_bottom_vec_.push_back(blob_bottom_mask_);
     blob_top_vec_.push_back(blob_top_);
+    propagate_down_.push_back(true);
   }
   virtual ~UnpoolingLayerTest() {
     delete blob_bottom_;
@@ -45,6 +51,7 @@ class UnpoolingLayerTest : public MultiDeviceTest<TypeParam> {
   Blob<Dtype>* const blob_top_;
   vector<Blob<Dtype>*> blob_bottom_vec_;
   vector<Blob<Dtype>*> blob_top_vec_;
+  vector<bool> propagate_down_;
   
   // Test for 2x 2 square pooling layer
   void TestForwardSquare() {
@@ -243,7 +250,159 @@ class UnpoolingLayerTest : public MultiDeviceTest<TypeParam> {
     }
   }
 };  // class
-   /*// Test for rectangular pooling layer with kernel_w > kernel_h
+
+TYPED_TEST_CASE(UnpoolingLayerTest, TestDtypesAndDevices);
+ 
+TYPED_TEST(UnpoolingLayerTest, TestSetup) {
+  typedef typename TypeParam::Dtype Dtype;
+  LayerParameter layer_param;
+  UnpoolingParameter* unpooling_param = layer_param.mutable_unpooling_param();
+  unpooling_param->set_kernel_size(3);
+  unpooling_param->set_stride(2);
+  UnpoolingLayer<Dtype> layer(layer_param);
+  layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+  EXPECT_EQ(this->blob_top_->num(), this->blob_bottom_->num());
+  EXPECT_EQ(this->blob_top_->channels(), this->blob_bottom_->channels());
+  EXPECT_EQ(this->blob_top_->height(), 13);
+  EXPECT_EQ(this->blob_top_->width(), 11);
+}
+
+TYPED_TEST(UnpoolingLayerTest, TestSetupPadded) {
+  typedef typename TypeParam::Dtype Dtype;
+  LayerParameter layer_param;
+  UnpoolingParameter* unpooling_param = layer_param.mutable_unpooling_param();
+  unpooling_param->set_kernel_size(3);
+  unpooling_param->set_stride(2);
+  unpooling_param->set_pad(1);
+  UnpoolingLayer<Dtype> layer(layer_param);
+  layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+  EXPECT_EQ(this->blob_top_->num(), this->blob_bottom_->num());
+  EXPECT_EQ(this->blob_top_->channels(), this->blob_bottom_->channels());
+  EXPECT_EQ(this->blob_top_->height(), 11);
+  EXPECT_EQ(this->blob_top_->width(), 9);
+}
+
+TYPED_TEST(UnpoolingLayerTest, TestForward) {
+    this->TestForwardSquare();
+    this->TestForwardRectHigh();
+}
+
+// TYPED_TEST(UnpoolingLayerTest, PrintBackward) {
+//   typedef typename TypeParam::Dtype Dtype;
+//   LayerParameter layer_param;
+//   UnpoolingParameter* unpooling_param = layer_param.mutable_unpooling_param();
+//   unpooling_param->set_kernel_size(2);
+//   unpooling_param->set_stride(1);
+//   unpooling_param->set_pad(0);
+//   this->blob_bottom_->Reshape(1, 1, 2, 4);
+//   this->blob_bottom_->mutable_cpu_data()[0] = 9;
+//   this->blob_bottom_->mutable_cpu_data()[1] = 5;
+//   this->blob_bottom_->mutable_cpu_data()[2] = 5;
+//   this->blob_bottom_->mutable_cpu_data()[3] = 8;
+//   this->blob_bottom_->mutable_cpu_data()[4] = 9;
+//   this->blob_bottom_->mutable_cpu_data()[5] = 5;
+//   this->blob_bottom_->mutable_cpu_data()[6] = 5;
+//   this->blob_bottom_->mutable_cpu_data()[7] = 8;
+//   
+//   this->blob_bottom_mask_->Reshape(1, 1, 2, 4);
+//   this->blob_bottom_mask_->mutable_cpu_data()[0] = 5;
+//   this->blob_bottom_mask_->mutable_cpu_data()[1] = 2;
+//   this->blob_bottom_mask_->mutable_cpu_data()[2] = 2;
+//   this->blob_bottom_mask_->mutable_cpu_data()[3] = 9;
+//   this->blob_bottom_mask_->mutable_cpu_data()[4] = 5;
+//   this->blob_bottom_mask_->mutable_cpu_data()[5] = 12;
+//   this->blob_bottom_mask_->mutable_cpu_data()[6] = 12;
+//   this->blob_bottom_mask_->mutable_cpu_data()[7] = 9;
+//   
+//   UnpoolingLayer<Dtype> layer(layer_param);
+//   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+//   layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
+//   
+//   const int bottom_count = this->blob_bottom_->count();
+//   const int top_count = this->blob_top_->count();
+//   cout << "======================="  << endl;
+//   const vector<int> top_shape = this->blob_top_->shape();
+//   const vector<int> btm_shape = this->blob_bottom_->shape();
+//   const vector<int> msk_shape = this->blob_bottom_mask_->shape();
+//   
+//   cout << "top shape: " << top_shape[0] << ", " << top_shape[1] << ", " << top_shape[2]<< ", " << top_shape[3] << endl;
+//   cout << "btm shape: " << btm_shape[0] << ", " << btm_shape[1] << ", " << btm_shape[2]<< ", " << btm_shape[3] << endl;
+//   cout << "msk shape: " << msk_shape[0] << ", " << msk_shape[1] << ", " << msk_shape[2]<< ", " << msk_shape[3] << endl;
+//   cout << "======================="  << endl;
+//   for (int i = 0; i < bottom_count; ++i) {
+//     cout << "bottom data " << i << "/" << bottom_count-1 << " " << this->blob_bottom_->cpu_data()[i] << " " << this->blob_bottom_mask_->cpu_data()[i] << endl;
+//   }
+//   for (int i = 0; i < top_count; ++i) {
+//     cout << "top data " << i << "/" << top_count-1 << " " << this->blob_top_->cpu_data()[i] << endl;
+//   }
+//   for (int i = 0; i < top_count; ++i) {
+//     this->blob_top_->mutable_cpu_diff()[i] = i;
+//   }
+//   layer.Backward(this->blob_top_vec_, this->propagate_down_, this->blob_bottom_vec_);
+//   for (int i = 0; i < bottom_count; ++i) {
+//     cout << "bottom diff " << i << "/" << bottom_count-1 << " " << this->blob_bottom_->cpu_diff()[i] << " " << this->blob_bottom_mask_->cpu_diff()[i] << endl;
+//   }
+//   cout << "======================="  << endl;
+// 
+// }
+
+
+TYPED_TEST(UnpoolingLayerTest, TestGradientSingle) {
+  typedef typename TypeParam::Dtype Dtype;
+  LayerParameter layer_param;
+  UnpoolingParameter* unpooling_param = layer_param.mutable_unpooling_param();
+  unpooling_param->set_kernel_size(2);
+  unpooling_param->set_stride(1);
+  unpooling_param->set_pad(0);
+  this->blob_bottom_->Reshape(1, 1, 2, 4);
+  this->blob_bottom_->mutable_cpu_data()[0] = 9;
+  this->blob_bottom_->mutable_cpu_data()[1] = 5;
+  this->blob_bottom_->mutable_cpu_data()[2] = 5;
+  this->blob_bottom_->mutable_cpu_data()[3] = 8;
+  this->blob_bottom_->mutable_cpu_data()[4] = 9;
+  this->blob_bottom_->mutable_cpu_data()[5] = 5;
+  this->blob_bottom_->mutable_cpu_data()[6] = 5;
+  this->blob_bottom_->mutable_cpu_data()[7] = 8;
+  
+  this->blob_bottom_mask_->Reshape(1, 1, 2, 4);
+  this->blob_bottom_mask_->mutable_cpu_data()[0] = 5;
+  this->blob_bottom_mask_->mutable_cpu_data()[1] = 2;
+  this->blob_bottom_mask_->mutable_cpu_data()[2] = 2;
+  this->blob_bottom_mask_->mutable_cpu_data()[3] = 9;
+  this->blob_bottom_mask_->mutable_cpu_data()[4] = 5;
+  this->blob_bottom_mask_->mutable_cpu_data()[5] = 12;
+  this->blob_bottom_mask_->mutable_cpu_data()[6] = 12;
+  this->blob_bottom_mask_->mutable_cpu_data()[7] = 9;
+  
+  UnpoolingLayer<Dtype> layer(layer_param);
+  layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+  GradientChecker<Dtype> checker(1e-4, 1e-2);
+  checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
+				  this->blob_top_vec_);;
+}
+
+
+// TYPED_TEST(UnpoolingLayerTest, TestGradientMax) {
+//   typedef typename TypeParam::Dtype Dtype;
+//   for (int kernel_h = 3; kernel_h <= 4; kernel_h++) {
+//     for (int kernel_w = 3; kernel_w <= 4; kernel_w++) {
+//       LayerParameter layer_param;
+//       UnpoolingParameter* unpooling_param = layer_param.mutable_unpooling_param();
+//       unpooling_param->set_kernel_h(kernel_h);
+//       unpooling_param->set_kernel_w(kernel_w);
+//       unpooling_param->set_stride(2);
+//       unpooling_param->set_pad(1);
+//       UnpoolingLayer<Dtype> layer(layer_param);
+//       GradientChecker<Dtype> checker(1e-4, 1e-2);
+//       checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
+//           this->blob_top_vec_);
+//     }
+//   }
+// }
+
+
+  /*
+  // Test for rectangular pooling layer with kernel_w > kernel_h
   void TestForwardRectWide() {
     LayerParameter layer_param;
     UnpoolingParameter* pooling_param = layer_param.mutable_pooling_param();
@@ -373,62 +532,6 @@ class UnpoolingLayerTest : public MultiDeviceTest<TypeParam> {
 };
 
 
-TYPED_TEST(UnpoolingLayerTest, TestSetupPadded) {
-  typedef typename TypeParam::Dtype Dtype;
-  LayerParameter layer_param;
-  UnpoolingParameter* pooling_param = layer_param.mutable_pooling_param();
-  pooling_param->set_kernel_size(3);
-  pooling_param->set_stride(2);
-  pooling_param->set_pad(1);
-  pooling_param->set_pool(UnpoolingParameter_UnpoolMethod_AVE);
-  UnpoolingLayer<Dtype> layer(layer_param);
-  layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-  EXPECT_EQ(this->blob_top_->num(), this->blob_bottom_->num());
-  EXPECT_EQ(this->blob_top_->channels(), this->blob_bottom_->channels());
-  EXPECT_EQ(this->blob_top_->height(), 4);
-  EXPECT_EQ(this->blob_top_->width(), 3);
-}
-
-TYPED_TEST(UnpoolingLayerTest, TestSetupGlobalUnpooling) {
-  typedef typename TypeParam::Dtype Dtype;
-  LayerParameter layer_param;
-  UnpoolingParameter* pooling_param = layer_param.mutable_pooling_param();
-  pooling_param->set_global_pooling(true);
-  pooling_param->set_pool(UnpoolingParameter_UnpoolMethod_AVE);
-  UnpoolingLayer<Dtype> layer(layer_param);
-  layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-  EXPECT_EQ(this->blob_top_->num(), this->blob_bottom_->num());
-  EXPECT_EQ(this->blob_top_->channels(), this->blob_bottom_->channels());
-  EXPECT_EQ(this->blob_top_->height(), 1);
-  EXPECT_EQ(this->blob_top_->width(), 1);
-}
-
-
-TYPED_TEST(UnpoolingLayerTest, PrintBackward) {
-  LayerParameter layer_param;
-  layer_param.set_kernelsize(3);
-  layer_param.set_stride(2);
-  layer_param.set_pool(LayerParameter_UnpoolMethod_MAX);
-  UnpoolingLayer<TypeParam> layer(layer_param);
-  layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-  layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-  for (int i = 0; i < this->blob_bottom_->count(); ++i) {
-    cout << "bottom data " << i << " " << this->blob_bottom_->cpu_data()[i] << endl;
-  }
-  for (int i = 0; i < this->blob_top_->count(); ++i) {
-    cout << "top data " << i << " " << this->blob_top_->cpu_data()[i] << endl;
-  }
-
-  for (int i = 0; i < this->blob_top_->count(); ++i) {
-    this->blob_top_->mutable_cpu_diff()[i] = i;
-  }
-  layer.Backward(this->blob_top_vec_, true, this->blob_bottom_vec_);
-  for (int i = 0; i < this->blob_bottom_->count(); ++i) {
-    cout << "bottom diff " << i << " " << this->blob_bottom_->cpu_diff()[i] << endl;
-  }
-}
-
-
 TYPED_TEST(UnpoolingLayerTest, TestForwardMax) {
   this->TestForwardSquare();
   this->TestForwardRectHigh();
@@ -442,24 +545,7 @@ TYPED_TEST(UnpoolingLayerTest, TestForwardMaxTopMask) {
   this->TestForwardRectWide();
 }
 
-TYPED_TEST(UnpoolingLayerTest, TestGradientMax) {
-  typedef typename TypeParam::Dtype Dtype;
-  for (int kernel_h = 3; kernel_h <= 4; kernel_h++) {
-    for (int kernel_w = 3; kernel_w <= 4; kernel_w++) {
-      LayerParameter layer_param;
-      UnpoolingParameter* pooling_param = layer_param.mutable_pooling_param();
-      pooling_param->set_kernel_h(kernel_h);
-      pooling_param->set_kernel_w(kernel_w);
-      pooling_param->set_stride(2);
-      pooling_param->set_pad(1);
-      pooling_param->set_pool(UnpoolingParameter_UnpoolMethod_MAX);
-      UnpoolingLayer<Dtype> layer(layer_param);
-      GradientChecker<Dtype> checker(1e-4, 1e-2);
-      checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
-          this->blob_top_vec_);
-    }
-  }
-}
+
 
 TYPED_TEST(UnpoolingLayerTest, TestForwardMaxPadded) {
   typedef typename TypeParam::Dtype Dtype;
@@ -1168,26 +1254,5 @@ TYPED_TEST(CuDNNUnpoolingLayerTest, TestGradientAvePaddedCuDNN) {
 
 #endif
 */
- 
-TYPED_TEST_CASE(UnpoolingLayerTest, TestDtypesAndDevices);
- 
-TYPED_TEST(UnpoolingLayerTest, TestSetup) {
-  typedef typename TypeParam::Dtype Dtype;
-  LayerParameter layer_param;
-  UnpoolingParameter* unpooling_param = layer_param.mutable_unpooling_param();
-  unpooling_param->set_kernel_size(3);
-  unpooling_param->set_stride(2);
-  UnpoolingLayer<Dtype> layer(layer_param);
-  layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-  EXPECT_EQ(this->blob_top_->num(), this->blob_bottom_->num());
-  EXPECT_EQ(this->blob_top_->channels(), this->blob_bottom_->channels());
-  EXPECT_EQ(this->blob_top_->height(), 13);
-  EXPECT_EQ(this->blob_top_->width(), 11);
-}
-
-TYPED_TEST(UnpoolingLayerTest, TestForward) {
-    this->TestForwardSquare();
-    this->TestForwardRectHigh();
-}
 
 }  // namespace caffe
