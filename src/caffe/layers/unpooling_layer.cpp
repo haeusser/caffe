@@ -155,6 +155,8 @@ void UnpoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   // max pool over top_diff and output bottom_diff and mask_diff
   
   const Dtype* top_diff = top[0]->cpu_diff();
+  const Dtype* top_data = top[0]->cpu_data();
+  const Dtype* bottom_data = bottom[0]->cpu_data();
   Dtype* bottom_data_diff = bottom[0]->mutable_cpu_diff();
   Dtype* mask_diff = bottom[1]->mutable_cpu_diff();
   
@@ -177,7 +179,7 @@ void UnpoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
           for (int h = hstart; h < hend; ++h) {
             for (int w = wstart; w < wend; ++w) {
               const int index = h * unpooled_width_ + w;
-              if (top_diff[index] > bottom_data_diff[pool_index]) {
+              if (top_data[index] > bottom_data[pool_index]) {
                 bottom_data_diff[pool_index] = top_diff[index];
                 // mask_diff[pool_index] = static_cast<Dtype>(index);
               }
