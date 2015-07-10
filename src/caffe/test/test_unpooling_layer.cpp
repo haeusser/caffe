@@ -346,7 +346,7 @@ TYPED_TEST(UnpoolingLayerTest, TestForward) {
 // 
 // }
 
-
+/*
 TYPED_TEST(UnpoolingLayerTest, TestGradientSingle) {
   typedef typename TypeParam::Dtype Dtype;
   LayerParameter layer_param;
@@ -380,7 +380,7 @@ TYPED_TEST(UnpoolingLayerTest, TestGradientSingle) {
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
 				  this->blob_top_vec_);;
 }
-
+*/
 
 // TYPED_TEST(UnpoolingLayerTest, TestGradientMax) {
 //   typedef typename TypeParam::Dtype Dtype;
