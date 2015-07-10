@@ -16,5 +16,5 @@ display: 100
 max_iter: 10000
 # snapshot intermediate results
 snapshot: 100
-snapshot_prefix: "examples/swwae/mnist_swwae"
+snapshot_prefix: "examples/swwae/modelfiles/mnist_swwae"
 solver_mode: GPU
