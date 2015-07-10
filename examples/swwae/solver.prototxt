@@ -15,6 +15,6 @@ display: 100
 # The maximum number of iterations
 max_iter: 10000
 # snapshot intermediate results
-snapshot: 5000
+snapshot: 100
 snapshot_prefix: "examples/swwae/mnist_swwae"
 solver_mode: GPU
