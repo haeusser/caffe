@@ -152,47 +152,44 @@ void UnpoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   if (!propagate_down[0]) {
     return;
   }
-  // max pool over top_diff and output bottom_diff and mask_diff
   
   const Dtype* top_diff = top[0]->cpu_diff();
   const Dtype* top_data = top[0]->cpu_data();
-  const Dtype* bottom_data = bottom[0]->cpu_data();
+  const Dtype* bottom_mask = bottom[1]->cpu_data();
   Dtype* bottom_data_diff = bottom[0]->mutable_cpu_diff();
-  Dtype* mask_diff = bottom[1]->mutable_cpu_diff();
+  Dtype* bottom_mask_diff = bottom[1]->mutable_cpu_diff();
   
   const int bottom_count = bottom[0]->count();
+  const int top_count = top[0]->count();
   caffe_set(bottom_count, Dtype(-FLT_MAX), bottom_data_diff);
-  caffe_set(bottom_count, Dtype(0), mask_diff);
-
-  // The main loop
-  for (int n = 0; n < top[0]->num(); ++n) {
-    for (int c = 0; c < channels_; ++c) {
-      for (int ph = 0; ph < pooled_height_; ++ph) {
-        for (int pw = 0; pw < pooled_width_; ++pw) {
-          int hstart = ph * stride_h_ - pad_h_;
-          int wstart = pw * stride_w_ - pad_w_;
-          int hend = min(hstart + kernel_h_, unpooled_height_);
-          int wend = min(wstart + kernel_w_, unpooled_width_);
-          hstart = max(hstart, 0);
-          wstart = max(wstart, 0);
-          const int pool_index = ph * pooled_width_ + pw;
-          for (int h = hstart; h < hend; ++h) {
-            for (int w = wstart; w < wend; ++w) {
-              const int index = h * unpooled_width_ + w;
-              if (top_data[index] > bottom_data[pool_index]) {
-                bottom_data_diff[pool_index] = top_diff[index];
-                // mask_diff[pool_index] = static_cast<Dtype>(index);
-              }
-            }
-          }
-        }
-      }
-      // compute offset
-      top_diff += top[0]->offset(0, 1);
-      bottom_data_diff += bottom[0]->offset(0, 1);
-      mask_diff += bottom[0]->offset(0, 1);
-      }
+  caffe_set(bottom_count, Dtype(0), bottom_mask_diff);
+  
+  // copy bottom_mask to bottom_mask_diff
+  for (int i = 0; i < bottom_count; ++i) {
+    bottom_mask_diff[i] = bottom_mask[i];
   }
+  
+  // put data diffs to the argmax positions
+  for (int i = 0; i < top_count; ++i) {
+    const int index = bottom_mask[i];
+    bottom_data_diff[i] = top_diff[index];
+  }
+  
+//   for (int n = 0; n < top[0]->num(); ++n) {
+//     for (int c = 0; c < channels_; ++c) {
+//       for (int ph = 0; ph < pooled_height_; ++ph) {
+//         for (int pw = 0; pw < pooled_width_; ++pw) {
+//           const int pool_index = ph * pooled_width_ + pw;
+// 	  const int index = bottom_mask[h * unpooled_width_ + w];
+// 	  bottom_data_diff[pool_index] = top_diff[index];
+//         }
+//       }
+//       // compute offset
+//       top_diff += top[0]->offset(0, 1);
+//       bottom_data_diff += bottom[0]->offset(0, 1);
+//       mask_diff += bottom[0]->offset(0, 1);
+//       }
+//   }
 }
 
 
