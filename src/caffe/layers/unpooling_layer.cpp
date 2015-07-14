@@ -154,17 +154,15 @@ void UnpoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   }
   
   const Dtype* top_diff = top[0]->cpu_diff();
-//  const Dtype* top_data = top[0]->cpu_data();
   const Dtype* bottom_mask = bottom[1]->cpu_data();
   Dtype* bottom_data_diff = bottom[0]->mutable_cpu_diff();
   Dtype* bottom_mask_diff = bottom[1]->mutable_cpu_diff();
   
   const int bottom_count = bottom[0]->count();
-//  const int top_count = top[0]->count();
   caffe_set(bottom_count, Dtype(-FLT_MAX), bottom_data_diff);
   caffe_set(bottom_count, Dtype(0), bottom_mask_diff);
   
-  // copy bottom_mask to bottom_mask_diff
+  // copy bottom_mask to bottom_mask_diff TODO: probably unnecessary!!
   for (int i = 0; i < bottom_count; ++i) {
     bottom_mask_diff[i] = bottom_mask[i];
   }
@@ -172,7 +170,7 @@ void UnpoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   // put data diffs to the argmax positions
   for (int i = 0; i < bottom_count; ++i) {
     const int index = bottom_mask[i];
-    bottom_data_diff[i] = top_diff[index];
+    bottom_data_diff[i] += top_diff[index];
   }
   
 //   for (int n = 0; n < top[0]->num(); ++n) {
