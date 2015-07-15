@@ -104,7 +104,6 @@ void UnpoolingLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 template <typename Dtype>
 void UnpoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
-  LOG(INFO) << "fwd begin ";
 
 //   const Dtype* bottom_data = bottom[0]->cpu_data();
 //   const Dtype* mask = bottom[1]->cpu_data();
@@ -145,7 +144,6 @@ void UnpoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       mask += bottom[0]->offset(0, 1);
     }
   }
-  LOG(INFO) << "fwd OK ";
 }
 
 template <typename Dtype>
@@ -154,8 +152,6 @@ void UnpoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   if (!propagate_down[0]) {
     return;
   }
-  LOG(INFO) << "backwd begin ";
-  
   const Dtype* top_diff = top[0]->cpu_diff();
   const Dtype* bottom_mask = bottom[1]->cpu_data();
   Dtype* bottom_data_diff = bottom[0]->mutable_cpu_diff();
@@ -166,9 +162,9 @@ void UnpoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   caffe_set(bottom_count, Dtype(0), bottom_mask_diff);
   
   // copy bottom_mask to bottom_mask_diff TODO: probably unnecessary!!
-  for (int i = 0; i < bottom_count; ++i) {
-    bottom_mask_diff[i] = bottom_mask[i];
-  }
+//   for (int i = 0; i < bottom_count; ++i) {
+//     bottom_mask_diff[i] = bottom_mask[i];
+//   }
   
   // put data diffs to the argmax positions
   for (int i = 0; i < bottom_count; ++i) {
@@ -191,8 +187,6 @@ void UnpoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 //       mask_diff += bottom[0]->offset(0, 1);
 //       }
 //   }
-  LOG(INFO) << "backwd OK ";
-
 }
 
 
