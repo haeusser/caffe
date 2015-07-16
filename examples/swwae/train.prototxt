@@ -13,7 +13,7 @@ layer {
   }
   data_param {
     source: "examples/mnist/mnist_train_lmdb"
-    batch_size: 384
+    batch_size: 2048
     backend: LMDB
   }
 }
