@@ -346,7 +346,7 @@ TYPED_TEST(UnpoolingLayerTest, TestForward) {
 // 
 // }
 
-/*
+
 TYPED_TEST(UnpoolingLayerTest, TestGradientSingle) {
   typedef typename TypeParam::Dtype Dtype;
   LayerParameter layer_param;
@@ -354,33 +354,32 @@ TYPED_TEST(UnpoolingLayerTest, TestGradientSingle) {
   unpooling_param->set_kernel_size(2);
   unpooling_param->set_stride(1);
   unpooling_param->set_pad(0);
-  this->blob_bottom_->Reshape(1, 1, 2, 4);
-  this->blob_bottom_->mutable_cpu_data()[0] = 9;
-  this->blob_bottom_->mutable_cpu_data()[1] = 5;
-  this->blob_bottom_->mutable_cpu_data()[2] = 5;
-  this->blob_bottom_->mutable_cpu_data()[3] = 8;
-  this->blob_bottom_->mutable_cpu_data()[4] = 9;
-  this->blob_bottom_->mutable_cpu_data()[5] = 5;
-  this->blob_bottom_->mutable_cpu_data()[6] = 5;
-  this->blob_bottom_->mutable_cpu_data()[7] = 8;
-  
-  this->blob_bottom_mask_->Reshape(1, 1, 2, 4);
-  this->blob_bottom_mask_->mutable_cpu_data()[0] = 5;
-  this->blob_bottom_mask_->mutable_cpu_data()[1] = 2;
-  this->blob_bottom_mask_->mutable_cpu_data()[2] = 2;
-  this->blob_bottom_mask_->mutable_cpu_data()[3] = 9;
-  this->blob_bottom_mask_->mutable_cpu_data()[4] = 5;
-  this->blob_bottom_mask_->mutable_cpu_data()[5] = 12;
-  this->blob_bottom_mask_->mutable_cpu_data()[6] = 12;
-  this->blob_bottom_mask_->mutable_cpu_data()[7] = 9;
+  //this->blob_bottom_->Reshape(1, 1, 2, 4);
+  //this->blob_bottom_->mutable_cpu_data()[0] = 9;
+  //this->blob_bottom_->mutable_cpu_data()[1] = 5;
+  //this->blob_bottom_->mutable_cpu_data()[2] = 5;
+  //this->blob_bottom_->mutable_cpu_data()[3] = 8;
+  //this->blob_bottom_->mutable_cpu_data()[4] = 9;
+  //this->blob_bottom_->mutable_cpu_data()[5] = 5;
+  //this->blob_bottom_->mutable_cpu_data()[6] = 5;
+  //this->blob_bottom_->mutable_cpu_data()[7] = 8;
+  //
+  //this->blob_bottom_mask_->Reshape(1, 1, 2, 4);
+  //this->blob_bottom_mask_->mutable_cpu_data()[0] = 5;
+  //this->blob_bottom_mask_->mutable_cpu_data()[1] = 2;
+  //this->blob_bottom_mask_->mutable_cpu_data()[2] = 2;
+  //this->blob_bottom_mask_->mutable_cpu_data()[3] = 9;
+  //this->blob_bottom_mask_->mutable_cpu_data()[4] = 5;
+  //this->blob_bottom_mask_->mutable_cpu_data()[5] = 12;
+  //this->blob_bottom_mask_->mutable_cpu_data()[6] = 12;
+  //this->blob_bottom_mask_->mutable_cpu_data()[7] = 9;
   
   UnpoolingLayer<Dtype> layer(layer_param);
-  layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+  //layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   GradientChecker<Dtype> checker(1e-4, 1e-2);
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
-				  this->blob_top_vec_);;
+				  this->blob_top_vec_, 1);
 }
-*/
 
 // TYPED_TEST(UnpoolingLayerTest, TestGradientMax) {
 //   typedef typename TypeParam::Dtype Dtype;
