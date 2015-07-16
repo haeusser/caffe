@@ -1,6 +1,6 @@
 net: "examples/swwae/train.prototxt"
 test_iter: 50
-test_interval: 500
+test_interval: 1000
 # Same parameters as the original LeNet MNIST example
 # Changes will probably be needed as a Deconvnet part was added
 base_lr: 0.01
@@ -10,9 +10,9 @@ weight_decay: 0.0005
 lr_policy: "inv"
 gamma: 0.0001
 power: 0.75
-display: 25
+display: 100
 # The maximum number of iterations
-max_iter: 1000000
+max_iter: 1000000000
 # snapshot intermediate results
 snapshot: 100
 snapshot_prefix: "examples/swwae/modelfiles/mnist_swwae"
