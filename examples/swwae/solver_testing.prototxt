@@ -1,0 +1,15 @@
+net: "examples/swwae/train.prototxt"
+test_compute_loss: true
+test_iter: 1000
+test_interval: 1
+base_lr: 0.0
+momentum: 0.9
+weight_decay: 0.0
+# The learning rate policy
+display: 1
+# The maximum number of iterations
+max_iter: 1
+# snapshot intermediate results
+snapshot: 999
+snapshot_prefix: "examples/swwae/modelfiles/mnist_swwae"
+solver_mode: GPU
