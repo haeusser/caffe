@@ -265,7 +265,7 @@ layer {
   bottom: "data"
   bottom: "deconv2"
   top: "l2rec"
-  loss_weight: 0.02 # lambdaL2rec
+  loss_weight: 0.01 # lambdaL2rec
 }
 
 # Intermediate L2 constraints (here, only one)
@@ -275,5 +275,5 @@ layer {
   bottom: "pool1"
   bottom: "deconv1"
   top: "l2m"
-  loss_weight: 0.08 # lambdaL2M
+  loss_weight: 0.3 # lambdaL2M
 }
