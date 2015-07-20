@@ -1,0 +1,18 @@
+net: "examples/swwae_fer/train.prototxt"
+test_iter: 100
+test_interval: 1000
+#base_lr: 0.0006
+base_lr: 0.008
+momentum: 0.9
+weight_decay: 0.0005
+# The learning rate policy
+lr_policy: "inv"
+gamma: 0.0001
+power: 0.75
+display: 10
+# The maximum number of iterations
+max_iter: 1000000000
+# snapshot intermediate results
+snapshot: 100
+snapshot_prefix: "examples/swwae_fer/modelfiles/mnist_swwae"
+solver_mode: GPU
