@@ -172,6 +172,15 @@ class ConvolutionLayer : public BaseConvolutionLayer<Dtype> {
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Deconv_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+      Backward_cpu(top, propagate_down, bottom);
+  }
+  virtual void Deconv_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+      Backward_gpu(top, propagate_down, bottom);
+  }
+
   virtual inline bool reverse_dimensions() { return false; }
   virtual void compute_output_shape();
 };
@@ -327,6 +336,17 @@ class LRNLayer : public Layer<Dtype> {
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 
+
+  virtual void Deconv_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Deconv_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Deconv_passthrough_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Deconv_passthrough_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+
+  
   virtual void CrossChannelForward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
   virtual void CrossChannelForward_gpu(const vector<Blob<Dtype>*>& bottom,
@@ -371,6 +391,9 @@ class LRNLayer : public Layer<Dtype> {
   shared_ptr<EltwiseLayer<Dtype> > product_layer_;
   Blob<Dtype> product_input_;
   vector<Blob<Dtype>*> product_bottom_vec_;
+
+  // Fields used for deconv
+  bool deconv_ignore_;
 };
 
 
@@ -408,6 +431,14 @@ class PoolingLayer : public Layer<Dtype> {
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Deconv_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+      Backward_cpu(top, propagate_down, bottom);
+  }
+  virtual void Deconv_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+      Backward_gpu(top, propagate_down, bottom);
+  }
 
   int kernel_h_, kernel_w_;
   int stride_h_, stride_w_;
