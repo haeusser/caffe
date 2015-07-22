@@ -32,6 +32,7 @@
 # Editor temporaries
 *.swp
 *~
+*.kate-swp
 
 # Sublime Text settings
 *.sublime-workspace
