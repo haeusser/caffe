@@ -52,11 +52,6 @@ void UnpoolingLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     stride_w_ = unpool_param.stride_w();
   }
   if (pad_h_ != 0 || pad_w_ != 0) {
-    CHECK(this->layer_param_.pooling_param().pool()
-        == PoolingParameter_PoolMethod_AVE
-        || this->layer_param_.pooling_param().pool()
-        == PoolingParameter_PoolMethod_MAX)
-        << "Padding implemented only for average and max pooling.";
     CHECK_LT(pad_h_, kernel_h_);
     CHECK_LT(pad_w_, kernel_w_);
   }   
@@ -83,20 +78,6 @@ void UnpoolingLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   unpooled_height_ = static_cast<int>((pooled_height_ - 1) * stride_h_ - 2 * pad_h_ + kernel_h_);
   unpooled_width_  = static_cast<int>((pooled_width_  - 1) * stride_w_ - 2 * pad_w_ + kernel_w_);
 
-//   LOG(INFO) << "bottom[0]->num_axes() = " << bottom[0]->num_axes();
-//   LOG(INFO) << "channels_ = " << channels_;  
-//   LOG(INFO) << "pooled_count_ = " << pooled_count_;
-//   LOG(INFO) << "pooled_height_ = " << pooled_height_;
-//   LOG(INFO) << "pooled_width_ = " << pooled_width_;
-//   LOG(INFO) << "unpooled_height_ = " << unpooled_height_;
-//   LOG(INFO) << "unpooled_width_ = " << unpooled_width_;
-//   LOG(INFO) << "pad_h_ = " << pad_h_;
-//   LOG(INFO) << "pad_w_ = " << pad_w_;
-//   LOG(INFO) << "kernel_h_ = " << kernel_h_;
-//   LOG(INFO) << "kernel_w_ = " << kernel_w_;
-//   LOG(INFO) << "stride_h_ = " << stride_h_;
-//   LOG(INFO) << "stride_w_ = " << stride_w_;
-
   top[0]->Reshape(bottom[0]->num(), channels_, unpooled_height_,
       unpooled_width_);
 }
@@ -104,24 +85,6 @@ void UnpoolingLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 template <typename Dtype>
 void UnpoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
-
-//   const Dtype* bottom_data = bottom[0]->cpu_data();
-//   const Dtype* mask = bottom[1]->cpu_data();
-//   Dtype* top_data = top[0]->mutable_cpu_data();
-//   caffe_set(top[0]->count(), Dtype(0), top_data);
-// 
-//   for (int n = 0; n < bottom[0]->num(); ++n) {
-//     for (int c = 0; c < channels_; ++c) {
-//       for (int idx = 0; idx < pooled_count_; ++idx) {
-//         top_data[static_cast<int>(mask[idx])] = bottom_data[idx];
-//       }
-//         // compute offset
-//         bottom_data += bottom[0]->offset(0, 1);
-//         top_data += top[0]->offset(0, 1);
-//         mask += bottom[0]->offset(0, 1);
-//     }
-//   }
-
 
   const Dtype* bottom_data = bottom[0]->cpu_data();
   const Dtype* mask = bottom[1]->cpu_data();  
@@ -135,8 +98,6 @@ void UnpoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
           const int pooled_index = ph * pooled_width_ + pw;
           const int unpooled_index = mask[pooled_index];
           top_data[unpooled_index] = bottom_data[pooled_index];
-// 	  LOG(INFO) << "top_data[" << unpooled_index <<"] = " << top_data[unpooled_index];
-// 	  LOG(INFO) << "bottom_data[" << pooled_index <<"] = " << bottom_data[pooled_index];
         }
       }
       bottom_data += bottom[0]->offset(0, 1);
@@ -160,33 +121,12 @@ void UnpoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   const int bottom_count = bottom[0]->count();
   caffe_set(bottom_count, Dtype(0), bottom_data_diff);
   caffe_set(bottom_count, Dtype(0), bottom_mask_diff);
-  
-  // copy bottom_mask to bottom_mask_diff TODO: probably unnecessary!!
-//   for (int i = 0; i < bottom_count; ++i) {
-//     bottom_mask_diff[i] = bottom_mask[i];
-//   }
-  
+   
   // put data diffs to the argmax positions
   for (int i = 0; i < bottom_count; ++i) {
     const int index = bottom_mask[i];
     bottom_data_diff[i] += top_diff[index];
   }
-  
-//   for (int n = 0; n < top[0]->num(); ++n) {
-//     for (int c = 0; c < channels_; ++c) {
-//       for (int ph = 0; ph < pooled_height_; ++ph) {
-//         for (int pw = 0; pw < pooled_width_; ++pw) {
-//           const int pool_index = ph * pooled_width_ + pw;
-// 	  const int index = bottom_mask[h * unpooled_width_ + w];
-// 	  bottom_data_diff[pool_index] = top_diff[index];
-//         }
-//       }
-//       // compute offset
-//       top_diff += top[0]->offset(0, 1);
-//       bottom_data_diff += bottom[0]->offset(0, 1);
-//       mask_diff += bottom[0]->offset(0, 1);
-//       }
-//   }
 }
 
 
