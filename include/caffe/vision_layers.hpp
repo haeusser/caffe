@@ -482,6 +482,7 @@ class CuDNNPoolingLayer : public PoolingLayer<Dtype> {
   cudnnPoolingDescriptor_t  pooling_desc_;
   cudnnPoolingMode_t        mode_;
 };
+
 #endif
 
 /**
@@ -508,12 +509,10 @@ class UnpoolingLayer : public Layer<Dtype> {
       const vector<Blob<Dtype>*>& top);
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-/* GPU passes not implemented yet  
   virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-*/  
   int kernel_h_, kernel_w_;
   int stride_h_, stride_w_;
   int pad_h_, pad_w_;
