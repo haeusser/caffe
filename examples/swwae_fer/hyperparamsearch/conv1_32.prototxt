@@ -10,11 +10,11 @@ layer {
   }
   transform_param {
     mirror: true
-    crop_size: 227
+    crop_size: 228
   }
   data_param {
     source: "data/custom/train/"
-    batch_size: 50
+    batch_size: 30
     backend: LMDB
   }
 }
@@ -29,30 +29,31 @@ layer {
   }
   transform_param {
     mirror: false
-    crop_size: 227
+    crop_size: 228
   }
   data_param {
     source: "data/custom/test/"
-    batch_size: 50
+    batch_size: 30
     backend: LMDB
   }
 }
 
-layer {
-  name: "norm"
-  type: "MVN"
-  bottom: "data"
-  top: "norm"
-  mvn_param{
-    across_channels: true
-  }
-}
+#layer {
+#  name: "norm"
+#  type: "MVN"
+#  bottom: "data"
+#  top: "norm"
+#  mvn_param{
+#    across_channels: true
+#  }
+#}
 
 ########################## Forward ##################################
 layer {
   name: "conv1"
   type: "Convolution"
-  bottom: "norm"
+  #bottom: "norm"
+  bottom: "data"
   top: "conv1"
   param {
     lr_mult: 1
@@ -75,7 +76,7 @@ layer {
 
 layer {
   name: "relu1"
-  type: "ReLU"
+  type: "Sigmoid"
   bottom: "conv1"
   top: "conv1"
 }
@@ -103,6 +104,7 @@ layer {
   unpooling_param {
     kernel_size: 2
     stride: 2
+	pad: 0
   }
 }
 
@@ -131,7 +133,7 @@ layer {
 
 layer {
   name: "relu1_b"
-  type: "ReLU"
+  type: "Sigmoid"
   bottom: "deconv1"
   top: "deconv1"
 }
@@ -141,7 +143,8 @@ layer {
 layer {
   name: "l2rec_conv1"
   type: "EuclideanLoss"
-  bottom: "norm"
+  #bottom: "norm"
+  bottom: "data"
   bottom: "deconv1"
   top: "l2rec"
   loss_weight: 1
@@ -173,7 +176,7 @@ layer {
 #
 #layer {
 #  name: "relu2"
-#  type: "ReLU"
+#  type: "Sigmoid"
 #  bottom: "conv2"
 #  top: "conv2"
 #}
@@ -218,7 +221,7 @@ layer {
 #
 #layer {
 #  name: "relu3"
-#  type: "ReLU"
+#  type: "Sigmoid"
 #  bottom: "conv3"
 #  top: "conv3"
 #}
@@ -277,7 +280,7 @@ layer {
 #
 #layer {
 #  name: "relu4"
-#  type: "ReLU"
+#  type: "Sigmoid"
 #  bottom: "deconv1"
 #  top: "deconv1"
 #}
@@ -321,7 +324,7 @@ layer {
 #
 #layer {
 #  name: "relu5"
-#  type: "ReLU"
+#  type: "Sigmoid"
 #  bottom: "deconv2"
 #  top: "deconv2"
 #}
@@ -364,7 +367,7 @@ layer {
 #
 #layer {
 #  name: "relu5"
-#  type: "ReLU"
+#  type: "Sigmoid"
 #  bottom: "deconv3"
 #  top: "deconv3"
 #}
@@ -394,7 +397,7 @@ layer {
 #}
 #layer {
 #  name: "relu6"
-#  type: "ReLU"
+#  type: "Sigmoid"
 #  bottom: "ip1"
 #  top: "ip1"
 #}
