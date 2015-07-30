@@ -1,0 +1,19 @@
+net: "examples/swwae_fer/hyperparamsearch/conv1_32.prototxt"
+test_iter: 100
+test_interval: 1000
+#base_lr: 0.0006
+base_lr: 0.01
+#base_lr: 0.000001
+momentum: 0.9
+weight_decay: 0.0005
+# The learning rate policy
+lr_policy: "inv"
+gamma: 0.0001
+power: 0.75
+display: 20
+# The maximum number of iterations
+max_iter: 1000000000
+# snapshot intermediate results
+snapshot: 100
+snapshot_prefix: "examples/swwae_fer/hyperparamsearch/modelfiles/conv1_32_iter"
+solver_mode: GPU
