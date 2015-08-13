@@ -18,7 +18,7 @@ USE_CUDNN := 1
 # "sudo apt-get install nvidia-cuda-toolkit" then use this instead:
 # CUDA_DIR := /usr
 
-CUDA_DIR := /misc/software-lin/lmbsoft/cuda-6.5.14-x86_64
+CUDA_DIR := /misc/software-lin/lmbsoft/cuda-7.0.28
 
 # CUDA architecture setting: going with all of them.
 # For CUDA < 6.0, comment the *_50 lines for compatibility.
@@ -81,7 +81,7 @@ LIBRARY_DIRS := $(PYTHON_LIB) /usr/local/lib /usr/lib
 # LIBRARY_DIRS += $(shell brew --prefix)/lib
 
 SYS_INCLUDE_DIRS := \
-  /misc/lmbraid15/hackathon/common/software-root/include \
+  /misc/software-lin/lmbsoft/cudnn-7.0-linux-x64-v3.0/include \
   /misc/software-lin/lmbsoft/boost_1_56_0/ \
   /misc/software-lin/lmbsoft/glog/include \
   /misc/software-lin/lmbsoft/gflags-2.1.1/build/include \
@@ -90,7 +90,8 @@ SYS_INCLUDE_DIRS := \
   /usr/local/include
 
 LIBRARY_DIRS := \
-  /misc/lmbraid15/hackathon/common/software-root/lib \
+  /misc/software-lin/lmbsoft/cuda-7.0.28/lib64 \
+  /misc/software-lin/lmbsoft/cudnn-7.0-linux-x64-v3.0/lib64 \
   /misc/software-lin/lmbsoft/boost_1_56_0/stage/lib \
   /misc/software-lin/lmbsoft/glog/lib \
   /misc/software-lin/lmbsoft/gflags-2.1.1/build/lib \
@@ -103,7 +104,9 @@ LDFLAGS += -Wl,-rpath,/misc/software-lin/lmbsoft/boost_1_56_0/stage/lib \
 -Wl,-rpath,/misc/software-lin/lmbsoft/glog/lib \
 -Wl,-rpath,/misc/software-lin/lmbsoft/gflags-2.1.1/build/lib \
 -Wl,-rpath,/misc/software-lin/lmbsoft/mdb-mdb/libraries/liblmdb \
--Wl,-rpath,/misc/software-lin/lmbsoft/cuda-6.5.14-x86_64/lib64
+-Wl,-rpath,/misc/software-lin/lmbsoft/cuda-7.0.28/lib64 \
+-Wl,-rpath,/misc/software-lin/lmbsoft/cudnn-7.0-linux-x64-v3.0/lib64
+
 
 # Uncomment to use `pkg-config` to specify OpenCV library paths.
 # (Usually not necessary -- OpenCV libraries are normally installed in one of the above $LIBRARY_DIRS.)
