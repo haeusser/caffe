@@ -68,6 +68,15 @@ template void caffe_set<int>(const int N, const int alpha, int* Y);
 template void caffe_set<float>(const int N, const float alpha, float* Y);
 template void caffe_set<double>(const int N, const double alpha, double* Y);
 
+template <typename Dtype>
+void caffe_min_scalar(const int N, const Dtype alpha, const Dtype* X, Dtype* Y) {
+  for (int i = 0; i < N; ++i) {
+    Y[i] = fminf(alpha, X[i]);
+  }
+}
+template void caffe_min_scalar<float>(const int N, const float alpha, const float* X, float* Y);
+template void caffe_min_scalar<double>(const int N, const double alpha, const double* X, double* Y);
+
 template <>
 void caffe_add_scalar(const int N, const float alpha, float* Y) {
   for (int i = 0; i < N; ++i) {

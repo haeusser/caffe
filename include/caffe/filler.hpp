@@ -178,10 +178,11 @@ class XavierFiller : public Filler<Dtype> {
  * [Saxe, McClelland, and Ganguli 2013 (v3)].
  *
  * It fills the incoming matrix by randomly sampling Gaussian data with std =
- * sqrt(2 / n) where n is the fan_in, fan_out, or their average, depending on
- * the variance_norm option. You should make sure the input blob has shape (num,
- * a, b, c) where a * b * c = fan_in and num * b * c = fan_out. Note that this
- * is currently not the case for inner product layers.
+ * msra_coeff * sqrt(2 / n) where n is the fan_in, fan_out, or their average, depending on
+ * the variance_norm option, and msra_coeff is a user-specified coefficient (default = 1). 
+ * You should make sure the input blob has shape (num, a, b, c) where a * b * c = fan_in 
+ * and num * b * c = fan_out. Note that this is currently not the case for inner product layers.
+ * 
  */
 template <typename Dtype>
 class MSRAFiller : public Filler<Dtype> {
@@ -200,7 +201,7 @@ class MSRAFiller : public Filler<Dtype> {
         FillerParameter_VarianceNorm_FAN_OUT) {
       n = fan_out;
     }
-    Dtype std = sqrt(Dtype(2) / n);
+    Dtype std = sqrt(2 / n) * Dtype(this->filler_param_.msra_coeff());
     caffe_rng_gaussian<Dtype>(blob->count(), Dtype(0), std,
         blob->mutable_cpu_data());
     CHECK_EQ(this->filler_param_.sparse(), -1)
@@ -262,6 +263,126 @@ class BilinearFiller : public Filler<Dtype> {
   }
 };
 
+// To be used for conv layers: fills "diagonal" channels with 1 / kernel_area , and "off-diagonal" with zeros
+template <typename Dtype>
+class DiagonalFiller : public Filler<Dtype> {
+ public:
+  explicit DiagonalFiller(const FillerParameter& param)
+      : Filler<Dtype>(param) {}
+  virtual void Fill(Blob<Dtype>* blob) {
+    CHECK(blob->count());
+    Dtype* blob_data = blob->mutable_cpu_data();
+    caffe_set(blob->count(), Dtype(0), blob_data);
+    
+    int kernel_area = static_cast<Dtype>(blob->height()*blob->width());
+    int channels = blob->channels();    
+    int num = blob->num();
+    
+    for (int n=0; n < num && n < channels; ++n) {
+      Dtype curr_val;
+      if (this->filler_param_.diag_val_size() > n)
+        curr_val = this->filler_param_.diag_val(n);
+      else
+        curr_val = 1;
+      curr_val /= static_cast<Dtype>(kernel_area);
+      caffe_set(kernel_area, curr_val, blob_data + kernel_area * (channels * n + n));
+    }
+    CHECK_EQ(this->filler_param_.sparse(), -1)
+         << "Sparsity not supported by this Filler.";
+  }
+};
+
+// Added by Alexey: a constant filler with changing value
+template <typename Dtype>
+class ScheduleFiller : public Filler<Dtype> {
+ public:
+  explicit ScheduleFiller(const FillerParameter& param)
+      : Filler<Dtype>(param), iter_(0) {}
+  virtual void Fill(Blob<Dtype>* blob) {
+    Dtype* data = blob->mutable_cpu_data();
+    const int count = blob->count();
+//     LOG(INFO) << "iter " << iter_;
+    const Dtype initial_value = this->filler_param_.initial_value();
+    const Dtype final_value = this->filler_param_.final_value();
+    const Dtype half_life = this->filler_param_.half_life();
+    const Dtype value = initial_value + (final_value - initial_value) * (Dtype(2) / (Dtype(1) + exp(-iter_/half_life*1.0986)) - Dtype(1));
+//     if (!(iter_ % 100))
+//       LOG(INFO) << "Filling with " << value; 
+//     if (this->filler_param_.schedule_type() == 'add')  
+//     else if (this->filler_param_.schedule_type() == 'mult')
+//     CHECK(count);
+    for (int i = 0; i < count; ++i) {
+      data[i] = value;
+    }
+    CHECK_EQ(this->filler_param_.sparse(), -1)
+         << "Sparsity not supported by this Filler.";
+    iter_++;      
+  }
+ private:
+  int iter_; 
+};
+
+// Added by Alexey: fills a conv layer by a per-channel difference of gaussians
+template <typename Dtype>
+class DoGFiller : public Filler<Dtype> {
+ public:
+  explicit DoGFiller(const FillerParameter& param)
+      : Filler<Dtype>(param) {}
+  virtual void Fill(Blob<Dtype>* blob) {
+    Dtype* data = blob->mutable_cpu_data();
+    const int width = blob->width();
+    const int height = blob->height();
+    const int channels = blob->channels();
+    const int num = blob->num();
+    const Dtype pi = 3.141592;
+    CHECK(height > 1 && width > 1) << "DoG filler is to be used in convolutional layers (blob width and height should be more than 1)";
+    CHECK_EQ(num, channels) << "To use DoG filler, the number of input and output channels should be the same";
+    const Dtype s1 = this->filler_param_.sigma1();
+    const Dtype s2 = this->filler_param_.sigma2();
+    CHECK(s1 > 0) << "sigma1 should be positive";
+    
+    std::vector<Dtype> g1(height * width);
+    std::vector<Dtype> g2(height * width);
+    Dtype g1_sum = 0;
+    Dtype g2_sum = 0;
+    
+    for (int y=0; y < height; ++y) { 
+      for (int x=0; x < width; ++x) { 
+        Dtype dx = static_cast<Dtype>(x) - (static_cast<Dtype>(width) - 1.)/2.;
+        Dtype dy = static_cast<Dtype>(y) - (static_cast<Dtype>(height) - 1.)/2.;
+        g1.at(y*width+x) = exp(-(dx*dx + dy*dy)/(2*s1*s1)) / (2*pi*s1*s1);
+        g1_sum += g1.at(y*width+x);
+        if (s2 > 0) {
+          g2.at(y*width+x) = exp(-(dx*dx + dy*dy)/(2*s2*s2)) / (2*pi*s2*s2);
+          g2_sum += g2.at(y*width+x);
+        }
+      }
+    }
+    
+    for (int c=0; c < height * width; ++c) { 
+      g1.at(c) /= g1_sum;
+      if (s2 > 0)
+        g2.at(c) /= g2_sum;
+    }
+    
+    for (int n=0; n < num; ++n) {
+      for (int y=0; y < height; ++y) { 
+        for (int x=0; x < width; ++x) { 
+          int ind = ((n * channels + n) * height + y) * width + x;
+          if (s2 > 0)
+            data[ind] = g1.at(y*width+x) - g2.at(y*width+x);
+          else
+            data[ind] = g1.at(y*width+x);
+        }
+      }
+    }
+    
+    CHECK_EQ(this->filler_param_.sparse(), -1)
+         << "Sparsity not supported by this Filler.";
+      
+  }
+};
+
 /**
  * @brief Get a specific filler from the specification given in FillerParameter.
  *
@@ -285,6 +406,12 @@ Filler<Dtype>* GetFiller(const FillerParameter& param) {
     return new MSRAFiller<Dtype>(param);
   } else if (type == "bilinear") {
     return new BilinearFiller<Dtype>(param);
+  } else if (type == "diagonal") {
+    return new DiagonalFiller<Dtype>(param);
+  } else if (type == "schedule") {
+    return new ScheduleFiller<Dtype>(param);
+  } else if (type == "DoG") {
+    return new DoGFiller<Dtype>(param);
   } else {
     CHECK(false) << "Unknown filler name: " << param.type();
   }

@@ -186,6 +186,27 @@ void caffe_gpu_add_scalar(const int N, const double alpha, double* Y) {
 }
 
 template <typename Dtype>
+__global__ void min_scalar_kernel(const int n, const Dtype alpha, const Dtype* x, Dtype* y) {
+  CUDA_KERNEL_LOOP(index, n) {
+    y[index] = fminf(alpha, x[index]);
+  }
+}
+
+template <>
+void caffe_gpu_min_scalar(const int N, const float alpha, const float* X, float* Y) {
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  min_scalar_kernel<float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+      N, alpha, X, Y);
+}
+
+template <>
+void caffe_gpu_min_scalar(const int N, const double alpha, const double* X, double* Y) {
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  min_scalar_kernel<double><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+      N, alpha, X, Y);
+}
+
+template <typename Dtype>
 __global__ void add_kernel(const int n, const Dtype* a,
     const Dtype* b, Dtype* y) {
   CUDA_KERNEL_LOOP(index, n) {

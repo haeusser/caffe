@@ -1128,11 +1128,253 @@ void AdaDeltaSolver<Dtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   }
 }
 
+// Adam by Kingma and Ba, 2014
+
+template <typename Dtype>
+void AdamSolver<Dtype>::AdamPreSolve() {
+  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  // add extra blobs for the running average of the squared gradient
+  for (int i = 0; i < net_params.size(); ++i) {
+    const vector<int>& shape = net_params[i]->shape();
+    this->history_.push_back(
+            shared_ptr<Blob<Dtype> >(new Blob<Dtype>(shape)));
+  }
+}
+
+template <typename Dtype>
+void AdamSolver<Dtype>::ComputeUpdateValue(int param_id, Dtype rate) {
+  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  const vector<float>& net_params_lr = this->net_->params_lr();
+  Dtype delta = this->param_.delta();
+  Dtype momentum = this->param_.momentum();
+  Dtype momentum2 = this->param_.momentum2();
+  Dtype local_rate = rate * net_params_lr[param_id];
+  size_t update_history_offset = net_params.size();
+  switch (Caffe::mode()) {
+  case Caffe::CPU: {
+    // update the gradient estimate
+    caffe_cpu_axpby(net_params[param_id]->count(), 1-momentum,
+        net_params[param_id]->cpu_diff(), momentum,
+        this->history_[param_id]->mutable_cpu_data());
+
+    // compute square of gradient in update
+    caffe_powx(net_params[param_id]->count(),
+        net_params[param_id]->cpu_diff(), Dtype(2),
+        this->update_[param_id]->mutable_cpu_data());
+
+    // update the gradient square estimate
+    caffe_cpu_axpby(this->update_[param_id]->count(), 1-momentum2,
+        this->update_[param_id]->cpu_data(), momentum2,
+        this->history_[update_history_offset + param_id]->mutable_cpu_data());
+
+    // prepare update
+    caffe_powx(net_params[param_id]->count(),
+              this->history_[update_history_offset + param_id]->cpu_data(), Dtype(0.5),
+              this->update_[param_id]->mutable_cpu_data());
+
+    caffe_add_scalar(net_params[param_id]->count(),
+              delta, this->update_[param_id]->mutable_cpu_data());
+
+    caffe_div(this->history_[param_id]->count(),
+              this->history_[param_id]->cpu_data(),
+              this->update_[param_id]->cpu_data(),
+              this->update_[param_id]->mutable_cpu_data());
+
+    // scale and copy
+    Dtype iter = static_cast<Dtype>(this->iter_);
+    Dtype coeff = local_rate * sqrt(1-pow(momentum2, iter)) / (1 - pow(momentum, iter));
+    caffe_cpu_axpby(net_params[param_id]->count(), coeff,
+        this->update_[param_id]->cpu_data(), Dtype(0),
+        net_params[param_id]->mutable_cpu_diff());
+    break;
+  }
+  case Caffe::GPU: {
+#ifndef CPU_ONLY
+    // update the gradient estimate
+    caffe_gpu_axpby(net_params[param_id]->count(), 1-momentum,
+        net_params[param_id]->gpu_diff(), momentum,
+        this->history_[param_id]->mutable_gpu_data());
+
+    // compute square of gradient in update
+    caffe_gpu_powx(net_params[param_id]->count(),
+        net_params[param_id]->gpu_diff(), Dtype(2),
+        this->update_[param_id]->mutable_gpu_data());
+
+    // update the gradient square estimate
+    caffe_gpu_axpby(this->update_[param_id]->count(), 1-momentum2,
+        this->update_[param_id]->gpu_data(), momentum2,
+        this->history_[update_history_offset + param_id]->mutable_gpu_data());
+
+    // prepare update
+    caffe_gpu_powx(net_params[param_id]->count(),
+              this->history_[update_history_offset + param_id]->gpu_data(), Dtype(0.5),
+              this->update_[param_id]->mutable_gpu_data());
+
+    caffe_gpu_add_scalar(net_params[param_id]->count(),
+              delta, this->update_[param_id]->mutable_gpu_data());
+
+    caffe_gpu_div(this->history_[param_id]->count(),
+              this->history_[param_id]->gpu_data(),
+              this->update_[param_id]->gpu_data(),
+              this->update_[param_id]->mutable_gpu_data());
+
+    // scale and copy
+    Dtype iter = static_cast<Dtype>(this->iter_) + 1;
+    Dtype coeff = local_rate * sqrt(1-pow(momentum2, iter)) / (1 - pow(momentum, iter));
+//       LOG(INFO) << coeff;
+    caffe_gpu_axpby(net_params[param_id]->count(), coeff,
+        this->update_[param_id]->gpu_data(), Dtype(0),
+        net_params[param_id]->mutable_gpu_diff());
+#else
+    NO_GPU;
+#endif
+    break;
+  }
+  default:
+    LOG(FATAL) << "Unknown caffe mode: " << Caffe::mode();
+  }
+}
+
+//SMORMS3, as in http://sifter.org/~simon/journal/20150420.html
+
+template <typename Dtype>
+void SMORMS3Solver<Dtype>::SMORMS3PreSolve() {
+  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  // add extra blobs for the running average of the squared gradient
+  for (int i = 0; i < net_params.size(); ++i) {
+    const vector<int>& shape = net_params[i]->shape();
+    this->history_.push_back(
+            shared_ptr<Blob<Dtype> >(new Blob<Dtype>(shape)));
+  }
+  // add extra blobs for the adaptive momentum
+  for (int i = 0; i < net_params.size(); ++i) {
+    const vector<int>& shape = net_params[i]->shape();
+    this->history_.push_back(
+            shared_ptr<Blob<Dtype> >(new Blob<Dtype>(shape)));
+    // initialize to all ones
+    caffe_set(this->history_.back()->count(), Dtype(1), this->history_.back()->mutable_cpu_data());
+  }
+}
+
+template <typename Dtype>
+void SMORMS3Solver<Dtype>::ComputeUpdateValue(int param_id, Dtype rate) {
+  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  const vector<float>& net_params_lr = this->net_->params_lr();
+  Dtype local_rate = rate * net_params_lr[param_id];
+  size_t update_history_offset = net_params.size();
+  
+  int params_count = net_params[param_id]->count();
+  Dtype eps = Dtype(1e-8);
+  
+  switch (Caffe::mode()) {
+  case Caffe::CPU: {    
+    
+    Dtype* update_data = this->update_[param_id]->mutable_cpu_data();    
+    Dtype* temp_data = this->temp_[param_id]->mutable_cpu_data();
+    Dtype* history_data = this->history_[param_id]->mutable_cpu_data();
+    Dtype* history2_data = this->history_[update_history_offset + param_id]->mutable_cpu_data();
+    Dtype* mem_data = this->history_[2*update_history_offset + param_id]->mutable_cpu_data();
+    Dtype* grad_data = net_params[param_id]->mutable_cpu_diff();
+    
+    // implementing pseudo-code from http://sifter.org/~simon/journal/20150420.html
+    
+    // temp = 1 / (mem +1)  
+    caffe_copy(params_count, mem_data, temp_data); // temp = mem
+    caffe_add_scalar(params_count, Dtype(1), temp_data); // temp = mem + 1
+    caffe_set(params_count, Dtype(1), update_data); // update = 1
+    caffe_div(params_count, update_data, temp_data, temp_data); // temp = 1 / (mem+1)
+
+    // history = (1 - temp) * history + temp * grad, history2 = (1 - temp) * history2 + temp * grad^2            
+    caffe_set(params_count, Dtype(1), update_data); // update = 1
+    caffe_axpy(params_count, Dtype(-1), temp_data, update_data); // update = 1 - temp
+    caffe_mul(params_count, history_data, update_data, history_data); // history = (1-temp) * history
+    caffe_mul(params_count, history2_data, update_data, history2_data); // history2 = (1-temp) * history2
+    caffe_mul(params_count, grad_data, temp_data, update_data); // update = temp * grad
+    caffe_axpy(params_count, Dtype(1), update_data, history_data); // history = history + temp * grad
+    caffe_mul(params_count, grad_data, grad_data, update_data); // update = grad^2
+    caffe_mul(params_count, update_data, temp_data, update_data); // update = temp * grad^2
+    caffe_axpy(params_count, Dtype(1), update_data, history2_data); // history2 = history2 + temp * grad^2
+    
+    // grad = grad * min(lr, history^2 / (history2 + eps) ) / (sqrt(history2) + eps)
+    caffe_powx(params_count, history2_data, Dtype(0.5), temp_data); // temp = sqrt(history2)
+    caffe_add_scalar(params_count, eps, temp_data); // temp = sqrt(history2) + eps
+    caffe_div(params_count, grad_data, temp_data, grad_data); // grad = grad / (sqrt(history2) + eps)
+    caffe_copy(params_count, history2_data, temp_data); // temp = history2
+    caffe_add_scalar(params_count, eps, temp_data); // temp = history2 + eps
+    caffe_mul(params_count, history_data, history_data, update_data); // update = history^2
+    caffe_div(params_count, update_data, temp_data, update_data); // update = history^2 / (history2 + eps)
+    caffe_min_scalar(params_count, local_rate, update_data, temp_data); // temp = min(lr, history^2 / (history2 + eps))
+    caffe_mul(params_count, grad_data, temp_data, grad_data); // grad = grad * min(lr, history^2 / (history2 + eps))
+    
+    // mem = 1 + mem * ( 1 - history^2 / (history2 + eps) )
+    caffe_set(params_count, Dtype(1), temp_data); // temp = 1
+    caffe_axpy(params_count, Dtype(-1), update_data, temp_data); // temp = 1 - history^2 / (history2 + eps)
+    caffe_mul(params_count, mem_data, temp_data, mem_data); // mem = mem * ( 1 - history^2 / (history2 + eps) )
+    caffe_add_scalar(params_count, Dtype(1), mem_data); // mem = 1 + mem * ( 1 - history^2 / (history2 + eps) )
+    
+    break;
+  }
+  case Caffe::GPU: {
+#ifndef CPU_ONLY
+    Dtype* update_data = this->update_[param_id]->mutable_gpu_data();    
+    Dtype* temp_data = this->temp_[param_id]->mutable_gpu_data();
+    Dtype* history_data = this->history_[param_id]->mutable_gpu_data();
+    Dtype* history2_data = this->history_[update_history_offset + param_id]->mutable_gpu_data();
+    Dtype* mem_data = this->history_[2*update_history_offset + param_id]->mutable_gpu_data();
+    Dtype* grad_data = net_params[param_id]->mutable_gpu_diff();
+    
+    // implementing pseudo-code from http://sifter.org/~simon/journal/20150420.html
+      
+    // temp = 1 / (mem +1)  
+    caffe_gpu_memcpy(params_count * sizeof(Dtype), mem_data, temp_data); // temp = mem
+    caffe_gpu_add_scalar(params_count, Dtype(1), temp_data); // temp = mem + 1
+    caffe_gpu_set(params_count, Dtype(1), update_data); // update = 1
+    caffe_gpu_div(params_count, update_data, temp_data, temp_data); // temp = 1 / (mem+1)
+
+    // history = (1 - temp) * history + temp * grad, history2 = (1 - temp) * history2 + temp * grad^2            
+    caffe_gpu_set(params_count, Dtype(1), update_data); // update = 1
+    caffe_gpu_axpy(params_count, Dtype(-1), temp_data, update_data); // update = 1 - temp
+    caffe_gpu_mul(params_count, history_data, update_data, history_data); // history = (1-temp) * history
+    caffe_gpu_mul(params_count, history2_data, update_data, history2_data); // history2 = (1-temp) * history2
+    caffe_gpu_mul(params_count, grad_data, temp_data, update_data); // update = temp * grad
+    caffe_gpu_axpy(params_count, Dtype(1), update_data, history_data); // history = history + temp * grad
+    caffe_gpu_mul(params_count, grad_data, grad_data, update_data); // update = grad^2
+    caffe_gpu_mul(params_count, update_data, temp_data, update_data); // update = temp * grad^2
+    caffe_gpu_axpy(params_count, Dtype(1), update_data, history2_data); // history2 = history2 + temp * grad^2
+    
+    // grad = grad * min(lr, history^2 / (history2 + eps) ) / (sqrt(history2) + eps)
+    caffe_gpu_powx(params_count, history2_data, Dtype(0.5), temp_data); // temp = sqrt(history2)
+    caffe_gpu_add_scalar(params_count, eps, temp_data); // temp = sqrt(history2) + eps
+    caffe_gpu_div(params_count, grad_data, temp_data, grad_data); // grad = grad / (sqrt(history2) + eps)
+    caffe_gpu_memcpy(params_count * sizeof(Dtype), history2_data, temp_data); // temp = history2
+    caffe_gpu_add_scalar(params_count, eps, temp_data); // temp = history2 + eps
+    caffe_gpu_mul(params_count, history_data, history_data, update_data); // update = history^2
+    caffe_gpu_div(params_count, update_data, temp_data, update_data); // update = history^2 / (history2 + eps)
+    caffe_gpu_min_scalar(params_count, local_rate, update_data, temp_data); // temp = min(lr, history^2 / (history2 + eps))
+    caffe_gpu_mul(params_count, grad_data, temp_data, grad_data); // grad = grad * min(lr, history^2 / (history2 + eps))
+    
+    // mem = 1 + mem * ( 1 - history^2 / (history2 + eps) )
+    caffe_gpu_set(params_count, Dtype(1), temp_data); // temp = 1
+    caffe_gpu_axpy(params_count, Dtype(-1), update_data, temp_data); // temp = 1 - history^2 / (history2 + eps)
+    caffe_gpu_mul(params_count, mem_data, temp_data, mem_data); // mem = mem * ( 1 - history^2 / (history2 + eps) )
+    caffe_gpu_add_scalar(params_count, Dtype(1), mem_data); // mem = 1 + mem * ( 1 - history^2 / (history2 + eps) )
+#else
+    NO_GPU;
+#endif
+    break;
+  }
+  default:
+    LOG(FATAL) << "Unknown caffe mode: " << Caffe::mode();
+  }
+}
+
 INSTANTIATE_CLASS(Solver);
 INSTANTIATE_CLASS(SGDSolver);
 INSTANTIATE_CLASS(NesterovSolver);
 INSTANTIATE_CLASS(AdaGradSolver);
 INSTANTIATE_CLASS(RMSPropSolver);
 INSTANTIATE_CLASS(AdaDeltaSolver);
+INSTANTIATE_CLASS(AdamSolver);
+INSTANTIATE_CLASS(SMORMS3Solver);
 
 }  // namespace caffe
