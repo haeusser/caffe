@@ -173,6 +173,7 @@ message SolverParameter {
   optional float gamma = 9; // The parameter to compute the learning rate.
   optional float power = 10; // The parameter to compute the learning rate.
   optional float momentum = 11; // The momentum value.
+  optional float momentum2 = 5001; // The momentum for squared gradient in Adam.
   optional float weight_decay = 12; // The weight decay.
   // regularization types supported: L1 and L2
   // controlled by weight_decay
@@ -220,6 +221,8 @@ message SolverParameter {
     ADAGRAD = 2;
     RMSPROP = 3;
     ADADELTA = 4;
+    ADAM = 5001;
+    SMORMS3 = 5002;
   }
   optional SolverType solver_type = 30 [default = SGD];
   // numerical stability for AdaGrad
