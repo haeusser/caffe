@@ -1,6 +1,12 @@
 PROJECT := caffe
 
-CONFIG_FILE := Makefile.config
+CONFIG_FILE := Makefile.config-$(shell whoami)
+ifeq ("$(wildcard $(CONFIG_FILE))","") #Or standard of custom doesn't exist
+	CONFIG_FILE := Makefile.config
+endif
+A := $(shell echo Using $(CONFIG_FILE))
+$(info $(A))
+
 # Explicitly check for the config file, otherwise make -k will proceed anyway.
 ifeq ($(wildcard $(CONFIG_FILE)),)
 $(error $(CONFIG_FILE) not found. See $(CONFIG_FILE).example.)
@@ -165,7 +171,7 @@ CUDA_LIB_DIR += $(CUDA_DIR)/lib
 
 INCLUDE_DIRS += $(BUILD_INCLUDE_DIR) ./src ./include
 ifneq ($(CPU_ONLY), 1)
-	INCLUDE_DIRS += $(CUDA_INCLUDE_DIR)
+	SYS_INCLUDE_DIRS += $(CUDA_INCLUDE_DIR)
 	LIBRARY_DIRS += $(CUDA_LIB_DIR)
 	LIBRARIES := cudart cublas curand
 endif
@@ -339,7 +345,7 @@ else
 		endif
 	endif
 endif
-INCLUDE_DIRS += $(BLAS_INCLUDE)
+SYS_INCLUDE_DIRS += $(BLAS_INCLUDE)
 LIBRARY_DIRS += $(BLAS_LIB)
 
 LIBRARY_DIRS += $(LIB_BUILD_DIR)
@@ -349,6 +355,7 @@ CXXFLAGS += -MMD -MP
 
 # Complete build flags.
 COMMON_FLAGS += $(foreach includedir,$(INCLUDE_DIRS),-I$(includedir))
+COMMON_FLAGS += $(foreach includedir,$(SYS_INCLUDE_DIRS),-isystem $(includedir))
 CXXFLAGS += -pthread -fPIC $(COMMON_FLAGS) $(WARNINGS)
 NVCCFLAGS += -ccbin=$(CXX) -Xcompiler -fPIC $(COMMON_FLAGS)
 # mex may invoke an older gcc that is too liberal with -Wuninitalized
