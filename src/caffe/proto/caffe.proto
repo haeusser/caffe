@@ -235,6 +235,18 @@ message SolverParameter {
 
   // If false, don't save a snapshot after training finishes.
   optional bool snapshot_after_train = 28 [default = true];
+  
+  // Hackathon2 Params:
+  
+  // the number of iterations between logging visualization information.
+  // If visualize = 0, no info will be logged.
+  optional int32 visualize = 3003 [default = 0]; 
+  optional bool interaction = 3004 [default = false];
+  optional int32 interaction_interval = 3005 [default = 0]; // if <= 0 means same as display interval
+  optional int32 snapshot_at_iter = 3006 [default = -1];
+  
+  optional string param_file = 3007 [default = ""]; // Don't need to set this. It's done automatically
+  
 }
 
 // A message that stores the solver snapshots

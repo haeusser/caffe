@@ -106,6 +106,8 @@ int train() {
   caffe::SolverParameter solver_param;
   caffe::ReadProtoFromTextFileOrDie(FLAGS_solver, &solver_param);
 
+  solver_param.set_param_file((std::string)FLAGS_solver);
+  
   // If the gpu flag is not provided, allow the mode and device to be set
   // in the solver prototxt.
   if (FLAGS_gpu < 0

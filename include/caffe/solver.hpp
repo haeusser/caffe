@@ -58,6 +58,7 @@ class Solver {
   void DisplayOutputBlobs(const int net_id);
 
   SolverParameter param_;
+  string param_file;
   int iter_;
   int current_step_;
   shared_ptr<Net<Dtype> > net_;

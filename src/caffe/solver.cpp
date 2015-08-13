@@ -28,6 +28,7 @@ Solver<Dtype>::Solver(const string& param_file)
     : net_() {
   SolverParameter param;
   ReadProtoFromTextFileOrDie(param_file, &param);
+  param.set_param_file(param_file);
   Init(param);
 }
 
@@ -171,6 +172,8 @@ void Solver<Dtype>::Step(int iters) {
   vector<Dtype> losses;
   Dtype smoothed_loss = 0;
 
+  SolverParameter param;
+  
   while (iter_ < stop_iter) {
     // zero-init the params
     net_->ClearParamDiffs();
@@ -226,9 +229,36 @@ void Solver<Dtype>::Step(int iters) {
     ++iter_;
 
     // Save a snapshot if needed.
-    if (param_.snapshot() && iter_ % param_.snapshot() == 0) {
+    if ((param_.snapshot() && iter_ % param_.snapshot() == 0) 
+        || param_.snapshot_at_iter() == iter_) {
       Snapshot();
     }
+    
+    // Visualization
+    /*const bool visualize = param_.visualize() && (iter_ % param_.visualize() == 0);
+    if (visualize) {
+      typedef typename vector<shared_ptr<Visualizer<Dtype> > >::const_iterator
+          VizIter;
+      for (VizIter visualizer = visualizers_.begin();
+          visualizer != visualizers_.end(); ++visualizer) {
+        LogRecord log_record;
+        log_record.set_iteration(this->iter_);
+        log_record.set_timestamp(time(0));
+        (*visualizer)->CreateLogRecord(net_, &log_record);
+        Log(log_record);
+      }
+    }*/
+    
+    // if interaction enabled, re-read config file
+    if (param_.interaction()) {
+      // If want to re-read at this iteration 
+      if((param_.interaction_interval() <= 0 && display)
+         || (param_.interaction_interval() > 0 && (iter_ % param_.interaction_interval() == 0))) {
+        ReadProtoFromTextFileOrDie(param_file, &param);
+        this->param_ = param;
+      }
+    }
+    
   }
 }
 
@@ -236,7 +266,16 @@ template <typename Dtype>
 void Solver<Dtype>::Solve(const char* resume_file) {
   LOG(INFO) << "Solving " << net_->name();
   LOG(INFO) << "Learning Rate Policy: " << param_.lr_policy();
-
+  LOG(INFO) << "Interaction: " << param_.interaction();
+  if (param_.interaction()){
+    LOG(INFO) << "Param File: " << param_.param_file();
+    if(param_.param_file().length() == 0) {
+      LOG(ERROR) << "The param_file was not set. Are you using something else than the caffe tool?";
+    }
+    param_file = param_.param_file();
+    LOG(INFO) << "Snapshot at iteration: " << param_.snapshot_at_iter();
+  }
+  
   if (resume_file) {
     LOG(INFO) << "Restoring previous solver status from " << resume_file;
     Restore(resume_file);
