@@ -182,6 +182,10 @@ message SolverParameter {
   // the stepsize for learning rate policy "multistep"
   repeated int32 stepvalue = 34;
 
+  // Hackathon: Custom LR function
+  repeated int32 lrfunction_iter = 3001;
+  repeated float lrfunction_value = 3002;
+  
   // Set clip_gradients to >= 0 to clip parameter gradients to that L2 norm,
   // whenever their actual L2 norm is larger.
   optional float clip_gradients = 35 [default = -1];

@@ -405,7 +405,7 @@ void Solver<Dtype>::Restore(const char* state_file) {
 // in the solver parameter protocol buffer, and iter is the current iteration.
 template <typename Dtype>
 Dtype SGDSolver<Dtype>::GetLearningRate() {
-  Dtype rate;
+  Dtype rate = 0;
   const string& lr_policy = this->param_.lr_policy();
   if (lr_policy == "fixed") {
     rate = this->param_.base_lr();
@@ -436,6 +436,15 @@ Dtype SGDSolver<Dtype>::GetLearningRate() {
     rate = this->param_.base_lr() * (Dtype(1.) /
         (Dtype(1.) + exp(-this->param_.gamma() * (Dtype(this->iter_) -
           Dtype(this->param_.stepsize())))));
+  } else if (lr_policy == "lrfunction") {
+    CHECK_EQ(this->param_.lrfunction_iter_size(), this->param_.lrfunction_value_size());
+    
+    rate = this->param_.base_lr();
+    for(int i = 0; i < this->param_.lrfunction_iter_size(); i++) {
+        if(this->iter_ >= this->param_.lrfunction_iter(i)) {
+            rate = this->param_.lrfunction_value(i);
+        }
+    }
   } else {
     LOG(FATAL) << "Unknown learning rate policy: " << lr_policy;
   }
