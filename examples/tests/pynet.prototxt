@@ -1,0 +1,75 @@
+name: "CIFAR10_full"
+layer {
+  name: "cifar"
+  type: "Data"
+  top: "data"
+  top: "label"
+  transform_param {
+    mean_file: "examples/cifar10/mean.binaryproto"
+  }
+  data_param {
+    source: "examples/cifar10/cifar10_train_lmdb"
+    batch_size: 100
+    backend: LMDB
+  }
+} 
+layer {
+  type: 'Silence'
+  name: 'silence'
+  bottom: 'label'
+}
+layer {
+  type: 'Python'
+  name: 'pyt'
+  top: 'data2'
+  bottom: 'data'
+  python_param {
+    # the module name -- usually the filename -- that needs to be in $PYTHONPATH
+    module: 'pylayer2'
+    # the layer name -- the class name in the module
+    layer: 'PythonLayer'
+    share_in_parallel: true
+  }
+}
+layer {
+  name: "conv1"
+  type: "Convolution"
+  bottom: "data2"
+  top: "data3"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 3
+    pad: 2
+    kernel_size: 5
+    stride: 1
+  }
+}
+layer {
+  type: 'EuclideanLoss'
+  name: 'loss'
+  top: 'loss'
+  bottom: 'data'
+  bottom: 'data3'
+  # set loss weight so Caffe knows this is a loss layer
+  loss_weight: 1
+}
+# layer {
+#   type: 'Python'
+#   name: 'loss'
+#   top: 'loss'
+#   bottom: 'data'
+#   bottom: 'data'
+#   python_param {
+#     # the module name -- usually the filename -- that needs to be in $PYTHONPATH
+#     module: 'pylayer'
+#     # the layer name -- the class name in the module
+#     layer: 'PythonLayer'
+#   }
+#   # set loss weight so Caffe knows this is a loss layer
+#   loss_weight: 1
+# }
