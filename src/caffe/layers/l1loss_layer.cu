@@ -58,7 +58,7 @@ void L1LossLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   
   // set NaNs to zero
   KillNaNs<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, diffptr->gpu_data(), diffptr->mutable_gpu_data());
+        count, diffptr->mutable_gpu_data(), diffptr->mutable_gpu_data());
   CUDA_POST_KERNEL_CHECK;
   
   if (this->layer_param_.l1_loss_param().l2_per_location()) {

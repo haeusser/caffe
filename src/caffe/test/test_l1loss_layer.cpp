@@ -57,7 +57,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     // equivalent to explicitly specifiying a weight of 1.
     LayerParameter layer_param;
     L1LossLayer<Dtype> layer_weight_1(layer_param);
-    layer_weight_1.LayerSetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+    layer_weight_1.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
     const Dtype loss_weight_1 =
         layer_weight_1.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
 
@@ -66,7 +66,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     const Dtype kLossWeight = 3.7;
     layer_param.add_loss_weight(kLossWeight);
     L1LossLayer<Dtype> layer_weight_2(layer_param);
-    layer_weight_2.LayerSetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+    layer_weight_2.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
     const Dtype loss_weight_2 =
         layer_weight_2.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
     const Dtype kErrorMargin = 1e-5;
@@ -84,7 +84,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     layer_param.mutable_l1_loss_param()->set_l2_per_location(false);
     
     L1LossLayer<Dtype> layer_weight_2(layer_param);
-    layer_weight_2.LayerSetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+    layer_weight_2.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
     
     const Dtype loss_weight_2 =
         layer_weight_2.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
@@ -114,7 +114,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     layer_param.mutable_l1_loss_param()->set_l2_per_location(true);
     
     L1LossLayer<Dtype> layer_weight_2(layer_param);
-    layer_weight_2.LayerSetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+    layer_weight_2.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
     
     const Dtype loss_weight_2 =
         layer_weight_2.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
@@ -163,7 +163,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     Dtype tmp_val = bot_data[17];
     bot_data[17] = NAN;    
     
-    layer_weight_2.LayerSetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+    layer_weight_2.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
     
     const Dtype loss_weight_2 =
         layer_weight_2.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
@@ -215,7 +215,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     layer_param.mutable_l1_loss_param()->set_l2_per_location(false);
     
     L1LossLayer<Dtype> layer_weight_2(layer_param);
-    layer_weight_2.LayerSetUp(mybottom, this->blob_top_vec_);
+    layer_weight_2.SetUp(mybottom, this->blob_top_vec_);
     
     const Dtype loss_weight_2 =
         layer_weight_2.Forward(mybottom, this->blob_top_vec_);
@@ -242,7 +242,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     LayerParameter layer_param;
     layer_param.mutable_l1_loss_param()->set_l2_per_location(true);
     L1LossLayer<Dtype> layer_weight_1(layer_param);
-    layer_weight_1.LayerSetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+    layer_weight_1.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
     const Dtype loss_weight_1 =
         layer_weight_1.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
 
@@ -251,7 +251,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     const Dtype kLossWeight = 3.7;
     layer_param.add_loss_weight(kLossWeight);
     L1LossLayer<Dtype> layer_weight_2(layer_param);
-    layer_weight_2.LayerSetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+    layer_weight_2.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
     const Dtype loss_weight_2 =
         layer_weight_2.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
     const Dtype kErrorMargin = 1e-5;
@@ -319,7 +319,7 @@ TYPED_TEST(L1LossLayerTest, TestGradient_simple) {
   const Dtype kLossWeight = 3.7;
   layer_param.add_loss_weight(kLossWeight);
   L1LossLayer<Dtype> layer(layer_param);
-  layer.LayerSetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+  layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
 
   GradientChecker<Dtype> checker(1e-2, 1e-3, 1701);
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
@@ -338,7 +338,7 @@ TYPED_TEST(L1LossLayerTest, TestGradient_l2_per_location) {
   const Dtype kLossWeight = 3.7;
   layer_param.add_loss_weight(kLossWeight);
   L1LossLayer<Dtype> layer(layer_param);
-  layer.LayerSetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+  layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   GradientChecker<Dtype> checker(1e-2, 1e-3, 1701);
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
