@@ -25,6 +25,7 @@ void L1LossLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     diff_param.mutable_eltwise_param()->set_operation(EltwiseParameter_EltwiseOp_SUM);
     diff_layer_.reset(new EltwiseLayer<Dtype>(diff_param));
     diff_layer_->LayerSetUp(bottom, diff_top_vec_);
+    diff_layer_->Reshape(bottom, diff_top_vec_);
   } else {
       LOG(FATAL) << "L1LossLayer needs one or two input blobs.";
   }
@@ -37,6 +38,7 @@ void L1LossLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     square_param.mutable_power_param()->set_power(Dtype(2));
     square_layer_.reset(new PowerLayer<Dtype>(square_param));
     square_layer_->LayerSetUp(diff_top_vec_, square_top_vec_);
+    square_layer_->Reshape(diff_top_vec_, square_top_vec_);
     // Set up convolutional layer to sum all channels
     sum_top_vec_.clear();
     sum_top_vec_.push_back(&sum_output_);
@@ -51,6 +53,7 @@ void L1LossLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     }
     sum_layer_.reset(new ConvolutionLayer<Dtype>(sum_param));
     sum_layer_->LayerSetUp(square_top_vec_, sum_top_vec_);
+    sum_layer_->Reshape(square_top_vec_, sum_top_vec_);
     // Set up power layer to compute elementwise sqrt
     sqrt_top_vec_.clear();
     sqrt_top_vec_.push_back(&sqrt_output_);
@@ -58,6 +61,7 @@ void L1LossLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     sqrt_param.mutable_power_param()->set_power(Dtype(0.5));
     sqrt_layer_.reset(new PowerLayer<Dtype>(sqrt_param));
     sqrt_layer_->LayerSetUp(sum_top_vec_, sqrt_top_vec_);
+    sqrt_layer_->Reshape(sum_top_vec_, sqrt_top_vec_);
   }
 }
 
