@@ -413,6 +413,8 @@ message LayerParameter {
   optional TanHParameter tanh_param = 127;
   optional ThresholdParameter threshold_param = 128;
   optional WindowDataParameter window_data_param = 129;
+  optional WriterParameter writer_param = 3002;
+  optional ReaderParameter reader_param = 3003;
 }
 
 // Message that stores parameters used to apply transformation
@@ -817,6 +819,11 @@ message PythonParameter {
   optional bool share_in_parallel = 4 [default = false];
 }
 
+message ReaderParameter { // Eddy
+    required string file = 1;
+    optional uint32 num = 2 [default=1];
+}
+
 // Message that stores parameters used by ReductionLayer
 message ReductionParameter {
   enum ReductionOp {
@@ -1005,6 +1012,15 @@ message WindowDataParameter {
   optional bool cache_images = 12 [default = false];
   // append root_folder to locate images
   optional string root_folder = 13 [default = ""];
+}
+
+message WriterParameter { // Eddy
+    optional string file = 1 [default=""];
+    optional string folder = 2 [default=""];
+    optional string prefix = 3 [default=""];
+    optional string suffix = 4 [default=""];
+    optional bool normalize = 5 [default=false];
+    optional float scale = 6 [default=1];
 }
 
 message SPPParameter {
