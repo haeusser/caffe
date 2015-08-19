@@ -332,11 +332,8 @@ void PhilDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       data_param.encoding().end(),
       std::back_inserter(channel_encoding_));
   iter_ = 0;
-}
 
-template <typename Dtype>
-void PhilDataLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+        
   const bool verbose = this->layer_param_.data_param().verbose();
   if (top.size() == slice_point_.size() + 1) {
     output_labels_ = false;
@@ -630,6 +627,13 @@ void PhilDataLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   DLOG(INFO) << "Initializing prefetch";
   CreatePrefetchThread();
   DLOG(INFO) << "Prefetch initialized.";
+}
+
+
+template <typename Dtype>
+void PhilDataLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top) {
+  
 }
 
 template <typename Dtype>

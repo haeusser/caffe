@@ -309,6 +309,8 @@ class PhilDataLayer : public Layer<Dtype> {
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
 
+  virtual inline bool ShareInParallel() const { return true; }
+  
   virtual inline const char* type() const { return "PhilData"; }
   
   virtual inline int ExactNumBottomBlobs() const { return 0; }
