@@ -18,6 +18,8 @@
 #include "caffe/util/blocking_queue.hpp"
 #include "caffe/util/db.hpp"
 
+#include "lmdb.h"
+
 namespace caffe {
 
 /**
@@ -255,6 +257,86 @@ class ImageDataLayer : public BasePrefetchingDataLayer<Dtype> {
 
   vector<std::pair<std::string, int> > lines_;
   int lines_id_;
+};
+
+
+/**
+ * @brief Phils Data Layer
+ *
+ */
+template <typename Dtype>
+void* PhilDataLayerPrefetch(void* layer_pointer);
+
+template <typename Dtype>
+class PhilDataLayer : public Layer<Dtype> {
+  // The function used to perform prefetching.
+  friend void* PhilDataLayerPrefetch<Dtype>(void* layer_pointer);
+
+ public:
+  explicit PhilDataLayer(const LayerParameter& param)
+      : Layer<Dtype>(param) {}
+  virtual ~PhilDataLayer();
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual inline const char* type() const { return "PhilData"; }
+  
+  virtual inline int ExactNumBottomBlobs() const { return 0; }
+  virtual inline int MinTopBlobs() const { return 1; }
+
+ protected:
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {}
+  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {}
+
+  virtual void CreatePrefetchThread();
+  virtual void JoinPrefetchThread();
+  virtual unsigned int PrefetchRand();
+  
+  virtual void generateRandomPermutation(int seed, int block_size = 0);
+
+  shared_ptr<Caffe::RNG> prefetch_rng_;
+
+  // LMDB
+  MDB_env* mdb_env_;
+  MDB_dbi mdb_dbi_;
+  MDB_txn* mdb_txn_;
+  MDB_cursor* mdb_cursor_;
+  MDB_val mdb_key_, mdb_value_;
+
+  int database_entries_;
+  int datum_index_;
+  int range_start_;
+  int range_end_;
+  int range_size_;
+  
+  int preselection_label_;
+  
+  std::vector<int> permutation_vector_;
+  
+  vector<int> slice_point_;
+  vector<int> channel_encoding_;
+  
+  int datum_channels_;
+  int datum_height_;
+  int datum_width_;
+  int datum_size_;
+  pthread_t thread_;
+  shared_ptr<Blob<Dtype> > prefetch_label_;
+  //shared_ptr<Blob<Dtype> > prefetch_data_;
+  vector<shared_ptr<Blob<Dtype> > > prefetch_data_blobs_;
+  
+  Blob<Dtype> data_mean_;
+  bool output_labels_;
+  
+  int iter_;
 };
 
 /**
