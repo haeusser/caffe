@@ -31,6 +31,7 @@ template <typename Dtype>
 Net<Dtype>::Net(const string& param_file, Phase phase, const Net* root_net)
     : root_net_(root_net) {
   NetParameter param;
+  solver_ = NULL;
   ReadNetParamsFromTextFileOrDie(param_file, &param);
   param.mutable_state()->set_phase(phase);
   Init(param);
@@ -127,6 +128,8 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
     // specified fewer than the required number (as specified by
     // ExactNumTopBlobs() or MinTopBlobs()), allocate them here.
     Layer<Dtype>* layer = layers_[layer_id].get();
+    layer->SetNet(this);
+    
     if (layer->AutoTopBlobs()) {
       const int needed_num_top =
           std::max(layer->MinTopBlobs(), layer->ExactNumTopBlobs());

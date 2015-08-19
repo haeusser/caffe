@@ -96,6 +96,7 @@ void Solver<Dtype>::InitTrainNet() {
   } else {
     net_.reset(new Net<Dtype>(net_param, root_solver_->net_.get()));
   }
+  net_->SetSolver(this);
 }
 
 template <typename Dtype>
