@@ -86,14 +86,14 @@ GPUParams<Dtype>::GPUParams(shared_ptr<Solver<Dtype> > root_solver, int device)
 
   // Allocate device buffers
   CUDA_CHECK(cudaSetDevice(device));
-  CUDA_CHECK(cudaMalloc(&data_, size_ * sizeof(Dtype) + 1));
+  CUDA_CHECK(cudaMalloc(&data_, size_ * sizeof(Dtype)));
 
   // Copy blob values
   const vector<Blob<Dtype>*>& net =
       root_solver->net()->learnable_params();
   apply_buffers(net, data_, size_, copy);
 
-  CUDA_CHECK(cudaMalloc(&diff_, size_ * sizeof(Dtype) + 1));
+  CUDA_CHECK(cudaMalloc(&diff_, size_ * sizeof(Dtype)));
   caffe_gpu_set(size_, Dtype(0), diff_);
 
   CUDA_CHECK(cudaSetDevice(initial_device));
@@ -239,7 +239,7 @@ P2PSync<Dtype>::P2PSync(shared_ptr<Solver<Dtype> > root_solver,
     }
     // Allocate receiving buffer on parent
     CUDA_CHECK(cudaSetDevice(peer));
-    CUDA_CHECK(cudaMalloc(&parent_grads_, size_ * sizeof(Dtype) + 1));
+    CUDA_CHECK(cudaMalloc(&parent_grads_, size_ * sizeof(Dtype)));
     CUDA_CHECK(cudaSetDevice(self));
   }
 
