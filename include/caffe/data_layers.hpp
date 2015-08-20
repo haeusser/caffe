@@ -146,6 +146,63 @@ class DummyDataLayer : public Layer<Dtype> {
 };
 
 /**
+ * @brief FloatWriterLayer writes float3 files
+ *
+ */
+template <typename Dtype>
+class FloatWriterLayer : public Layer<Dtype> {
+ public:
+  explicit FloatWriterLayer(const LayerParameter& param)
+      : Layer<Dtype>(param) {}
+  virtual ~FloatWriterLayer() {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  
+  virtual inline const char* type() const { return "FloatWriter"; }
+  virtual inline int ExactNumBottomBlobs() const { return 1; }
+ protected:
+
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {}
+  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {}
+};
+
+/**
+ * @brief FLOWriterLayer writes FLO (flow) files
+ *
+ */
+template <typename Dtype>
+class FLOWriterLayer : public Layer<Dtype> {
+ public:
+  explicit FLOWriterLayer(const LayerParameter& param)
+      : Layer<Dtype>(param) {}
+  virtual ~FLOWriterLayer() {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  
+  virtual inline const char* type() const { return "FLOWriter"; }
+  virtual inline int ExactNumBottomBlobs() const { return 1; }
+ protected:
+
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {}
+  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {}
+};
+
+
+/**
  * @brief Provides data to the Net from HDF5 files.
  *
  * TODO(dox): thorough documentation for Forward and proto params.
