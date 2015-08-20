@@ -377,6 +377,7 @@ message LayerParameter {
   // for their implementation. These layers include an Engine type and
   // engine parameter for selecting the implementation.
   // The default for the engine is set by the ENGINE switch at compile-time.
+  optional AccumParameter accum_param = 3005;
   optional AccuracyParameter accuracy_param = 102;
   optional ArgMaxParameter argmax_param = 103;
   optional ConcatParameter concat_param = 104;
@@ -452,6 +453,12 @@ message LossParameter {
 
 // Messages that store parameters used by individual layer types follow, in
 // alphabetical order.
+
+message AccumParameter {
+  optional uint32 top_height = 1 [default = 0]; // The output height
+  optional uint32 top_width = 2 [default = 0]; // The output width
+  optional uint32 size_divisible_by = 3 [default = 0]; // Upscales to the minimal size divisible by the given number 
+}
 
 message AccuracyParameter {
   // When computing accuracy, count as correct by comparing the true label to
