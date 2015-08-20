@@ -382,6 +382,7 @@ message LayerParameter {
   optional ConcatParameter concat_param = 104;
   optional ContrastiveLossParameter contrastive_loss_param = 105;
   optional ConvolutionParameter convolution_param = 106;
+  optional CorrelationParameter correlation_param = 3004;
   optional DataParameter data_param = 107;
   optional DropoutParameter dropout_param = 108;
   optional DummyDataParameter dummy_data_param = 109;
@@ -521,6 +522,22 @@ message ConvolutionParameter {
     CUDNN = 2;
   }
   optional Engine engine = 15 [default = DEFAULT];
+}
+
+// Message that stores parameters used by CorrelationLayer
+message CorrelationParameter {
+  optional uint32 pad = 2 [default = 0]; // The padding size (equal in Y, X)
+  optional uint32 kernel_size = 3; // The kernel size (square)
+  optional uint32 max_displacement = 4; // The maximum displacement (square)
+  optional uint32 stride_1 = 5 [default = 1]; // The stride in blob 1 (equal in Y, X)
+  optional uint32 stride_2 = 6 [default = 1]; // The stride in blob 2 (equal in Y, X)
+  
+  optional bool do_abs = 7 [default = false]; // Use absolute value of result
+  enum CorrelationType {
+    MULTIPLY = 0;
+    SUBTRACT = 1;
+  }
+  optional CorrelationType correlation_type = 15 [default = MULTIPLY]; // Multiplicative is normal correlation
 }
 
 message DataParameter {
