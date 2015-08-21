@@ -13,7 +13,7 @@ inline float valclamp(float val) {
   return (val<0)?0:((val>255)?255:val);
 }
 
-bool readFloFile(string filename,float*& data,int& xSize,int &ySize)
+bool readFloFile(string filename, float*& data, int& xSize, int &ySize)
 {
     FILE *stream = fopen(filename.c_str(), "rb");
     if (stream == 0)
@@ -22,24 +22,29 @@ bool readFloFile(string filename,float*& data,int& xSize,int &ySize)
         return false;
     }
 
-    float help;
-    fread(&help,sizeof(float),1,stream);
-    fread(&xSize,sizeof(int),1,stream);
-    fread(&ySize,sizeof(int),1,stream);
+    try {
+      float help;
+      if(0 == fread(&help,sizeof(float),1,stream)) throw 0;
+      if(0 == fread(&xSize,sizeof(int),1,stream)) throw 0;
+      if(0 == fread(&ySize,sizeof(int),1,stream)) throw 0;
 
-    data=new float[xSize*ySize*2];
+      data=new float[xSize*ySize*2];
 
-    for (int y = 0; y < ySize; y++)
-        for (int x = 0; x < xSize; x++) {
-            fread(&data[y*xSize+x],sizeof(float),1,stream);
-            fread(&data[y*xSize+x+xSize*ySize],sizeof(float),1,stream);
-        }
+      for (int y = 0; y < ySize; y++)
+          for (int x = 0; x < xSize; x++) {
+              if(0 == fread(&data[y*xSize+x],sizeof(float),1,stream)) throw 0;
+              if(0 == fread(&data[y*xSize+x+xSize*ySize],sizeof(float),1,stream)) throw 0;
+          }
+    } catch(int err) {
+      fclose(stream);
+      LOG(FATAL) << "File corrupted: " << filename;
+    }
     fclose(stream);
 
     return true;
 }
 
-void writeFloFile(string filename,const float* data,int xSize,int ySize)
+void writeFloFile(string filename, const float* data, int xSize, int ySize)
 {
     FILE *stream = fopen(filename.c_str(), "wb");
 
@@ -59,7 +64,7 @@ void writeFloFile(string filename,const float* data,int xSize,int ySize)
     fclose(stream);
 }
 
-void writePPM(std::string filename,const float* data,int xSize,int ySize,bool flipRGB,float scale)
+void writePPM(std::string filename, const float* data, int xSize, int ySize, bool flipRGB, float scale)
 {
     FILE* outimage = fopen(filename.c_str(), "wb");
     fprintf(outimage, "P6 \n");
@@ -87,7 +92,7 @@ void writePPM(std::string filename,const float* data,int xSize,int ySize,bool fl
     fclose(outimage);
 }
 
-void writePPMNorm(std::string filename,const float* data,int xSize, int ySize,bool flipRGB)
+void writePPMNorm(std::string filename, const float* data, int xSize, int ySize, bool flipRGB)
 {
     int size=xSize*ySize;
     float min=std::numeric_limits<float>::max();
@@ -120,7 +125,7 @@ void writePPMNorm(std::string filename,const float* data,int xSize, int ySize,bo
     fclose(outimage);
 }
 
-void writePGM(std::string filename,const float* data,int xSize,int ySize,float scale)
+void writePGM(std::string filename, const float* data, int xSize, int ySize, float scale)
 {
     FILE* outimage = fopen(filename.c_str(), "wb");
 
@@ -136,7 +141,7 @@ void writePGM(std::string filename,const float* data,int xSize,int ySize,float s
     fclose(outimage);
 }
 
-void writePGMNorm(std::string filename,const float* data,int xSize, int ySize)
+void writePGMNorm(std::string filename, const float* data, int xSize, int ySize)
 {
     int size=xSize*ySize;
     float min=std::numeric_limits<float>::max();
@@ -163,7 +168,7 @@ void writePGMNorm(std::string filename,const float* data,int xSize, int ySize)
 
 #define fail(text)  LOG(FATAL) << text;
 
-void writeFloatFile(std::string filename,const float* data,int xSize,int ySize,int zSize)
+void writeFloatFile(std::string filename, const float* data, int xSize, int ySize, int zSize)
 {
     int size=xSize*ySize*zSize;
 
@@ -182,44 +187,49 @@ void writeFloatFile(std::string filename,const float* data,int xSize,int ySize,i
     fclose(f);
 }
 
-void readFloatFile(std::string filename,float*& data,int& xSize,int& ySize,int& zSize)
+void readFloatFile(std::string filename, float*& data, int& xSize, int& ySize, int& zSize)
 {
     FILE* f=fopen(filename.c_str(),"rb");
-    if(!f)
-        fail("Cannot open file: "+filename);
+    
+    if(!f) fail("Cannot open file: "+filename);
 
     char buffer[128];
-    fgets(buffer,128,f);
-    if(strcmp(buffer,"float\n")!=0)
-        fail("File has invalid format: "+filename);
+    try {
+      if(NULL == fgets(buffer,128,f)) {throw 0;}; 
+      if(strcmp(buffer,"float\n")!=0)
+          fail("File has invalid format: "+filename);
 
-    fgets(buffer,128,f);
-    int dim=atoi(buffer);
-    int dimX=1;
-    int dimY=1;
-    int dimZ=1;
-    if(dim==3)
-    {
-        fgets(buffer,128,f); dimX=atoi(buffer);
-        fgets(buffer,128,f); dimY=atoi(buffer);
-        fgets(buffer,128,f); dimZ=atoi(buffer);
-    }
-    else if(dim==2)
-    {
-        fgets(buffer,128,f); dimX=atoi(buffer);
-        fgets(buffer,128,f); dimY=atoi(buffer);
-    }
-    else
+      if(NULL == fgets(buffer,128,f)) {throw 0;}; 
+      int dim=atoi(buffer);
+      int dimX=1;
+      int dimY=1;
+      int dimZ=1;
+      if(dim==3)
+      {
+        if(NULL == fgets(buffer,128,f)) {throw 0;}; dimX=atoi(buffer);
+        if(NULL == fgets(buffer,128,f)) {throw 0;}; dimY=atoi(buffer);
+        if(NULL == fgets(buffer,128,f)) {throw 0;}; dimZ=atoi(buffer);
+      }
+      else if(dim==2)
+      {
+        if(NULL == fgets(buffer,128,f)) {throw 0;}; dimX=atoi(buffer);
+        if(NULL == fgets(buffer,128,f)) {throw 0;}; dimY=atoi(buffer);
+      }
+      else {
         fail("File not 3-dimensional: "+filename);
+      }
 
-
-    xSize=dimX;
-    ySize=dimY;
-    zSize=dimZ;
-    int size=xSize*ySize*zSize;
-    data=new float[size];
-    fread(data,size,sizeof(float),f);
-
+      xSize=dimX;
+      ySize=dimY;
+      zSize=dimZ;
+      int size=xSize*ySize*zSize;
+      data=new float[size];
+      if(0 == fread(data,size,sizeof(float),f)) throw 0;
+    } catch(int err) {
+      fclose(f);
+      LOG(FATAL) << "File corrupted: " << filename;
+    }
+    
     fclose(f);
 }
 
