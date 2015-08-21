@@ -385,6 +385,7 @@ message LayerParameter {
   optional ConvolutionParameter convolution_param = 106;
   optional CorrelationParameter correlation_param = 3004;
   optional DataParameter data_param = 107;
+  optional DownsampleParameter downsample_param = 3006;
   optional DropoutParameter dropout_param = 108;
   optional DummyDataParameter dummy_data_param = 109;
   optional EltwiseParameter eltwise_param = 110;
@@ -609,6 +610,11 @@ message DataParameter {
   optional uint32 permute_every_iter = 3012 [default = 0];
   optional uint32 block_size = 3013 [default = 0];
 
+}
+
+message DownsampleParameter {
+  optional uint32 top_height = 1 [default = 0]; // The output height
+  optional uint32 top_width = 2 [default = 0]; // The output width
 }
 
 message DropoutParameter {
