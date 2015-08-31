@@ -28,19 +28,19 @@ namespace caffe {
   
 template <typename Dtype>
 void AugParamExtractionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top)
+      const vector<Blob<Dtype>*>& top)
 {
 }
 
 template <typename Dtype>
 void AugParamExtractionLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top)
+      const vector<Blob<Dtype>*>& top)
 {
   AugParamExtractionParameter layer_param = this->layer_param_.aug_param_extraction_param();
   
   CHECK(layer_param.has_extract_param()) << "AugParamExtractionLayer layer: Must specify extract_param";
   CHECK_EQ(bottom.size(), 1) << "AugParamExtractionLayer layer takes augparams as input blob";
-  CHECK_EQ(top->size(), 1) << "AugParamExtractionLayer layer outputs one blob";
+  CHECK_EQ(top.size(), 1) << "AugParamExtractionLayer layer outputs one blob";
 
   extract_param_ = layer_param.extract_param();
   multiplier_ = layer_param.multiplier();
@@ -50,22 +50,22 @@ void AugParamExtractionLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   }*/
       
   const int num = bottom[0]->num();
-  const int channels = bottom[0]->channels();
+//   const int channels = bottom[0]->channels();
 
   if(extract_param_ == AugParamExtractionParameter_ExtractParam_MIRROR) {
-    (*top)[0]->Reshape(num,2,1,1); // For mirror 2 channels
+    (top)[0]->Reshape(num,2,1,1); // For mirror 2 channels
   } else if(extract_param_ == AugParamExtractionParameter_ExtractParam_ROTATION) {
-    (*top)[0]->Reshape(num,2,1,1); // For rotation 2 channels (positive and negative rotation separated)
+    (top)[0]->Reshape(num,2,1,1); // For rotation 2 channels (positive and negative rotation separated)
   } else if(extract_param_ == AugParamExtractionParameter_ExtractParam_ROTATION_SCALAR) {
-    (*top)[0]->Reshape(num,1,1,1); // For rotation 1 channels scalar
+    (top)[0]->Reshape(num,1,1,1); // For rotation 1 channels scalar
   } else if(extract_param_ == AugParamExtractionParameter_ExtractParam_ROTATION_COSSIN) {
-    (*top)[0]->Reshape(num,2,1,1); // For cos sin rotation 2 channels
+    (top)[0]->Reshape(num,2,1,1); // For cos sin rotation 2 channels
   } else if(extract_param_ == AugParamExtractionParameter_ExtractParam_ROTATION_90DEG_BINS) {
-    (*top)[0]->Reshape(num,4,1,1); // For cos sin rotation 2 channels
+    (top)[0]->Reshape(num,4,1,1); // For cos sin rotation 2 channels
   } else if(extract_param_ == AugParamExtractionParameter_ExtractParam_ROTATION_90DEG_CLASS) {
-    (*top)[0]->Reshape(num,1,1,1); //class in [0,1,2,3]
+    (top)[0]->Reshape(num,1,1,1); //class in [0,1,2,3]
   } else if(extract_param_ == AugParamExtractionParameter_ExtractParam_ROTATION_45DEG_REL) {
-    (*top)[0]->Reshape(num,2,1,1); // +-45deg rotation relative to nearest rounded 90deg (2 channels as for ROTATION)
+    (top)[0]->Reshape(num,2,1,1); // +-45deg rotation relative to nearest rounded 90deg (2 channels as for ROTATION)
   }
   
   // Set up coeff blobs
@@ -82,10 +82,10 @@ void AugParamExtractionLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-void AugParamExtractionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom, vector<Blob<Dtype>*>* top)
+void AugParamExtractionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top)
 {  
   int num = (bottom)[0]->num();
-  Dtype* top_data = (*top)[0]->mutable_cpu_data();
+  Dtype* top_data = (top)[0]->mutable_cpu_data();
   
   all_coeffs1_.ShareData(*bottom[0]);
   const Dtype* my_params1 = all_coeffs1_.cpu_data();
@@ -150,7 +150,7 @@ void AugParamExtractionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bot
 }
 
 template <typename Dtype>
-void AugParamExtractionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom, vector<Blob<Dtype>*>* top)
+void AugParamExtractionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top)
 {
   Forward_cpu(bottom, top);
 }

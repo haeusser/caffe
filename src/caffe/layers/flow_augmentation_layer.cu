@@ -86,15 +86,15 @@ __global__ void WarpData(const int nthreads, const int num, const int height, co
 
 
 template <typename Dtype>
-void FlowAugmentationLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom, vector<Blob<Dtype>*>* top)
+void FlowAugmentationLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top)
 {
   //"Flow augmentation layer takes three input blobs: FlowField, Img1TransfParams, Img2TransfParams";
   
-  Dtype* top_data = (*top)[0]->mutable_gpu_data(); // dest
-  int topwidth = (*top)[0]->width();
-  int topheight = (*top)[0]->height();
-  int topchannels = (*top)[0]->channels();
-  int topcount = (*top)[0]->count();
+  Dtype* top_data = (top)[0]->mutable_gpu_data(); // dest
+  int topwidth = (top)[0]->width();
+  int topheight = (top)[0]->height();
+  int topchannels = (top)[0]->channels();
+  int topcount = (top)[0]->count();
   
   CHECK_EQ(topchannels, 2);
   
@@ -108,7 +108,7 @@ void FlowAugmentationLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& botto
   int num = (bottom)[0]->num();
   
   CHECK_EQ(bottomchannels, 2);
-  CHECK_EQ((bottom)[0]->num(), (*top)[0]->num());
+  CHECK_EQ((bottom)[0]->num(), (top)[0]->num());
   
   
   // Prepare matrices
@@ -152,6 +152,6 @@ void FlowAugmentationLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& botto
   
 }
 
-INSTANTIATE_CLASS(FlowAugmentationLayer);
+INSTANTIATE_LAYER_GPU_FUNCS(FlowAugmentationLayer);
 
 }  // namespace caffe

@@ -350,7 +350,7 @@ void PhilDataAugmentationLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& b
     else                            write_augmented = std::string("");
 
     bool augment_during_test = aug_.augment_during_test();
-    bool train_phase = (Caffe::phase() == Caffe::TRAIN);
+    bool train_phase = (this->phase_ == TRAIN);
 
     AugmentationParameter aug = aug_;
 
@@ -474,8 +474,9 @@ void PhilDataAugmentationLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& b
 //        LOG(INFO) << "has_chromatic_augmentation=" << has_chromatic_augmentation;
 //        LOG(INFO) << "has_chromatic_eigen_augmentation=" << has_chromatic_eigen_augmentation;
 
-        if(has_chromatic_eigen_augmentation && bottomchannels==3)
+        if(has_chromatic_eigen_augmentation)
         {
+            CHECK_EQ(bottomchannels, 3) << "Chromatic-Eigen augmentations only work with 3-channel input";
             memset(chromatic_eigen_space,0,sizeof(typename AugmentationLayerBase<Dtype>::tChromaticEigenSpace));
 
             if(this->layer_param_.augmentation_param().chromatic_eigvec().size()!=9)
@@ -494,8 +495,9 @@ void PhilDataAugmentationLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& b
         typename AugmentationLayerBase<Dtype>::tEffectCoeffs *gpu_effects = (typename AugmentationLayerBase<Dtype>::tEffectCoeffs*)(coeff_effect_->mutable_gpu_data());
         typename AugmentationLayerBase<Dtype>::tChromaticEigenSpace *gpu_chromatic_eigen_space = (typename AugmentationLayerBase<Dtype>::tChromaticEigenSpace*)(chromatic_eigenspace_->mutable_gpu_data());
 
-        if(has_chromatic_eigen_augmentation  && bottomchannels==3)
+        if(has_chromatic_eigen_augmentation)
         {
+            CHECK_EQ(bottomchannels, 3) << "Chromatic-Eigen augmentations only work with 3-channel input";
             ComputeChromaticEigenspace<Dtype><<<CAFFE_GET_BLOCKS(bottomcount/bottomchannels), CAFFE_CUDA_NUM_THREADS>>>(
                   bottomcount/bottomchannels, num,
                   bottomchannels, bottomheight, bottomwidth,
@@ -539,22 +541,25 @@ void PhilDataAugmentationLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& b
               topheight, topwidth, top_data, gpu_matrices);
         CUDA_POST_KERNEL_CHECK;
 
-        if (has_chromatic_eigen_augmentation && bottomchannels == 3)
+        if (has_chromatic_eigen_augmentation)
         {
+            CHECK_EQ(bottomchannels, 3) << "Chromatic-Eigen augmentations only work with 3-channel input";
             ChromaticEigenAugmentation<Dtype><<<CAFFE_GET_BLOCKS(topcount/topchannels), CAFFE_CUDA_NUM_THREADS>>>(
                topcount/topchannels, num,
                topchannels, topheight, topwidth, top_data, top_data, gpu_chromatics_eigen, gpu_chromatic_eigen_space, aug_.max_multiplier());
             CUDA_POST_KERNEL_CHECK;
         }
 
-        if (has_chromatic_augmentation && bottomchannels == 3) {
+        if (has_chromatic_augmentation) {
+            CHECK_EQ(bottomchannels, 3) << "Chromatic augmentations only work with 3-channel input";
             ColorContrastAugmentation<Dtype><<<CAFFE_GET_BLOCKS(topcount/topchannels), CAFFE_CUDA_NUM_THREADS>>>(
                topcount/topchannels, num,
                topchannels, topheight, topwidth, top_data, top_data, gpu_chromatics, aug_.max_multiplier());
             CUDA_POST_KERNEL_CHECK;
         }
 
-        if (has_effect_augmentation && bottomchannels == 3)         {
+        if (has_effect_augmentation)         {
+            CHECK_EQ(bottomchannels, 3) << "Effect augmentations only work with 3-channel input";
             ApplyEffects<Dtype><<<CAFFE_GET_BLOCKS(topcount), CAFFE_CUDA_NUM_THREADS>>>(
                   topcount, num,
                   topcount, bottomchannels, topheight, topwidth, top_data,

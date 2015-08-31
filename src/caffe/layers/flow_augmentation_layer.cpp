@@ -28,7 +28,7 @@ namespace caffe {
   
 template <typename Dtype>
 void FlowAugmentationLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top)
+      const vector<Blob<Dtype>*>& top)
 {
     CHECK_GT(this->layer_param_.augmentation_param().crop_width(),0) << "Please enter crop width if you want to perform augmentation";
     CHECK_GT(this->layer_param_.augmentation_param().crop_height(),0) << "Please enter crop height if you want to perform augmentation";
@@ -36,10 +36,10 @@ void FlowAugmentationLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom
 
 template <typename Dtype>
 void FlowAugmentationLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top)
+      const vector<Blob<Dtype>*>& top)
 {
   CHECK_EQ(bottom.size(), 3) << "Flow augmentation layer takes three input blobs: FlowField, Img1TransfParams, Img2TransfParams";
-  CHECK_EQ(top->size(), 1) << "Flow augmentation layer outputs one output blob: Augmented Flow";
+  CHECK_EQ(top.size(), 1) << "Flow augmentation layer outputs one output blob: Augmented Flow";
 
   const int num = bottom[0]->num();
   const int channels = bottom[0]->channels();
@@ -51,7 +51,7 @@ void FlowAugmentationLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   cropped_width_ = this->layer_param_.augmentation_param().crop_width();
   cropped_height_ = this->layer_param_.augmentation_param().crop_height();
 
-  (*top)[0]->Reshape(num,channels, cropped_height_, cropped_width_);
+  (top)[0]->Reshape(num,channels, cropped_height_, cropped_width_);
   
   
   //test_coeffs_.ReshapeLike(*bottom[1]);
@@ -74,12 +74,17 @@ void FlowAugmentationLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 
 template <typename Dtype>
 void FlowAugmentationLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-    vector<Blob<Dtype>*>* top)
+    const vector<Blob<Dtype>*>& top)
 {  
     LOG(FATAL) << "Forward CPU Augmentation not implemented.";
 }
 
+#ifdef CPU_ONLY
+STUB_GPU(FlowAugmentationLayer);
+#endif
+
 INSTANTIATE_CLASS(FlowAugmentationLayer);
+REGISTER_LAYER_CLASS(FlowAugmentation);
 
 
 }  // namespace caffe

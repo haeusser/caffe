@@ -43,9 +43,13 @@ void PhilDataAugmentationLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bo
       LOG(INFO) << "Recompute mean";
       this->blobs_.resize(3);
       this->blobs_[1].reset(new Blob<Dtype>());
-      this->layer_param_.add_weight_decay(0.);
+      this->layer_param_.add_param();
+      this->layer_param_.mutable_param(this->layer_param_.param_size())->set_lr_mult(0.);
+      this->layer_param_.mutable_param(this->layer_param_.param_size())->set_decay_mult(0.);
       this->blobs_[2].reset(new Blob<Dtype>());
-      this->layer_param_.add_weight_decay(0.);      
+      this->layer_param_.add_param();
+      this->layer_param_.mutable_param(this->layer_param_.param_size())->set_lr_mult(0.);
+      this->layer_param_.mutable_param(this->layer_param_.param_size())->set_decay_mult(0.);      
     } 
     else {  
       LOG(INFO) << "Do not recompute mean";
@@ -54,7 +58,9 @@ void PhilDataAugmentationLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bo
     this->blobs_[0].reset(new Blob<Dtype>(1, 1, 1, 1));      
     // Never backpropagate
     this->param_propagate_down_.resize(this->blobs_.size(), false);
-    this->layer_param_.add_weight_decay(0.);
+    this->layer_param_.add_param();
+    this->layer_param_.mutable_param(this->layer_param_.param_size())->set_lr_mult(0.);
+    this->layer_param_.mutable_param(this->layer_param_.param_size())->set_decay_mult(0.); 
   } 
 }
 

@@ -32,12 +32,12 @@ template <typename T> int sgn(T val) {
 
 template <typename Dtype>
 void GenerateAugmentationParametersLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top) {
+      const vector<Blob<Dtype>*>& top) {
 }
 
 template <typename Dtype>
 void GenerateAugmentationParametersLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top) {
+      const vector<Blob<Dtype>*>& top) {
   
   aug_ = this->layer_param_.augmentation_param();
   discount_coeff_schedule_ = this->layer_param_.coeff_schedule_param();
@@ -45,8 +45,8 @@ void GenerateAugmentationParametersLayer<Dtype>::Reshape(const vector<Blob<Dtype
   // There is the following convention: 
   //   if there is just one blob given, the layer just generates the parameters with num equal to num of this blob
   //   if there are three blobs, it adds the generated parameters to the given ones and checks if the transformed image fits in the original one
-  CHECK(bottom.size() == 1 || bottom.size() == 3) << "Generate augmentation parameters layer takes one (any blob from which it can take num) or three (aug params, orig data, augmented data) input blobs.";
-  CHECK_EQ(top->size(), 1) << "Generate augmentation parameters layer outputs one output blob.";
+  CHECK(bottom.size() == 1 || bottom.size() == 3) << "Generate augmentation parameters layer takes one (any blob from which it can take num and potentially original image size) or three (aug params, orig data, augmented data) input blobs.";
+  CHECK_EQ(top.size(), 1) << "Generate augmentation parameters layer outputs one output blob.";
   
   // = Coeff stuff
   AugmentationCoeff coeff;
@@ -72,10 +72,19 @@ void GenerateAugmentationParametersLayer<Dtype>::Reshape(const vector<Blob<Dtype
     bottomwidth_ = (bottom)[1]->width();
     bottomheight_ = (bottom)[1]->height();
   } else {
+    CHECK(aug_.has_crop_width() && aug_.has_crop_height()) << "Need crop_width and crop_height if there is no blob specifying these";
     cropped_width_ = aug_.crop_width();
-    cropped_height_ = aug_.crop_height();     
-    bottomwidth_ = aug_.bottomwidth();
-    bottomheight_ = aug_.bottomheight();
+    cropped_height_ = aug_.crop_height();
+    if (bottom.size() == 1) {
+      if (bottom[0]->width() > 1 || bottom[0]->height() > 1) {
+        bottomwidth_ = bottom[0]->width();
+        bottomheight_ = bottom[0]->height();
+      } else {
+        CHECK(aug_.has_bottomwidth() && aug_.has_bottomheight()) << "Need bottomwidth and bottomheight if there is no blob specifying these";
+        bottomwidth_ = aug_.bottomwidth();
+        bottomheight_ = aug_.bottomheight();
+      }
+    }
   }
   
   
@@ -84,20 +93,24 @@ void GenerateAugmentationParametersLayer<Dtype>::Reshape(const vector<Blob<Dtype
 //   LOG(INFO) << "mode=" << mode_ << ", gen_spatial_transform=" << gen_spatial_transform_ << ", gen_chromatic_transform=" << gen_chromatic_transform_;
   
   // Prepare output blob
-  (*top)[0]->Reshape(num_, num_params_, 1, 1); 
+  (top)[0]->Reshape(num_, num_params_, 1, 1); 
     
   num_iter_ = 0;  
 }
 
 template <typename Dtype>
 void GenerateAugmentationParametersLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-    vector<Blob<Dtype>*>* top) {  
+    const vector<Blob<Dtype>*>& top) {  
   
   LOG(FATAL) << "CPU forward pass not implemented";
 
 }
 
-INSTANTIATE_CLASS(GenerateAugmentationParametersLayer);
+#ifdef CPU_ONLY
+STUB_GPU(GenerateAugmentationParametersLayer);
+#endif
 
+INSTANTIATE_CLASS(GenerateAugmentationParametersLayer);
+REGISTER_LAYER_CLASS(GenerateAugmentationParameters);
 
 }  // namespace caffe

@@ -15,12 +15,12 @@
 namespace caffe {
 
 template <typename Dtype>
-void GenerateAugmentationParametersLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom, vector<Blob<Dtype>*>* top) {
+void GenerateAugmentationParametersLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
         
   // From bottom to top
   num_iter_++;
   
-  Dtype* out_params = (*top)[0]->mutable_cpu_data();
+  Dtype* out_params = (top)[0]->mutable_cpu_data();
   
   Dtype discount_coeff = discount_coeff_schedule_.initial_coeff() + 
       (discount_coeff_schedule_.final_coeff() - discount_coeff_schedule_.initial_coeff()) * (Dtype(2) /
@@ -33,7 +33,7 @@ void GenerateAugmentationParametersLayer<Dtype>::Forward_gpu(const vector<Blob<D
   bool gen_chromatic_transform = false;
   bool gen_effect_transform    = false;
   bool gen_chromatic_eigen_transform = false;
-  if(Caffe::phase() == Caffe::TRAIN || aug_.augment_during_test()) {
+  if(this->phase_ == TRAIN || aug_.augment_during_test()) {
       if(aug_.has_mirror() || aug_.has_rotate() || aug_.has_zoom() || aug_.has_translate() || aug_.has_squeeze())
           gen_spatial_transform   = true;
       if(aug_.has_brightness() || aug_.has_gamma() || aug_.has_contrast() || aug_.has_color())
@@ -117,6 +117,6 @@ void GenerateAugmentationParametersLayer<Dtype>::Forward_gpu(const vector<Blob<D
 
 
 
-INSTANTIATE_CLASS(GenerateAugmentationParametersLayer);
+INSTANTIATE_LAYER_GPU_FUNCS(GenerateAugmentationParametersLayer);
 
 }  // namespace caffe

@@ -382,6 +382,7 @@ message LayerParameter {
   optional ArgMaxParameter argmax_param = 103;
   optional AugmentationParameter augmentation_param = 3007;
   optional AugParamExtractionParameter aug_param_extraction_param = 3008;
+  optional CoeffScheduleParameter coeff_schedule_param = 5001;
   optional ConcatParameter concat_param = 104;
   optional ContrastiveLossParameter contrastive_loss_param = 105;
   optional ConvolutionParameter convolution_param = 106;
@@ -612,6 +613,12 @@ message AugParamExtractionParameter {
   
   optional ExtractParam extract_param = 1;
   optional float multiplier = 2 [default = 1];
+}
+
+message CoeffScheduleParameter {
+  optional float half_life = 1 [default = 1];
+  optional float initial_coeff = 2 [default = 1];
+  optional float final_coeff = 3 [default = 1];
 }
 
 message ConcatParameter {
@@ -992,6 +999,18 @@ message PythonParameter {
   // If true, each worker solver sequentially run forward from this layer.
   // This value should be set true if you are using it as a data layer.
   optional bool share_in_parallel = 4 [default = false];
+}
+
+// Message used by AugmentationParameter for describing how to generate augmentation parameters
+message RandomGeneratorParameter {
+  optional string rand_type = 1 [default = "uniform" ]; // can be uniform, gaussian, bernoulli
+  optional bool exp = 2 [default = false ]; // after generating the random number, exponentiate it or not 
+  optional float mean = 4 [default = 0. ]; // mean of the random variable
+  optional float spread = 5 [default = 0. ]; // half of interval length for uniform; standard deviation for gaussian 
+  optional float prob = 6 [default = 1.];
+  optional bool apply_schedule = 7 [default = true];
+  optional bool discretize = 8 [default = false]; //Discretize (Round) value from rng to INT
+  optional float multiplier = 9 [default = 1.]; //Final random value will be multiplied by this. (Useful for discrete distributions)
 }
 
 message ReaderParameter { // Eddy
