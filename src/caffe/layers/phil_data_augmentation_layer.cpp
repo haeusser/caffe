@@ -11,6 +11,7 @@
 #include "caffe/data_layers.hpp"
 #include "caffe/util/rng.hpp"
 #include "caffe/util/math_functions.hpp"
+#include "caffe/util/io.hpp"
 
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -44,12 +45,12 @@ void PhilDataAugmentationLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bo
       this->blobs_.resize(3);
       this->blobs_[1].reset(new Blob<Dtype>());
       this->layer_param_.add_param();
-      this->layer_param_.mutable_param(this->layer_param_.param_size())->set_lr_mult(0.);
-      this->layer_param_.mutable_param(this->layer_param_.param_size())->set_decay_mult(0.);
+      this->layer_param_.mutable_param(this->layer_param_.param_size()-1)->set_lr_mult(0.);
+      this->layer_param_.mutable_param(this->layer_param_.param_size()-1)->set_decay_mult(0.);
       this->blobs_[2].reset(new Blob<Dtype>());
       this->layer_param_.add_param();
-      this->layer_param_.mutable_param(this->layer_param_.param_size())->set_lr_mult(0.);
-      this->layer_param_.mutable_param(this->layer_param_.param_size())->set_decay_mult(0.);      
+      this->layer_param_.mutable_param(this->layer_param_.param_size()-1)->set_lr_mult(0.);
+      this->layer_param_.mutable_param(this->layer_param_.param_size()-1)->set_decay_mult(0.);      
     } 
     else {  
       LOG(INFO) << "Do not recompute mean";
@@ -59,8 +60,12 @@ void PhilDataAugmentationLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bo
     // Never backpropagate
     this->param_propagate_down_.resize(this->blobs_.size(), false);
     this->layer_param_.add_param();
-    this->layer_param_.mutable_param(this->layer_param_.param_size())->set_lr_mult(0.);
-    this->layer_param_.mutable_param(this->layer_param_.param_size())->set_decay_mult(0.); 
+    this->layer_param_.mutable_param(this->layer_param_.param_size()-1)->set_lr_mult(0.);
+    this->layer_param_.mutable_param(this->layer_param_.param_size()-1)->set_decay_mult(0.); 
+//     LOG(INFO) << "DEBUG: this->layer_param_.param_size()=" << this->layer_param_.param_size();
+//     LOG(INFO) << "DEBUG: Writing layer_param";
+    WriteProtoToTextFile(this->layer_param_, "/misc/lmbraid17/sceneflownet/dosovits/matlab/test/message.prototxt");
+//     LOG(INFO) << "DEBUG: Finished writing layer_param";
   } 
 }
 
@@ -68,7 +73,7 @@ template <typename Dtype>
 void PhilDataAugmentationLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top)
 {
-    LOG(WARNING) << "Reshape of Augmentation later should only be called once? Check this";
+    LOG(WARNING) << "Reshape of Augmentation layer should only be called once? Check this";
     CHECK_GE(bottom.size(), 1) << "Data augmentation layer takes one or two input blobs.";
     CHECK_LE(bottom.size(), 2) << "Data augmentation layer takes one or two input blobs.";
     CHECK_GE(top.size(), 1) << "Data augmentation layer outputs one or two output blobs.";
@@ -147,6 +152,8 @@ void PhilDataAugmentationLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& botto
     noise_.reset(new SyncedMemory(top[0]->count() / top[0]->num() * sizeof(Dtype)));
 
     *(this->blobs_[0]->mutable_cpu_data()) = 0;
+    
+//     LOG(INFO) << "DEBUG: Reshape done";
 }
 
 template <typename Dtype>

@@ -322,6 +322,7 @@ template <typename Dtype>
 void PhilDataAugmentationLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top)
 {
+//     LOG(INFO) << "forward_gpu";
     Dtype* top_data = top[0]->mutable_gpu_data(); // dest
     int topwidth = top[0]->width();
     int topheight = top[0]->height();
