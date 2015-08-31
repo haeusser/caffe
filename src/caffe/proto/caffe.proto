@@ -380,6 +380,8 @@ message LayerParameter {
   optional AccumParameter accum_param = 3005;
   optional AccuracyParameter accuracy_param = 102;
   optional ArgMaxParameter argmax_param = 103;
+  optional AugmentationParameter augmentation_param = 3007;
+  optional AugParamExtractionParameter aug_param_extraction_param = 3008;
   optional ConcatParameter concat_param = 104;
   optional ContrastiveLossParameter contrastive_loss_param = 105;
   optional ConvolutionParameter convolution_param = 106;
@@ -482,6 +484,132 @@ message ArgMaxParameter {
   // If true produce pairs (argmax, maxval)
   optional bool out_max_val = 1 [default = false];
   optional uint32 top_k = 2 [default = 1];
+}
+
+// Message storing the actual coefficients of a transformation
+// IMPORTANT: default values should be 0 or 1 
+message AugmentationCoeff {
+  // Spatial
+  optional float mirror = 1 [default = 0];
+  optional float dx = 2 [default = 0];
+  optional float dy = 3 [default = 0];
+  optional float angle = 4 [default = 0];
+  optional float zoom_x = 5 [default = 1];
+  optional float zoom_y = 6 [default = 1];
+  
+  // Chromatic
+  optional float gamma = 100 [default = 1];
+  optional float brightness = 101 [default = 0];
+  optional float contrast = 102 [default = 1];
+  optional float color1 = 103 [default = 1];
+  optional float color2 = 104 [default = 1];
+  optional float color3 = 105 [default = 1];
+
+  // Chromatic-Eigen
+  optional float pow_nomean0 = 10 [default = 1];
+  optional float pow_nomean1 = 11 [default = 1];
+  optional float pow_nomean2 = 12 [default = 1];
+  optional float add_nomean0 = 13 [default = 0];
+  optional float add_nomean1 = 14 [default = 0];
+  optional float add_nomean2 = 15 [default = 0];
+  optional float mult_nomean0 = 16 [default = 1];
+  optional float mult_nomean1 = 17 [default = 1];
+  optional float mult_nomean2 = 18 [default = 1];
+  optional float pow_withmean0 = 19 [default = 1];
+  optional float pow_withmean1 = 20 [default = 1];
+  optional float pow_withmean2 = 21 [default = 1];
+  optional float add_withmean0 = 22 [default = 0];
+  optional float add_withmean1 = 23 [default = 0];
+  optional float add_withmean2 = 24 [default = 0];
+  optional float mult_withmean0 = 25 [default = 1];
+  optional float mult_withmean1 = 26 [default = 1];
+  optional float mult_withmean2 = 27 [default = 1];
+  optional float lmult_pow = 28 [default = 1];
+  optional float lmult_add = 29 [default = 0];
+  optional float lmult_mult = 30 [default = 1];
+  optional float col_angle = 31 [default = 0];
+
+  // Effect
+  optional float fog_amount = 38 [default = 0];
+  optional float fog_size = 39 [default = 0];
+  optional float motion_blur_angle = 40 [default = 0];
+  optional float motion_blur_size = 41 [default = 0];
+  optional float shadow_angle = 42 [default = 0];
+  optional float shadow_distance = 43 [default = 0];
+  optional float shadow_strength = 44 [default = 0];
+  optional float noise = 45 [default = 0];
+}
+
+// Message describing distribution of augmentation parameters
+message AugmentationParameter {
+  optional uint32 crop_width = 33 [default = 0];
+  optional uint32 crop_height = 34 [default = 0];
+  optional string write_augmented = 2 [default = ""];
+  optional float max_multiplier = 3 [default = 255.];
+  optional bool augment_during_test = 4 [default = false];
+  optional uint32 recompute_mean = 5 [default = 0]; // number of iterations to recompute mean (0 - do not recompute)
+  optional string write_mean = 6 [default = ""];
+  optional bool mean_per_pixel = 7 [default = true]; // if the mean is computed for each pixel or for the whole channel
+  repeated float mean = 18; // Eddy: Per pixel RGB mean to subtract
+  optional string mode = 8 [default = "add"]; // can be "add" or "replace" or "regenerate"
+  optional uint32 bottomwidth = 80 [default = 0];
+  optional uint32 bottomheight = 81 [default = 0];
+  optional uint32 num = 82 [default = 0];
+
+  repeated float chromatic_eigvec = 83;
+
+  // Spatial
+  optional RandomGeneratorParameter mirror = 10;
+  optional RandomGeneratorParameter translate = 11 ;
+  optional RandomGeneratorParameter rotate = 12 ;
+  optional RandomGeneratorParameter zoom = 13 ;
+  optional RandomGeneratorParameter squeeze = 14 ;
+
+  // Chromatic
+  optional RandomGeneratorParameter gamma = 35 ;
+  optional RandomGeneratorParameter brightness = 36 ;
+  optional RandomGeneratorParameter contrast = 37 ;
+  optional RandomGeneratorParameter color = 38 ;
+
+  // Chromatic-Eigen
+  optional RandomGeneratorParameter lmult_pow = 20 ;
+  optional RandomGeneratorParameter lmult_mult = 21 ;
+  optional RandomGeneratorParameter lmult_add = 22 ;
+  optional RandomGeneratorParameter sat_pow = 23 ;
+  optional RandomGeneratorParameter sat_mult = 24 ;
+  optional RandomGeneratorParameter sat_add = 25 ;
+  optional RandomGeneratorParameter col_pow = 26 ;
+  optional RandomGeneratorParameter col_mult = 27 ;
+  optional RandomGeneratorParameter col_add = 28 ;
+  optional RandomGeneratorParameter ladd_pow = 29 ;
+  optional RandomGeneratorParameter ladd_mult = 30 ;
+  optional RandomGeneratorParameter ladd_add = 31 ;
+  optional RandomGeneratorParameter col_rotate = 32 ;
+
+  // Effect
+  optional RandomGeneratorParameter fog_amount = 100 ;
+  optional RandomGeneratorParameter fog_size = 101 ;
+  optional RandomGeneratorParameter motion_blur_angle = 102 ;
+  optional RandomGeneratorParameter motion_blur_size = 103 ;
+  optional RandomGeneratorParameter shadow_angle = 104 ;
+  optional RandomGeneratorParameter shadow_distance = 105 ;
+  optional RandomGeneratorParameter shadow_strength = 106 ;
+  optional RandomGeneratorParameter noise = 107 ;
+}
+
+message AugParamExtractionParameter {
+  enum ExtractParam {
+    MIRROR = 1; // 2 elements, (mirrored =[1,0] non-mirrored = [0,1])
+    ROTATION = 2; // Rotation angle (2 elements, one for positive one for negative rotation)
+    ROTATION_COSSIN = 3; // Rotation cos/sin coefficients
+    ROTATION_90DEG_BINS = 4; // 4 bins for 90 deg rotations
+    ROTATION_90DEG_CLASS = 5; // 90 deg rotations classes (for use with softmax)
+    ROTATION_45DEG_REL = 6; // +-45deg rotation relative to nearest rounded 90deg
+    ROTATION_SCALAR = 7; // Rotation angle scalar
+  }
+  
+  optional ExtractParam extract_param = 1;
+  optional float multiplier = 2 [default = 1];
 }
 
 message ConcatParameter {
