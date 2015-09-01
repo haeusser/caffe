@@ -5,19 +5,24 @@
 
 #include "caffe/common.hpp"
 #include "caffe/data_layers.hpp"
-#include "caffe/data_reader.hpp"
+#include "caffe/binary_data_reader.hpp"
 #include "caffe/proto/caffe.pb.h"
+
+#include "caffe/util/binarydb.hpp"
 
 namespace caffe {
 
 using boost::weak_ptr;
 
-map<const string, weak_ptr<BinaryDataReader::Body> > BinaryDataReader::bodies_;
+template<> map<const string, weak_ptr<BinaryDataReader<float>::Body> > BinaryDataReader<float>::bodies_;
+template<> map<const string, weak_ptr<BinaryDataReader<double>::Body> > BinaryDataReader<double>::bodies_;
+
 static boost::mutex bodies_mutex_;
 
-BinaryDataReader::BinaryDataReader(const LayerParameter& param)
-  : queue_pair_(new QueuePair(  //
-        param.data_param().prefetch() * param.data_param().batch_size()), param.top_size()),
+template <typename Dtype>
+BinaryDataReader<Dtype>::BinaryDataReader(const LayerParameter& param)
+  : queue_pair_(new BinaryQueuePair(  //
+        param.data_param().prefetch() * param.data_param().batch_size(), param.top_size())),
   num_blobs_(param.top_size())
         {
   
@@ -33,7 +38,8 @@ BinaryDataReader::BinaryDataReader(const LayerParameter& param)
   body_->new_queue_pairs_.push(queue_pair_);
 }
 
-BinaryDataReader::~BinaryDataReader() {
+template <typename Dtype>
+BinaryDataReader<Dtype>::~BinaryDataReader() {
   string key = source_key(body_->param_);
   body_.reset();
   boost::mutex::scoped_lock lock(bodies_mutex_);
@@ -42,45 +48,57 @@ BinaryDataReader::~BinaryDataReader() {
   }
 }
 
-//
 
-BinaryDataReader::BinaryQueuePair::BinaryQueuePair(int size, int num_blobs) {
-  num_blobs_ = num_blobs;
-  
+
+template <typename Dtype>
+BinaryDataReader<Dtype>::BinaryQueuePair::BinaryQueuePair(int size, int num_blobs) {
   // Initialize the free queue with requested number of blob vectors
   for (int i = 0; i < size; ++i) {
-    free_.push(new vector<Blob<Dtype> >(num_blobs));
+    vector<Blob<Dtype>*>* vec = new vector<Blob<Dtype>*>(num_blobs);
+    for(int j = 0; j < num_blobs; j++) (*vec)[j] = NULL; // empty
+    free_.push(vec);
   }
 }
 
-BinaryDataReader::BinaryQueuePair::~BinaryQueuePair() {
+template <typename Dtype>
+BinaryDataReader<Dtype>::BinaryQueuePair::~BinaryQueuePair() {
   vector<Blob<Dtype>*>* vec;
   while (free_.try_pop(&vec)) {
+    for(int j = 0; j < vec->size(); j++) {
+      if((*vec)[j]) delete (*vec)[j];
+    }
     delete vec;
   }
   while (full_.try_pop(&vec)) {
+    for(int j = 0; j < vec->size(); j++) {
+      if((*vec)[j]) delete (*vec)[j];
+    }
     delete vec;
   }
 }
 
-//
-
-BinaryDataReader::Body::Body(const LayerParameter& param)
+template <typename Dtype>
+BinaryDataReader<Dtype>::Body::Body(const LayerParameter& param)
     : param_(param),
       new_queue_pairs_() {
   StartInternalThread();
 }
 
-BinaryDataReader::Body::~Body() {
+template <typename Dtype>
+BinaryDataReader<Dtype>::Body::~Body() {
   StopInternalThread();
 }
 
-void BinaryDataReader::Body::InternalThreadEntry() {
+template <typename Dtype>
+void BinaryDataReader<Dtype>::Body::InternalThreadEntry() {
   CHECK_EQ(param_.data_param().backend(), DataParameter_DB_BINARYDB);
 
-  db->Open(param_.data_param().source(), db::READ);
-  shared_ptr<db::Cursor> cursor(db->NewCursor());
-  vector<shared_ptr<QueuePair> > qps;
+  shared_ptr<db::BinaryDB<Dtype> > db;
+  db->Open(param_.data_param().source(), param_);
+  
+  int index = 0;
+  vector<shared_ptr<BinaryQueuePair> > qps;
+  
   try {
     int solver_count = param_.phase() == TRAIN ? Caffe::solver_count() : 1;
 
@@ -88,14 +106,14 @@ void BinaryDataReader::Body::InternalThreadEntry() {
     // are ready. But solvers need to peek on one item during initialization,
     // so read one item, then wait for the next solver.
     for (int i = 0; i < solver_count; ++i) {
-      shared_ptr<QueuePair> qp(new_queue_pairs_.pop());
-      read_one(cursor.get(), qp.get());
+      shared_ptr<BinaryQueuePair> qp(new_queue_pairs_.pop());
+      read_one(db.get(), index, qp.get());
       qps.push_back(qp);
     }
     // Main loop
     while (!must_stop()) {
       for (int i = 0; i < solver_count; ++i) {
-        read_one(cursor.get(), qps[i].get());
+        read_one(db.get(), index, qps[i].get());
       }
       // Check no additional readers have been created. This can happen if
       // more than one net is trained at a time per process, whether single
@@ -108,18 +126,22 @@ void BinaryDataReader::Body::InternalThreadEntry() {
   }
 }
 
-void BinaryDataReader::Body::read_one(db::Cursor* cursor, QueuePair* qp) {
-  Datum* datum = qp->free_.pop();
-  // TODO deserialize in-place instead of copy?
-  datum->ParseFromString(cursor->value());
-  qp->full_.push(datum);
+template <typename Dtype>
+void BinaryDataReader<Dtype>::Body::read_one(db::BinaryDB<Dtype>* db, int &index, BinaryQueuePair* qp) {
+  
+  vector<Blob<Dtype>*>* sample = qp->free_.pop();
 
-  // go to the next iter
-  cursor->Next();
-  if (!cursor->valid()) {
+  db->get_sample(index, sample);
+  
+  qp->full_.push(sample);
+
+  index++;
+  if(index >= db->get_num_samples()) {
+    index = 0;
     DLOG(INFO) << "Restarting data prefetching from start.";
-    cursor->SeekToFirst();
   }
 }
+
+INSTANTIATE_CLASS(BinaryDataReader);
 
 }  // namespace caffe

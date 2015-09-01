@@ -1,5 +1,5 @@
-#ifndef CAFFE_DATA_READER_HPP_
-#define CAFFE_DATA_READER_HPP_
+#ifndef CAFFE_BINARY_DATA_READER_HPP_
+#define CAFFE_BINARY_DATA_READER_HPP_
 
 #include <map>
 #include <string>
@@ -9,6 +9,7 @@
 #include "caffe/internal_thread.hpp"
 #include "caffe/util/blocking_queue.hpp"
 #include "caffe/util/db.hpp"
+#include "caffe/util/binarydb.hpp"
 
 namespace caffe {
 
@@ -20,15 +21,17 @@ namespace caffe {
  * subset of the database. Data is distributed to solvers in a round-robin
  * way to keep parallel training deterministic.
  */
+
+template <typename Dtype>
 class BinaryDataReader : public InternalThread {
  public:
   explicit BinaryDataReader(const LayerParameter& param);
   ~BinaryDataReader();
 
-  inline BlockingQueue<vector<Blob<Dtype> >*>& free() const {
+  inline BlockingQueue< vector<Blob<Dtype>*>*>& free() const {
     return queue_pair_->free_;
   }
-  inline BlockingQueue<vector<Blob<Dtype> >*>& full() const {
+  inline BlockingQueue< vector<Blob<Dtype>*>*>& full() const {
     return queue_pair_->full_;
   }
   const LayerParameter param_;
@@ -37,11 +40,11 @@ class BinaryDataReader : public InternalThread {
   // Queue pairs are shared between a body and its readers
   class BinaryQueuePair {
    public:
-    explicit BinaryQueuePair(int size);
+    explicit BinaryQueuePair(int size, int num_blobs);
     ~BinaryQueuePair();
 
-    BlockingQueue<vector<Blob<Dtype> >*> free_;
-    BlockingQueue<vector<Blob<Dtype> >*> full_;
+    BlockingQueue< vector<Blob<Dtype>*>*> free_;
+    BlockingQueue< vector<Blob<Dtype>*>*> full_;
 
   DISABLE_COPY_AND_ASSIGN(BinaryQueuePair);
   };
@@ -54,10 +57,10 @@ class BinaryDataReader : public InternalThread {
 
    protected:
     void InternalThreadEntry();
-    void read_one(int cursor, QueuePair* qp);
+    void read_one(db::BinaryDB<Dtype>* db, int &index, BinaryQueuePair* qp);
 
     const LayerParameter param_;
-    BlockingQueue<shared_ptr<QueuePair> > new_queue_pairs_;
+    BlockingQueue<shared_ptr<BinaryQueuePair> > new_queue_pairs_;
 
     friend class BinaryDataReader;
 
@@ -70,13 +73,16 @@ class BinaryDataReader : public InternalThread {
     return param.name() + ":" + param.data_param().source();
   }
 
-  const shared_ptr<QueuePair> queue_pair_;
+  const shared_ptr<BinaryQueuePair> queue_pair_;
   shared_ptr<Body> body_;
 
-  static map<const string, boost::weak_ptr<BinaryDataReader::Body> > bodies_;
+  static map<const string, boost::weak_ptr<BinaryDataReader<Dtype>::Body> > bodies_;
+  
+  int num_blobs_;
 
 DISABLE_COPY_AND_ASSIGN(BinaryDataReader);
 };
+
 
 }  // namespace caffe
 

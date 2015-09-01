@@ -691,6 +691,11 @@ message DataParameter {
     LMDB = 1;
     BINARYDB = 3001;
   }
+  enum CHANNELENCODING {
+    UINT8 = 1;
+    UINT16FLOW = 2;
+    BOOL1 = 3;
+  }
   enum RANDPERMORDER {
     FIRST_PERMUTE_THEN_RANGE = 0;
     FIRST_RANGE_THEN_PERMUTE = 1;
@@ -725,6 +730,9 @@ message DataParameter {
   optional uint32 prefetch = 10 [default = 4];
   
   
+  optional string preselection_file = 3001; // Load a text file which specifies a label for each data sample. Use preselection_label to filter the data for one specific label.
+  optional int32 preselection_label = 3002;
+  
   optional int32 range_start = 3003 [default = 0]; //0 = start with first
   optional int32 range_end = 3004 [default = -1]; //-1 = go until end
   
@@ -732,6 +740,8 @@ message DataParameter {
   optional RANDPERMORDER rand_permute_order = 3006 [default = FIRST_PERMUTE_THEN_RANGE]; // permute indices first, then extract range (or other way around)
   optional uint32 rand_permute_seed = 3007 [default = 0];
   
+  repeated uint32 slice_point = 3008;
+  repeated CHANNELENCODING encoding = 3009;
   optional bool verbose = 3010 [default = false];
 
   repeated float subtract = 3011;
