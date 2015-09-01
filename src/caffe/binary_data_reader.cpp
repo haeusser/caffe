@@ -12,10 +12,10 @@ namespace caffe {
 
 using boost::weak_ptr;
 
-map<const string, weak_ptr<DataReader::Body> > DataReader::bodies_;
+map<const string, weak_ptr<BinaryDataReader::Body> > BinaryDataReader::bodies_;
 static boost::mutex bodies_mutex_;
 
-DataReader::DataReader(const LayerParameter& param)
+BinaryDataReader::BinaryDataReader(const LayerParameter& param)
   : queue_pair_(new QueuePair(  //
         param.data_param().prefetch() * param.data_param().batch_size()), param.top_size()),
   num_blobs_(param.top_size())
@@ -33,7 +33,7 @@ DataReader::DataReader(const LayerParameter& param)
   body_->new_queue_pairs_.push(queue_pair_);
 }
 
-DataReader::~DataReader() {
+BinaryDataReader::~BinaryDataReader() {
   string key = source_key(body_->param_);
   body_.reset();
   boost::mutex::scoped_lock lock(bodies_mutex_);
@@ -44,7 +44,7 @@ DataReader::~DataReader() {
 
 //
 
-DataReader::BinaryQueuePair::BinaryQueuePair(int size, int num_blobs) {
+BinaryDataReader::BinaryQueuePair::BinaryQueuePair(int size, int num_blobs) {
   num_blobs_ = num_blobs;
   
   // Initialize the free queue with requested number of blob vectors
@@ -53,7 +53,7 @@ DataReader::BinaryQueuePair::BinaryQueuePair(int size, int num_blobs) {
   }
 }
 
-DataReader::BinaryQueuePair::~BinaryQueuePair() {
+BinaryDataReader::BinaryQueuePair::~BinaryQueuePair() {
   vector<Blob<Dtype>*>* vec;
   while (free_.try_pop(&vec)) {
     delete vec;
@@ -65,18 +65,19 @@ DataReader::BinaryQueuePair::~BinaryQueuePair() {
 
 //
 
-DataReader::Body::Body(const LayerParameter& param)
+BinaryDataReader::Body::Body(const LayerParameter& param)
     : param_(param),
       new_queue_pairs_() {
   StartInternalThread();
 }
 
-DataReader::Body::~Body() {
+BinaryDataReader::Body::~Body() {
   StopInternalThread();
 }
 
-void DataReader::Body::InternalThreadEntry() {
-  shared_ptr<db::DB> db(db::GetDB(param_.data_param().backend()));
+void BinaryDataReader::Body::InternalThreadEntry() {
+  CHECK_EQ(param_.data_param().backend(), DataParameter_DB_BINARYDB);
+
   db->Open(param_.data_param().source(), db::READ);
   shared_ptr<db::Cursor> cursor(db->NewCursor());
   vector<shared_ptr<QueuePair> > qps;
@@ -107,7 +108,7 @@ void DataReader::Body::InternalThreadEntry() {
   }
 }
 
-void DataReader::Body::read_one(db::Cursor* cursor, QueuePair* qp) {
+void BinaryDataReader::Body::read_one(db::Cursor* cursor, QueuePair* qp) {
   Datum* datum = qp->free_.pop();
   // TODO deserialize in-place instead of copy?
   datum->ParseFromString(cursor->value());

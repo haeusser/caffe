@@ -54,26 +54,28 @@ class BinaryDataReader : public InternalThread {
 
    protected:
     void InternalThreadEntry();
-    void read_one(int cursor, BinaryQueuePair* qp);
+    void read_one(int cursor, QueuePair* qp);
 
     const LayerParameter param_;
-    BlockingQueue<shared_ptr<BinaryQueuePair> > new_queue_pairs_;
+    BlockingQueue<shared_ptr<QueuePair> > new_queue_pairs_;
 
-    friend class DataReader;
+    friend class BinaryDataReader;
 
   DISABLE_COPY_AND_ASSIGN(Body);
   };
 
   // A source is uniquely identified by its layer name + path, in case
   // the same database is read from two different locations in the net.
+  static inline string source_key(const LayerParameter& param) {
+    return param.name() + ":" + param.data_param().source();
+  }
 
-  const shared_ptr<BinaryQueuePair> queue_pair_;
-  
-  //shared_ptr<Body> body_;
+  const shared_ptr<QueuePair> queue_pair_;
+  shared_ptr<Body> body_;
 
-  static bool instantiated_; //only allow one instance
+  static map<const string, boost::weak_ptr<BinaryDataReader::Body> > bodies_;
 
-DISABLE_COPY_AND_ASSIGN(DataReader);
+DISABLE_COPY_AND_ASSIGN(BinaryDataReader);
 };
 
 }  // namespace caffe
