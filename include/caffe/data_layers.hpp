@@ -423,6 +423,8 @@ class FlowAugmentationLayer : public AugmentationLayerBase<Dtype>, public Layer<
       const vector<Blob<Dtype>*>& top);
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
+  virtual inline bool AllowBackward() const { LOG(WARNING) << "FlowAugmentationLayer does not do backward."; return false; }
+  
 
  protected:
   
@@ -463,6 +465,7 @@ class GenerateAugmentationParametersLayer : public AugmentationLayerBase<Dtype>,
       const vector<Blob<Dtype>*>& top);
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
+  virtual inline bool AllowBackward() const { LOG(WARNING) << "GenerateAugmentationParametersLayer does not do backward."; return false; }
   
  protected:
   
@@ -472,9 +475,9 @@ class GenerateAugmentationParametersLayer : public AugmentationLayerBase<Dtype>,
       const vector<Blob<Dtype>*>& top);
 
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom)  { LOG(FATAL) << "PhilDataAugmentationLayer cannot do backward."; return; }
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom)  { LOG(FATAL) << "GenerateAugmentationParametersLayer cannot do backward."; return; }
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom)  { LOG(FATAL) << "PhilDataAugmentationLayer cannot do backward."; return; }
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom)  { LOG(FATAL) << "GenerateAugmentationParametersLayer cannot do backward."; return; }
       
     
   int num_params_; 
@@ -732,6 +735,7 @@ public:
     virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
                          const vector<Blob<Dtype>*>& top);
     virtual void adjust_blobs(const LayerParameter& source_layer);
+    virtual inline bool AllowBackward() const { LOG(WARNING) << "PhilDataAugmentationLayer does not do backward."; return false; }
 
 protected:
     virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,

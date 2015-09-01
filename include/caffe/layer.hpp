@@ -302,6 +302,15 @@ class Layer {
   virtual inline bool AllowForceBackward(const int bottom_index) const {
     return true;
   }
+  
+  /**
+   * @brief By Alexey: return whether to allow backward for this layer
+   *
+   * If AllowBackward = false, this layer will never do backward
+   */
+  virtual inline bool AllowBackward() const {
+    return true;
+  }
 
   /**
    * @brief Specifies whether the layer should compute gradients w.r.t. a
@@ -465,7 +474,8 @@ inline Dtype Layer<Dtype>::Forward(const vector<Blob<Dtype>*>& bottom,
   // Lock during forward to ensure sequential forward
   Lock();
   Dtype loss = 0;
-  Reshape(bottom, top);
+  if (this->layer_param_.reshape_every_iter())
+    Reshape(bottom, top);
   switch (Caffe::mode()) {
   case Caffe::CPU:
     Forward_cpu(bottom, top);
