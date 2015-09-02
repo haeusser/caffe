@@ -643,7 +643,8 @@ message BinaryDB {
   }
   
   required int32 num = 1;
-  repeated File file = 2;
+  repeated int32 slice_before = 2;
+  repeated File file = 3;
 }
 
 message CoeffScheduleParameter {
@@ -781,7 +782,8 @@ message DataParameter {
 
   // For Binary DB:
   repeated DataSample sample = 3014;
-  optional string clip_list= 3015;
+  optional string clip_list = 3015;
+  optional uint32 minimum_boundary_margin = 3016 [default = 0]; // Minimum distance to keep to clip boundaries when looking for samples
 }
 
 message DataEntry {
