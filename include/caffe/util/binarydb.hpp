@@ -26,6 +26,9 @@ class BinaryDB {
   void get_sample(int index, vector<Blob<Dtype>*>* dst);
 
  private:
+  int top_num_;
+  int sample_variants_num_;
+  
 };
 
 }  // namespace db

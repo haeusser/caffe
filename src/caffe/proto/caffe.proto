@@ -750,6 +750,7 @@ message DataParameter {
 
   // For Binary DB:
   repeated DataSample sample = 3014;
+  optional string clip_list= 3015;
 }
 
 message DataEntry {
