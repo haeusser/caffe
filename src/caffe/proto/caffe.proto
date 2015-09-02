@@ -748,6 +748,17 @@ message DataParameter {
   optional uint32 permute_every_iter = 3012 [default = 0];
   optional uint32 block_size = 3013 [default = 0];
 
+  // For Binary DB:
+  repeated DataSample sample = 3014;
+}
+
+message DataEntry {
+  required string name = 3001;
+  optional int32 offset = 3002 [default = 0];
+}
+
+message DataSample {
+  repeated DataEntry entry = 3001;
 }
 
 message DownsampleParameter {
