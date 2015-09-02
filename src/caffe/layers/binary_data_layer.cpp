@@ -5,23 +5,29 @@
 #include <pthread.h>
 
 #include <fstream>  // NOLINT(readability/streams)
-#include <string>
 #include <vector>
 
+#include <boost/thread.hpp>
+
+/// Caffe and local files
 #include "caffe/layer.hpp"
+#include "caffe/util/benchmark.hpp"
 #include "caffe/util/io.hpp"
 #include "caffe/util/math_functions.hpp"
 #include "caffe/util/rng.hpp"
 #include "caffe/vision_layers.hpp"
 #include "caffe/proto/caffe.pb.h"
+#include "caffe/common.hpp"
+#include "caffe/data_layers.hpp"
+#include "caffe/binary_data_reader.hpp"
+#include "caffe/net.hpp"
 
-// #include "lmdb.h"
-
-using std::string;
 
 namespace caffe {
 
 const int kMaxKeyLength = 256;
+
+#define Container vector<Blob<Dtype>*>
 
 
 // template <typename Dtype>
@@ -194,10 +200,11 @@ const int kMaxKeyLength = 256;
  * @param param Parameters
  */
 template <typename Dtype>
-BinaryDataLayer<Dtype>::BinaryDataLayer<Dtype>(const LayerParameter& param)
-  : Layer<Dtype>(param),,
+BinaryDataLayer<Dtype>::BinaryDataLayer(const LayerParameter& param)
+  : Layer<Dtype>(param),
     prefetch_free_(),
-    prefetch_full_()
+    prefetch_full_(),
+    reader_(param)
 {
   for (int i = 0; i < PREFETCH_COUNT; ++i) {
     prefetch_free_.push(&prefetch_[i]);
@@ -219,22 +226,23 @@ BinaryDataLayer<Dtype>::~BinaryDataLayer<Dtype>() {
  * @brief Initial layer setup
  */
 template <typename Dtype>
-void BinaryDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-                                        const vector<Blob<Dtype>*>& top)
+void BinaryDataLayer<Dtype>::LayerSetUp(const Container& bottom,
+                                        const Container& top)
 {
-  const DataParameter& data_param = this->layer_param_.data_param();
+  //const DataParameter& data_param = this->layer_param_.data_param();
   
+  const bool verbose = this->layer_param_.data_param().verbose();
   if (verbose && this->layer_param_.data_param().block_size())
     LOG(INFO) << "Block size: " << this->layer_param_.data_param().block_size();
 
   /// Read a data point, and use it to initialize the top blob.
   const int batch_size = this->layer_param_.data_param().batch_size();
-  vector<Blob<Dtype>*>* peek_data_ptr = reader_.full().peek();
-  const vector<Blob<Dtype>*>& peek_data = *(peek_data_ptr);
+  Container* peek_data_ptr = reader_.full().peek();
+  const Container& peek_data = *(peek_data_ptr);
   assert(top.size() == peek_data.size());
   for (unsigned int i = 0; i < top.size(); ++i)
   {
-    vector<int> shape(peek_data[i].shape());
+    vector<int> shape(peek_data[i]->shape());
     shape[0] = batch_size;
     top[i]->Reshape(shape);
   }
@@ -260,16 +268,16 @@ void BinaryDataLayer<Dtype>::InternalThreadEntry()
 
   try {
     while (!must_stop()) {
-      vector<Blob<Dtype>*>* container = prefetch_free_.pop();
-      load_batch(container);
+      Container* container_ptr = prefetch_free_.pop();
+      load_batch(container_ptr);
 #ifndef CPU_ONLY
       if (Caffe::mode() == Caffe::GPU) {
-        for (unsigned int i = 0; i < batch->size(); ++i)
-          (*container)[i]->data().get()->async_gpu_push(stream);
+        for (unsigned int i = 0; i < container_ptr->size(); ++i)
+          (*container_ptr)[i]->data().get()->async_gpu_push(stream);
         CUDA_CHECK(cudaStreamSynchronize(stream));
       }
 #endif
-      prefetch_full_.push(container);
+      prefetch_full_.push(container_ptr);
     }
   } catch (boost::thread_interrupted&) {
     // Interrupted exception is expected on shutdown
@@ -286,9 +294,9 @@ void BinaryDataLayer<Dtype>::InternalThreadEntry()
  * Fetch a data batch from the internal reader (not called by user)
  */
 template <typename Dtype>
-void BinaryDataLayer<Dtype>::load_batch(vector<Blob<Dtype>*>* output_ptr)
+void BinaryDataLayer<Dtype>::load_batch(Container* output_ptr)
 {
-  const vector<Blob<Dtype>*>& output = (*output_ptr);
+  const Container& output = (*output_ptr);
   
   CPUTimer batch_timer;
   batch_timer.Start();
@@ -296,15 +304,15 @@ void BinaryDataLayer<Dtype>::load_batch(vector<Blob<Dtype>*>* output_ptr)
   double trans_time = 0;
   CPUTimer timer;
   for (unsigned int i = 0; i < output.size(); ++i)
-    CHECK(output[i]->data_.count());
+    CHECK(output[i]->count());
 
   /// Reshape output to match source data
   const int batch_size = this->layer_param_.data_param().batch_size();
-  vector<Blob<Dtype>*>& data = *(reader_.full().peek());
+  Container& data = *(reader_.full().peek());
   assert(output.size() == data.size());
   for (unsigned int i = 0; i < output.size(); ++i) 
   {
-    vector<int> shape(data[i].shape());
+    vector<int> shape(data[i]->shape());
     shape[0] = batch_size;
     output[i]->Reshape(shape);
   }
@@ -312,22 +320,25 @@ void BinaryDataLayer<Dtype>::load_batch(vector<Blob<Dtype>*>* output_ptr)
   /// Fill output
   for (unsigned int i = 0; i < batch_size; ++i)
   {
-    Dtype* top_data = output[i]->mutable_cpu_data();
     timer.Start();
     /// Fetch one data sample from internal reader
-    vector<Blob<Dtype>*>* data_ptr = reader_.full().pop("Waiting for data");
-    const vector<Blob<Dtype>*>& data = (*data_ptr);
+    Container* data_ptr = reader_.full().pop("Waiting for data");
+    const Container& data = (*data_ptr);
     read_time += timer.MicroSeconds();
     timer.Start();
     /// Copy data from new sample into output
     for (unsigned int i = 0; i < output.size(); ++i)
     {
-      Blob<Dtype>* datum
-      /// TODO copy data
-      
+      Blob<Dtype>* target_ptr = output[i];
+      Blob<Dtype>* const source_ptr = data[i];
+      const int offset = target_ptr->offset(i, 0, 0, 0);
+      caffe_copy(source_ptr->count(),
+                 source_ptr->cpu_data()+offset,
+                 target_ptr->mutable_cpu_data()+offset);
     }
     trans_time += timer.MicroSeconds();
-
+    
+    /// Recycle spent data container for data reading
     reader_.free().push(data_ptr);
   }
   timer.Stop();
@@ -343,32 +354,46 @@ void BinaryDataLayer<Dtype>::load_batch(vector<Blob<Dtype>*>* output_ptr)
  * @brief Reshape
  */
 template <typename Dtype>
-void BinaryDataLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-                                     const vector<Blob<Dtype>*>& top) 
+void BinaryDataLayer<Dtype>::Reshape(const Container& bottom,
+                                     const Container& top) 
 {
-    /// TODO
+  /// TODO what does this do?
 }
 
 
 /**
  * @brief Forward_cpu
+ * TODO
  */
 template <typename Dtype>
-void BinaryDataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-                                         const vector<Blob<Dtype>*>& top) 
+void BinaryDataLayer<Dtype>::Forward_cpu(const Container& bottom,
+                                         const Container& top) 
 {  
-  // First, join the thread
-  JoinPrefetchThread();
+  (void)bottom;
   
-  /// TODO
-  
-  for (int i = 0; i <= slice_point_.size(); ++i) {
-    // Copy the data
-    caffe_copy(prefetch_data_blobs_[i]->count(), 
-               prefetch_data_blobs_[i]->cpu_data(),  
+  Container* container_ptr = prefetch_full_.pop("Data layer prefetch queue empty");
+  const Container& container = (*container_ptr);
+
+  /// Reshape tops and copy data
+  for (unsigned int i = 0; i < top.size(); ++i) {
+    top[i]->ReshapeLike(*container[i]);
+    caffe_copy(container[i]->count(), 
+               container[i]->cpu_data(),  
                top[i]->mutable_cpu_data());
     
   }
+  
+  /// Recycle spent data container for prefetching
+  prefetch_free_.push(container_ptr);
+}
+
+
+template <typename Dtype>
+void BinaryDataLayer<Dtype>::Forward_gpu(const Container& bottom,
+                                         const Container& top) 
+{
+  /// TODO
+  Forward_cpu(bottom, top);
 }
 
 

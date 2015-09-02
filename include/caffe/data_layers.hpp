@@ -250,13 +250,15 @@ class Batch {
  *        BasePrefetchingDataLayer and BaseDataLayer.
  */
 template <typename Dtype>
-class BinaryDataLayer : public Layer<Dtype>, public InternalThread {
- public:
+class BinaryDataLayer : public Layer<Dtype>, public InternalThread 
+{
+public:
   /// Constructor
   explicit BinaryDataLayer(
         const LayerParameter& param);
   /// Destructor
   virtual ~BinaryDataLayer();
+  /// Initial setup
   virtual void LayerSetUp(
         const vector<Blob<Dtype>*>& bottom,
         const vector<Blob<Dtype>*>& top);
@@ -270,7 +272,7 @@ class BinaryDataLayer : public Layer<Dtype>, public InternalThread {
   virtual inline int ExactNumBottomBlobs() const { return 0; }
   virtual inline int MinTopBlobs() const { return 1; }
   
-  /// Prefetches batches (asynchronously if to GPU memory)
+  /// Number of samples to prefetch (asynchronously if to GPU memory)
   static const int PREFETCH_COUNT = 3;
 
   virtual void Forward_cpu(
@@ -279,6 +281,8 @@ class BinaryDataLayer : public Layer<Dtype>, public InternalThread {
   virtual void Forward_gpu(
         const vector<Blob<Dtype>*>& bottom,
         const vector<Blob<Dtype>*>& top);
+  
+  /// Trivial backward passes for data layers
   virtual void Backward_cpu(
         const vector<Blob<Dtype>*>& top,
         const vector<bool>& propagate_down, 
@@ -289,16 +293,18 @@ class BinaryDataLayer : public Layer<Dtype>, public InternalThread {
         const vector<Blob<Dtype>*>& bottom) {}
   
   
-  protected:
+protected:
   
+  /// Entry point for internal prefetching thread
   virtual void InternalThreadEntry();
-  virtual void load_batch(Batch<Dtype>* batch);
+  /// Fetch data samples from reader_
+  virtual void load_batch(vector<Blob<Dtype>*>* output_ptr);
   
   vector<Blob<Dtype>*> prefetch_[PREFETCH_COUNT];
   BlockingQueue<vector<Blob<Dtype>*>*> prefetch_free_;
   BlockingQueue<vector<Blob<Dtype>*>*> prefetch_full_;
   
-  BinaryDataReader reader_;
+  BinaryDataReader<Dtype> reader_;
 };
 /// TESTING LMB BINARY DATA LAYER
 
