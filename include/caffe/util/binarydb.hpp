@@ -10,6 +10,8 @@
 
 namespace caffe { namespace db {
 
+ 
+  
 template <typename Dtype>
 class BinaryDB {
  public:
@@ -26,8 +28,20 @@ class BinaryDB {
   void get_sample(int index, vector<Blob<Dtype>*>* dst);
 
  private:
+  struct Sample {
+    int binfile_idx;
+    long int byte_offset;
+    BinaryDB_DATATYPE data_type;
+  };
+  
   int top_num_;
   int sample_variants_num_;
+  
+  vector<Sample> samples_;
+  vector<std::string> binfiles_;
+  vector<int> permutation;
+  
+  
   
 };
 
