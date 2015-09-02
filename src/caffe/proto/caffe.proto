@@ -615,6 +615,36 @@ message AugParamExtractionParameter {
   optional float multiplier = 2 [default = 1];
 }
 
+
+// Defines the proto messages we use for the BinaryDB index.prototxt
+message BinaryDB {
+  enum DataEncoding {
+    UINT8 = 1;
+    BOOL1 = 2;
+    FIXED16DIV32 = 3;
+  }
+  
+  message EntryFormat {
+    required string name = 1;
+    required DataEncoding data_encoding = 2;
+    required int32 width = 3;
+    required int32 height = 4;
+    required int32 channels = 5;
+  }
+  
+  message Content {
+    repeated EntryFormat entry_format = 1;
+  }
+  message File {
+    
+    required string filename = 1; // Filename of the .bin file in the same folder as the index (or relative path)
+    required Content content = 2;
+    
+  }
+  
+  repeated File file = 1;
+}
+
 message CoeffScheduleParameter {
   optional float half_life = 1 [default = 1];
   optional float initial_coeff = 2 [default = 1];
