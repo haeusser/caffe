@@ -1,7 +1,7 @@
 // Copyright 2014 BVLC and contributors.
 
 /// System/STL
-#include <cstdint>
+#include <stdint.h>
 #include <pthread.h>
 #include <vector>
 

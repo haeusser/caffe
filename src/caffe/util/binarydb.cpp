@@ -36,6 +36,15 @@ void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param) {
     PyErr_Print();
     throw;
   }
+  
+  // open binfiles
+  binstreams_.resize(binfiles_.size());
+  for (int i = 0; i < binfiles_.size(); ++i)
+    binstreams_.at(i) = new std::ifstream(binfiles_.at(i).c_str(), std::ios::in | std::ios::binary);
+
+  // permute the samples  
+  std::random_shuffle ( samples_.begin(), samples_.end() );  
+  
   LOG(INFO) << "Opened BinaryDB " << source;
 }
 
@@ -47,82 +56,56 @@ void BinaryDB<Dtype>::Close() {
 
 template <typename Dtype>
 void BinaryDB<Dtype>::get_sample(int index, vector<Blob<Dtype>*>* dst) {
-  //TODO
+  // loop through top blobs
+  for (int t=0; t<top_num_; ++t) {
+    Entry entry = samples_.at(index).at(t);
+    std::ifstream* curr_binstream = binstreams_.at(entry.binfile_idx);
+    curr_binstream->seekg(entry.byte_offset);
+    
+    // check the flag of the entry (4-byte thing)
+    int flag;
+    curr_binstream->read(reinterpret_cast<char *>(&flag), 4);
+    if (flag == 1)
+      LOG(FATAL) << "Blob " << t << "of sample " << index << " not accessible";
+    else if (flag != 0)
+      LOG(FATAL) << "Flag of blob " << t << "of sample " << index << " has invalid value " << flag;    
+    
+    // actually read the data
+    read_values(curr_binstream, entry.data_encoding, dst->at(t)->count(), dst->at(t)->mutable_cpu_data());
+  }
 }
 
-const unsigned char* srcptr=(const unsigned char*)datum.data().c_str();
-    Dtype* destptr=ptr;
+// given a ifstream (with file pointer set correctly), reads N values from the stream to out with the given data_encoding
+template <typename Dtype>
+void BinaryDB<Dtype>::read_values(std::ifstream* binstream, BinaryDB_DataEncoding data_encoding, long int N, Dtype* out) {
+  switch(data_encoding)
+  {
+    case BinaryDB_DataEncoding_UINT8:
+      for(int i=0; i<N; i++) {
+        char c;
+        binstream->read(&c, 1);
+        *(out++)=static_cast<Dtype>(c);
+      }
+      break;
+    case BinaryDB_DataEncoding_FIXED16DIV32:
+      for(int i=0; i<N; i++) {
+        short v;
+        binstream->read(reinterpret_cast<char *>(&v), 2);
 
-//     int channel_start = -1; //inclusive
-//     int channel_end = 0; //non-inclusive (end will become start in next slice)
-//     for(int slice = 0; slice <= slice_points.size(); slice++)
-//     {
-//         channel_start = channel_end;
-// 
-//         if(slice == slice_points.size())
-//             channel_end = channels;
-//         else
-//             channel_end = slice_points[slice];
-// 
-//         int channel_count=channel_end-channel_start;
-// 
-//         int format;
-//         if(encoding.size()<=slice)
-//             format=DataParameter_CHANNELENCODING_UINT8;
-//         else
-//             format=encoding[slice];
-// 
-// //         LOG(INFO) << "Slice " << slice << "(" << channel_start << "," << channel_end << ") has format " << ((int)format);
-//         switch(format)
-//         {
-//             case DataParameter_CHANNELENCODING_UINT8:
-//                 for(int c=0; c<channel_count; c++)
-//                     for(int y=0; y<height; y++)
-//                         for(int x=0; x<width; x++)
-//                             *(destptr++)=static_cast<Dtype>(*(srcptr++));
-//                 break;
-//             case DataParameter_CHANNELENCODING_UINT16FLOW:
-//             for(int c=0; c<channel_count; c++)
-//                 for(int y=0; y<height; y++)
-//                     for(int x=0; x<width; x++)
-//                     {
-//                         short v;
-//                         *((unsigned char*)&v)=*(srcptr++);
-//                         *((unsigned char*)&v+1)=*(srcptr++);
-// 
-//                         Dtype value;
-//                         if(v==std::numeric_limits<short>::max()) {
-//                           value = std::numeric_limits<Dtype>::signaling_NaN();
-//                         } else {
-//                           value = ((Dtype)v)/32.0;
-//                         }
-// 
-//                         *(destptr++)=value;
-//                     }
-//                 break;
-//             case DataParameter_CHANNELENCODING_BOOL1:
-//                 {
-//                     int j=0;
-//                     for(int i=0; i<(width*height-1)/8+1; i++)
-//                     {
-//                         unsigned char data=*(srcptr++);
-//                         for(int k=0; k<8; k++)
-//                         {
-//                             float value=(data&(1<<k))==(1<<k);
-//                             if(j<width*height)
-//                                 *(destptr++)=value?1.0:0;
-//                             j++;
-//                         }
-//                     }
-//                 }
-//                 break;
-//             default:
-//                 LOG(FATAL) << "Invalid format for slice " << slice;
-//                 break;
-//         }
-//     }
-// //     LOG(INFO) << destptr << " " << ptr;
-//     assert(destptr==ptr+count);
+        Dtype value;
+        if(v==std::numeric_limits<short>::max()) 
+          value = std::numeric_limits<Dtype>::signaling_NaN();
+        else
+          value = ((Dtype)v)/32.0;
+
+        *(out++)=value;
+      }
+      break;
+    default:
+        LOG(FATAL) << "Unknown data encoding " << data_encoding;
+        break;
+  }
+}
 
 
 INSTANTIATE_CLASS(BinaryDB);
