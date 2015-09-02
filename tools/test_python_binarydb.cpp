@@ -27,8 +27,8 @@ int main(int argc, char** argv) {
   //data_param->set_source("/scratch/global/hackathon/data");
   //data_param->set_clip_list("/scratch/global/hackathon/data/test_clip_list.txt");
   
-  data_param->set_source("/misc/lmbraid17/sceneflownet/common/data4_bin-db");
-  data_param->set_clip_list("/misc/lmbraid17/sceneflownet/common/data4_bin-db/cliplist_test01.txt");
+  data_param->set_source("/misc/lmbraid17/sceneflownet/common/data/4_bin-db");
+  data_param->set_clip_list("/misc/lmbraid17/sceneflownet/common/data/4_bin-db/cliplist_test01.txt");
   
   DataSample *sample1 = data_param->add_sample();
    DataEntry *ent1_1 = sample1->add_entry();

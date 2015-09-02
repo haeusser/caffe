@@ -44,6 +44,7 @@ class BinaryDB {
   int num_binfiles_;
   
   vector<Sample> samples_;
+  vector<vector<int> > entry_dimensions_;
   vector<std::string> binfiles_;
   vector<boost::shared_ptr<std::ifstream> > binstreams_;
   vector<int> permutation_;  

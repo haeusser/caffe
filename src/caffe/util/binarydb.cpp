@@ -23,15 +23,46 @@ void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param) {
     bp::object module = bp::import("binarydb");
     bp::object dbclass = module.attr("BinaryDB")(param_str, top_num_);
     
-    bp::list infos = (bp::list)dbclass.attr("getInfos")();
+    // returns (all_samples, entry_dimensions, bin_filenames)
+    bp::tuple infos = (bp::tuple)dbclass.attr("getInfos")();
     
-//     int n = bp::len((ret));
-//     
-//     std::cout << "Len: " << n << std::endl;
-//     for(unsigned int i=0; i<n; i++){
-//       string str = boost::python::extract<string>((ret)[i]);
-//       std::cout << "String: " << str << std::endl;
-//     }
+    if(bp::len(infos) != 3) LOG(FATAL) << "Python did not return 3-tuple";
+    
+    bp::list all_samples = (bp::list)infos[0];
+    bp::list dimensions = (bp::list)infos[1];
+    bp::list bin_filenames = (bp::list)infos[2];
+    
+    // Store dimensions:
+    if(bp::len(dimensions) != top_num_) LOG(FATAL) << "Number of entry dimensions passed from python not equal to top blob count";
+    
+    entry_dimensions_.resize(top_num_);
+    for(int entry = 0; entry < top_num_; entry++) {
+      entry_dimensions_[entry].resize(4);
+      entry_dimensions_[entry][0] = 1;
+      entry_dimensions_[entry][1] = boost::python::extract<int>(dimensions[entry][2]);
+      entry_dimensions_[entry][2] = boost::python::extract<int>(dimensions[entry][1]);
+      entry_dimensions_[entry][3] = boost::python::extract<int>(dimensions[entry][0]);
+    }
+    
+    // Store bin filenames:
+    binfiles_.resize(bp::len(bin_filenames));
+    for(int i=0; i<bp::len(bin_filenames); i++) {
+      binfiles_[i] = boost::python::extract<string>(bin_filenames[i]);
+    }
+    
+    // Store samples
+    // [[(0, 3110400, 1), (1, 4147200, 3), (2, 3110400, 3)], [(),(),()], ... ]
+    samples_.resize(bp::len(all_samples));
+    for(int sample=0; sample<bp::len(all_samples); sample++) {
+      samples_[sample].resize(top_num_);
+      for(int entry=0; entry<top_num_; entry++) {
+        samples_[sample][entry].binfile_idx = boost::python::extract<int>(all_samples[sample][entry][0]);
+        samples_[sample][entry].byte_offset = boost::python::extract<long int>(all_samples[sample][entry][1]);
+        int encoding_int = boost::python::extract<int>(all_samples[sample][entry][2]);
+        samples_[sample][entry].data_encoding = (BinaryDB_DataEncoding)encoding_int;
+      }
+    }
+    
   } catch (bp::error_already_set) {
     PyErr_Print();
     throw;
@@ -70,6 +101,9 @@ void BinaryDB<Dtype>::get_sample(int index, vector<Blob<Dtype>*>* dst) {
       LOG(FATAL) << "Blob " << t << "of sample " << index << " not accessible";
     else if (flag != 0)
       LOG(FATAL) << "Flag of blob " << t << "of sample " << index << " has invalid value " << flag;    
+    
+    // reshape blob
+    dst->at(t)->Reshape(entry_dimensions_[t]);
     
     // actually read the data
     read_binstream(curr_binstream, entry.data_encoding, dst->at(t)->count(), dst->at(t)->mutable_cpu_data());
