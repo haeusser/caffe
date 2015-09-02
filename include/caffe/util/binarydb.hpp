@@ -23,25 +23,28 @@ class BinaryDB {
   
   void Close();
   
-  int get_num_samples();
+  int get_num_samples() { return num_samples; };
   
   void get_sample(int index, vector<Blob<Dtype>*>* dst);
 
  private:
-  struct Sample {
+  struct Entry {
     int binfile_idx;
     long int byte_offset;
-    BinaryDB_DATATYPE data_type;
+    BinaryDB_DataEncoding data_type;
   };
+  
+  typedef vector<Entry> Sample;
   
   int top_num_;
   int sample_variants_num_;
+  int num_samples_;
+  int num_binfiles_;
   
   vector<Sample> samples_;
   vector<std::string> binfiles_;
-  vector<int> permutation;
-  
-  
+  vector<std::ifstream> binstreams_;
+  vector<int> permutation_;  
   
 };
 

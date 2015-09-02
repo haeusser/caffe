@@ -46,11 +46,6 @@ void BinaryDB<Dtype>::Close() {
 }
 
 template <typename Dtype>
-int BinaryDB<Dtype>::get_num_samples() {
-  return 0; // TODO
-}
-
-template <typename Dtype>
 void BinaryDB<Dtype>::get_sample(int index, vector<Blob<Dtype>*>* dst) {
   //TODO
 }
