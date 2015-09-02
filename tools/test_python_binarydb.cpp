@@ -24,8 +24,11 @@ int main(int argc, char** argv) {
   
   LayerParameter param;
   DataParameter* data_param = param.mutable_data_param();
-  data_param->set_source("/scratch/global/hackathon/data");
-  data_param->set_clip_list("/scratch/global/hackathon/data/test_clip_list.txt");
+  //data_param->set_source("/scratch/global/hackathon/data");
+  //data_param->set_clip_list("/scratch/global/hackathon/data/test_clip_list.txt");
+  
+  data_param->set_source("/misc/lmbraid17/sceneflownet/common/data4_bin-db");
+  data_param->set_clip_list("/misc/lmbraid17/sceneflownet/common/data4_bin-db/cliplist_test01.txt");
   
   DataSample *sample1 = data_param->add_sample();
    DataEntry *ent1_1 = sample1->add_entry();
@@ -38,7 +41,11 @@ int main(int argc, char** argv) {
    
    DataEntry *ent1_3 = sample1->add_entry();
    ent1_3->set_name("dispL");
-   ent1_3->set_offset(0);
+   ent1_3->set_offset(1);
+
+   DataEntry *ent1_4 = sample1->add_entry();
+   ent1_4->set_name("dispR");
+   ent1_4->set_offset(-2);
   
   
   string param_str;
@@ -47,7 +54,7 @@ int main(int argc, char** argv) {
   Py_Initialize();
   try {
     bp::object module = bp::import("binarydb");
-    bp::object dbclass = module.attr("BinaryDB")(param_str, 3);
+    bp::object dbclass = module.attr("BinaryDB")(param_str, 4);
     
     bp::list infos = (bp::list)dbclass.attr("getInfos")();
     
