@@ -77,6 +77,12 @@ void AugmentationLayerBase<Dtype>::generate_spatial_coeffs(const AugmentationPar
     coeff.set_dx(caffe_rng_generate<Dtype,float>(aug.translate(), discount_coeff,coeff.default_instance().dx()));
     coeff.set_dy(caffe_rng_generate<Dtype,float>(aug.translate(), discount_coeff,coeff.default_instance().dy()));
   } 
+  if (aug.has_translate_x()) {
+    coeff.set_dx(caffe_rng_generate<Dtype,float>(aug.translate_x(), discount_coeff,coeff.default_instance().dx()));
+  } 
+  if (aug.has_translate_y()) {
+    coeff.set_dy(caffe_rng_generate<Dtype,float>(aug.translate_y(), discount_coeff,coeff.default_instance().dy()));
+  } 
   if (aug.has_rotate())
     coeff.set_angle(caffe_rng_generate<Dtype,float>(aug.rotate(), discount_coeff,coeff.default_instance().angle()));
   if (aug.has_zoom()) {
@@ -115,6 +121,7 @@ void AugmentationLayerBase<Dtype>::generate_valid_spatial_coeffs(const Augmentat
     // generate params
     AugmentationLayerBase<Dtype>::clear_all_coeffs(coeff);
     AugmentationLayerBase<Dtype>::generate_spatial_coeffs(aug, coeff, discount_coeff);
+//     LOG(INFO) << "DEBUG: try dx = " << coeff.dx() << ", dy = " << coeff.dy();
     
     // add incoming params
     AugmentationLayerBase<Dtype>::coeff_to_array(coeff, curr_params);
@@ -158,6 +165,7 @@ void AugmentationLayerBase<Dtype>::generate_valid_spatial_coeffs(const Augmentat
     AugmentationLayerBase<Dtype>::array_to_coeff(in_params, coeff);
     LOG(WARNING) << "Augmentation: Exceeded maximum tries in finding spatial coeffs.";
   }
+//   LOG(INFO) << "DEBUG: final dx = " << coeff.dx() << ", dy = " << coeff.dy();
 }
 
 template <typename Dtype>

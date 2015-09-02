@@ -370,6 +370,9 @@ message LayerParameter {
 
   // Parameters shared by loss layers.
   optional LossParameter loss_param = 101;
+  
+  // If should run reshape every iteration
+  optional bool reshape_every_iter = 5002 [default = true];
 
   // Layer type-specific parameters.
   //
@@ -567,6 +570,9 @@ message AugmentationParameter {
   optional RandomGeneratorParameter rotate = 12 ;
   optional RandomGeneratorParameter zoom = 13 ;
   optional RandomGeneratorParameter squeeze = 14 ;
+  optional RandomGeneratorParameter translate_x = 15 ;
+  optional RandomGeneratorParameter translate_y = 16 ;
+  
 
   // Chromatic
   optional RandomGeneratorParameter gamma = 35 ;
