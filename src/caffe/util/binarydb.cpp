@@ -40,7 +40,7 @@ void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param) {
   // open binfiles
   binstreams_.resize(binfiles_.size());
   for (int i = 0; i < binfiles_.size(); ++i)
-    binstreams_.at(i) = new std::ifstream(binfiles_.at(i).c_str(), std::ios::in | std::ios::binary);
+    binstreams_.at(i).reset(new std::ifstream(binfiles_.at(i).c_str(), std::ios::in | std::ios::binary));
 
   // permute the samples  
   std::random_shuffle ( samples_.begin(), samples_.end() );  
@@ -51,7 +51,8 @@ void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param) {
 
 template <typename Dtype>
 void BinaryDB<Dtype>::Close() {
-  //TODO
+  for (int i = 0; i < binfiles_.size(); ++i)
+    binstreams_.at(i)->close();
 }
 
 template <typename Dtype>
@@ -59,11 +60,11 @@ void BinaryDB<Dtype>::get_sample(int index, vector<Blob<Dtype>*>* dst) {
   // loop through top blobs
   for (int t=0; t<top_num_; ++t) {
     Entry entry = samples_.at(index).at(t);
-    std::ifstream* curr_binstream = binstreams_.at(entry.binfile_idx);
-    curr_binstream->seekg(entry.byte_offset);
+    std::ifstream* curr_binstream = binstreams_.at(entry.binfile_idx).get();
+    curr_binstream->seekg(entry.byte_offset, ios::beg);
     
     // check the flag of the entry (4-byte thing)
-    int flag;
+    unsigned int flag;
     curr_binstream->read(reinterpret_cast<char *>(&flag), 4);
     if (flag == 1)
       LOG(FATAL) << "Blob " << t << "of sample " << index << " not accessible";
@@ -71,26 +72,26 @@ void BinaryDB<Dtype>::get_sample(int index, vector<Blob<Dtype>*>* dst) {
       LOG(FATAL) << "Flag of blob " << t << "of sample " << index << " has invalid value " << flag;    
     
     // actually read the data
-    read_values(curr_binstream, entry.data_encoding, dst->at(t)->count(), dst->at(t)->mutable_cpu_data());
+    read_binstream(curr_binstream, entry.data_encoding, dst->at(t)->count(), dst->at(t)->mutable_cpu_data());
   }
 }
 
 // given a ifstream (with file pointer set correctly), reads N values from the stream to out with the given data_encoding
 template <typename Dtype>
-void BinaryDB<Dtype>::read_values(std::ifstream* binstream, BinaryDB_DataEncoding data_encoding, long int N, Dtype* out) {
+void BinaryDB<Dtype>::read_binstream(std::ifstream* binstream, BinaryDB_DataEncoding data_encoding, long int N, Dtype* out) {
   switch(data_encoding)
   {
     case BinaryDB_DataEncoding_UINT8:
       for(int i=0; i<N; i++) {
-        char c;
-        binstream->read(&c, 1);
+        unsigned char c;
+        binstream->read(reinterpret_cast<char*>(&c), 1);
         *(out++)=static_cast<Dtype>(c);
       }
       break;
     case BinaryDB_DataEncoding_FIXED16DIV32:
       for(int i=0; i<N; i++) {
         short v;
-        binstream->read(reinterpret_cast<char *>(&v), 2);
+        binstream->read(reinterpret_cast<char*>(&v), 2);
 
         Dtype value;
         if(v==std::numeric_limits<short>::max()) 
