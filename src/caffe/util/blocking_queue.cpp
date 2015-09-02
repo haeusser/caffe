@@ -3,6 +3,7 @@
 
 #include "caffe/data_layers.hpp"
 #include "caffe/data_reader.hpp"
+#include "caffe/binary_data_reader.hpp"
 #include "caffe/parallel.hpp"
 #include "caffe/util/blocking_queue.hpp"
 
@@ -89,7 +90,11 @@ size_t BlockingQueue<T>::size() const {
 template class BlockingQueue<Batch<float>*>;
 template class BlockingQueue<Batch<double>*>;
 template class BlockingQueue<Datum*>;
+template class BlockingQueue< vector<Blob<float>*>*>;
+template class BlockingQueue< vector<Blob<double>*>*>;
 template class BlockingQueue<shared_ptr<DataReader::QueuePair> >;
+template class BlockingQueue<shared_ptr<BinaryDataReader<float>::BinaryQueuePair> >;
+template class BlockingQueue<shared_ptr<BinaryDataReader<double>::BinaryQueuePair> >;
 template class BlockingQueue<P2PSync<float>*>;
 template class BlockingQueue<P2PSync<double>*>;
 

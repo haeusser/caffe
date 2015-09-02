@@ -14,8 +14,8 @@ namespace caffe {
 
 using boost::weak_ptr;
 
-template<> map<const string, weak_ptr<BinaryDataReader<float>::Body> > BinaryDataReader<float>::bodies_;
-template<> map<const string, weak_ptr<BinaryDataReader<double>::Body> > BinaryDataReader<double>::bodies_;
+template<> map<const string, weak_ptr<BinaryDataReader<float>::Body> > BinaryDataReader<float>::bodies_ = map<const string, weak_ptr<BinaryDataReader<float>::Body> >();
+template<> map<const string, weak_ptr<BinaryDataReader<double>::Body> > BinaryDataReader<double>::bodies_ = map<const string, weak_ptr<BinaryDataReader<double>::Body> >();
 
 static boost::mutex bodies_mutex_;
 

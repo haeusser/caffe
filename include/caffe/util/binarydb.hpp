@@ -6,6 +6,8 @@
 #include "caffe/common.hpp"
 #include "caffe/proto/caffe.pb.h"
 
+#include "caffe/blob.hpp"
+
 namespace caffe { namespace db {
 
 template <typename Dtype>
