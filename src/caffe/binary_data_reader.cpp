@@ -26,6 +26,10 @@ BinaryDataReader<Dtype>::BinaryDataReader(const LayerParameter& param)
   num_blobs_(param.top_size())
         {
   
+  int queue_size = param.data_param().prefetch() * param.data_param().batch_size() * param.top_size();
+  if(queue_size == 0) {
+    LOG(FATAL) << "BinaryDataReader: One of prefetch, batch_size, top_size is 0!";
+  }
   // Get or create a body
   boost::mutex::scoped_lock lock(bodies_mutex_);
   string key = source_key(param);
@@ -55,7 +59,7 @@ BinaryDataReader<Dtype>::BinaryQueuePair::BinaryQueuePair(int size, int num_blob
   // Initialize the free queue with requested number of blob vectors
   for (int i = 0; i < size; ++i) {
     vector<Blob<Dtype>*>* vec = new vector<Blob<Dtype>*>(num_blobs);
-    for(int j = 0; j < num_blobs; j++) (*vec)[j] = NULL; // empty
+    for(int j = 0; j < num_blobs; j++) (*vec)[j] = new Blob<Dtype>(); // empty
     free_.push(vec);
   }
 }
@@ -93,7 +97,7 @@ template <typename Dtype>
 void BinaryDataReader<Dtype>::Body::InternalThreadEntry() {
   CHECK_EQ(param_.data_param().backend(), DataParameter_DB_BINARYDB);
 
-  shared_ptr<db::BinaryDB<Dtype> > db;
+  shared_ptr<db::BinaryDB<Dtype> > db(new db::BinaryDB<Dtype>);
   db->Open(param_.data_param().source(), param_);
   
   int index = 0;
@@ -124,6 +128,7 @@ void BinaryDataReader<Dtype>::Body::InternalThreadEntry() {
   } catch (boost::thread_interrupted&) {
     // Interrupted exception is expected on shutdown
   }
+  db->Close();
 }
 
 template <typename Dtype>

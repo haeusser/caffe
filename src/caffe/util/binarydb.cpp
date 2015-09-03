@@ -70,11 +70,19 @@ void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param) {
   
   // open binfiles
   binstreams_.resize(binfiles_.size());
-  for (int i = 0; i < binfiles_.size(); ++i)
+  for (int i = 0; i < binfiles_.size(); ++i) {
     binstreams_.at(i).reset(new std::ifstream(binfiles_.at(i).c_str(), std::ios::in | std::ios::binary));
+    if(!binstreams_.at(i)->is_open()) {
+      LOG(FATAL) << "Could not open bin file " << binfiles_.at(i);
+    }
+  }
 
-  // permute the samples  
-  std::random_shuffle ( samples_.begin(), samples_.end() );  
+  // permute the samples
+  if (param.data_param().rand_permute()) {  
+    int seed = param.data_param().rand_permute_seed();
+    if(seed > 0) std::srand (unsigned(seed));
+    std::random_shuffle ( samples_.begin(), samples_.end() );  
+  }
   
   LOG(INFO) << "Opened BinaryDB " << source;
 }
@@ -97,10 +105,11 @@ void BinaryDB<Dtype>::get_sample(int index, vector<Blob<Dtype>*>* dst) {
     // check the flag of the entry (4-byte thing)
     unsigned int flag;
     curr_binstream->read(reinterpret_cast<char *>(&flag), 4);
-    if (flag == 1)
-      LOG(FATAL) << "Blob " << t << "of sample " << index << " not accessible";
-    else if (flag != 0)
-      LOG(FATAL) << "Flag of blob " << t << "of sample " << index << " has invalid value " << flag;    
+    if (flag == 0)
+      LOG(FATAL) << "Blob " << t << " of sample " << index << " marked invalid (flag == 0)";
+    else if (flag != 1)
+      LOG(FATAL) << "Flag of blob " << t << " of sample " << index << " has invalid value " << flag
+         << " (File " << binfiles_.at(entry.binfile_idx) << " offset " << entry.byte_offset << ")";
     
     // reshape blob
     dst->at(t)->Reshape(entry_dimensions_[t]);

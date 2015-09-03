@@ -66,10 +66,10 @@ class BinaryDB:
                 if max_offset is None or max_offset < entry.offset:
                     max_offset = entry.offset
 
-            self.sample_props.append(BinaryDB.SampleProps)
+            self.sample_props.append(BinaryDB.SampleProps())
             self.sample_props[-1].min_offset = min_offset
             self.sample_props[-1].max_offset = max_offset
-            self.sample_props[-1].needed_entries = needed_entries
+            self.sample_props[-1].needed_entries = needed_entries.copy()
 
 
     def setOrCheckDimensions(self, entry_name, dimensions):
@@ -87,10 +87,11 @@ class BinaryDB:
             return 2
 
     def filenameIndex(self, list, item):
-        if item not in list:
-            list.append(item)
+        utf_str = str(item).encode('utf-8')
+        if utf_str not in list:
+            list.append(utf_str)
 
-        return list.index(item)
+        return list.index(utf_str)
 
     def findSamplesInClips(self):
 
@@ -110,17 +111,19 @@ class BinaryDB:
             print("Slice points:")
             print(slice_points)
 
-            entry_lookup = {}
             for sampidx, sample in enumerate(self.data_param.sample):
+                entry_lookup = {}
+                print("== Considering sample %d" % sampidx)
                 # Search all available BIN files mentioned in this index
                 # for the needed entries and store where to find what
                 for binfile in bindb_index.file:
+                    print("Scanning entry_formats for binfile %s" % binfile.filename)
                     for entry_format in binfile.content.entry_format:
                         if entry_format.name in self.sample_props[sampidx].needed_entries:
                             # Create lookup entry
                             if entry_format.name in entry_lookup:
                                 self.throw_error('Entry %s defined multiple times in %s' % (entry_format.name, index_file))
-
+                            print(" Adding entry_format %s" % entry_format.name)
                             entry_lookup[entry_format.name] = {
                                 'filename': binfile.filename,
                                 'encoding': entry_format.data_encoding,
@@ -140,9 +143,15 @@ class BinaryDB:
 
                     entries = []
                     for entry in sample.entry:
+                        if entry.name not in entry_lookup:
+                            self.throw_error('The requested entry %s is not available in clip %s.\nAvailable: %s' % (entry.name, clip_folder, str(entry_lookup)))
                         el = entry_lookup[entry.name]
                         dims = el['dimensions']
-                        bin_file_index = self.filenameIndex(self.bin_filenames, el['filename'])
+
+                        abs_file_path = os.path.join(self.data_param.source, clip_folder, el['filename'])
+                        if not os.path.isfile(abs_file_path):
+                            self.throw_error('Bin file %s from clip %s does not exist' % (abs_file_path, clip_folder))
+                        bin_file_index = self.filenameIndex(self.bin_filenames, abs_file_path)
                         encoding = el['encoding']
                         self.setOrCheckDimensions(entry.name, el['dimensions'])
 

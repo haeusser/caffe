@@ -42,6 +42,10 @@ BinaryDataLayer<Dtype>::BinaryDataLayer(const LayerParameter& param)
 {
   /// Populate prefetching queue with empty buckets
   for (int i = 0; i < PREFETCH_COUNT; ++i) {
+    for (int j = 0; j < param.top_size(); ++j) {
+      Blob<Dtype> *tmpblob = new Blob<Dtype>();
+      prefetch_[i].push_back(tmpblob);
+    }
     prefetch_free_.push(&prefetch_[i]);
   }
 }
