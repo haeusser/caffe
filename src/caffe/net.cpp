@@ -186,7 +186,7 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
     for (int param_id = 0; param_id < num_param_blobs; ++param_id) {
       const ParamSpec* param_spec = (param_id < param_size) ?
           &layer_param.param(param_id) : &default_param_spec;
-      bool param_need_backward = param_spec->lr_mult() > 0;
+      bool param_need_backward = param_spec->lr_mult() != 0;
       
       if (!layer->AllowBackward())
         param_need_backward = false;
