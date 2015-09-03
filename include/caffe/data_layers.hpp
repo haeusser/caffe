@@ -7,6 +7,7 @@
 
 #include "hdf5.h"
 
+#include "caffe/binary_data_reader.hpp"
 #include "caffe/blob.hpp"
 #include "caffe/common.hpp"
 #include "caffe/data_reader.hpp"
@@ -230,6 +231,84 @@ class AugParamExtractionLayer : public AugmentationLayerBase<Dtype>, public Laye
   int num_params_;
 };
 
+
+/**
+ * @brief A BATCH of data consists of two BLOBs
+ */
+template <typename Dtype>
+class Batch {
+ public:
+  Blob<Dtype> data_, label_;
+};
+
+
+/// TESTING LMB BINARY DATA LAYER
+/**
+ * @brief LMB binary data layer. Does not conform to the "usual" DataLayer
+ *        inheritance hierarchy: It performs as a DataLayer, but includes
+ *        all needed functionality that the DataLayer gets from the
+ *        BasePrefetchingDataLayer and BaseDataLayer.
+ */
+template <typename Dtype>
+class BinaryDataLayer : public Layer<Dtype>, public InternalThread 
+{
+public:
+  /// Constructor
+  explicit BinaryDataLayer(
+        const LayerParameter& param);
+  /// Destructor
+  virtual ~BinaryDataLayer();
+  /// Initial setup
+  virtual void LayerSetUp(
+        const vector<Blob<Dtype>*>& bottom,
+        const vector<Blob<Dtype>*>& top);
+  virtual void Reshape(
+        const vector<Blob<Dtype>*>& bottom,
+        const vector<Blob<Dtype>*>& top) {}
+  
+  /// BinaryDataLayer uses BinaryDataReader instead for sharing for parallelism
+  virtual inline bool ShareInParallel() const { return false; }
+  virtual inline const char* type() const { return "BinaryData"; }
+  virtual inline int ExactNumBottomBlobs() const { return 0; }
+  virtual inline int MinTopBlobs() const { return 1; }
+  
+  /// Number of samples to prefetch (asynchronously if to GPU memory)
+  static const int PREFETCH_COUNT = 3;
+
+  virtual void Forward_cpu(
+        const vector<Blob<Dtype>*>& bottom,
+        const vector<Blob<Dtype>*>& top);
+  virtual void Forward_gpu(
+        const vector<Blob<Dtype>*>& bottom,
+        const vector<Blob<Dtype>*>& top);
+  
+  /// Trivial backward passes for data layers
+  virtual void Backward_cpu(
+        const vector<Blob<Dtype>*>& top,
+        const vector<bool>& propagate_down, 
+        const vector<Blob<Dtype>*>& bottom) {}
+  virtual void Backward_gpu(
+        const vector<Blob<Dtype>*>& top,
+        const vector<bool>& propagate_down, 
+        const vector<Blob<Dtype>*>& bottom) {}
+  
+  
+protected:
+  
+  /// Entry point for internal prefetching thread
+  virtual void InternalThreadEntry();
+  /// Fetch data samples from reader_
+  virtual void load_batch(vector<Blob<Dtype>*>* output_ptr);
+  
+  vector<Blob<Dtype>*> prefetch_[PREFETCH_COUNT];
+  BlockingQueue<vector<Blob<Dtype>*>*> prefetch_free_;
+  BlockingQueue<vector<Blob<Dtype>*>*> prefetch_full_;
+  
+  BinaryDataReader<Dtype> reader_;
+};
+/// TESTING LMB BINARY DATA LAYER
+
+
 /**
  * @brief Provides base for data layers that feed blobs to the Net.
  *
@@ -261,12 +340,6 @@ class BaseDataLayer : public Layer<Dtype> {
   TransformationParameter transform_param_;
   shared_ptr<DataTransformer<Dtype> > data_transformer_;
   bool output_labels_;
-};
-
-template <typename Dtype>
-class Batch {
- public:
-  Blob<Dtype> data_, label_;
 };
 
 template <typename Dtype>

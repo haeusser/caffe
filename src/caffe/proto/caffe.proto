@@ -621,6 +621,38 @@ message AugParamExtractionParameter {
   optional float multiplier = 2 [default = 1];
 }
 
+
+// Defines the proto messages we use for the BinaryDB index.prototxt
+message BinaryDB {
+  enum DataEncoding {
+    UINT8 = 1;
+    BOOL1 = 2;
+    FIXED16DIV32 = 3;
+  }
+  
+  message EntryFormat {
+    required string name = 1;
+    required DataEncoding data_encoding = 2;
+    required int32 width = 3;
+    required int32 height = 4;
+    required int32 channels = 5;
+  }
+  
+  message Content {
+    repeated EntryFormat entry_format = 1;
+  }
+  message File {
+    
+    required string filename = 1; // Filename of the .bin file in the same folder as the index (or relative path)
+    required Content content = 2;
+    
+  }
+  
+  required int32 num = 1;
+  repeated int32 slice_before = 2;
+  repeated File file = 3;
+}
+
 message CoeffScheduleParameter {
   optional float half_life = 1 [default = 1];
   optional float initial_coeff = 2 [default = 1];
@@ -695,6 +727,7 @@ message DataParameter {
   enum DB {
     LEVELDB = 0;
     LMDB = 1;
+    BINARYDB = 3001;
   }
   enum CHANNELENCODING {
     UINT8 = 1;
@@ -709,7 +742,7 @@ message DataParameter {
   // Specify the data source.
   optional string source = 1;
   // Specify the batch size.
-  optional uint32 batch_size = 4;
+  optional uint32 batch_size = 4 [default = 1];
   // The rand_skip variable is for the data layer to skip a few data points
   // to avoid all asynchronous sgd clients to start at the same point. The skip
   // point would be set as rand_skip * rand(0,1). Note that rand_skip should not
@@ -753,6 +786,19 @@ message DataParameter {
   optional uint32 permute_every_iter = 3012 [default = 0];
   optional uint32 block_size = 3013 [default = 0];
 
+  // For Binary DB:
+  repeated DataSample sample = 3014;
+  optional string clip_list = 3015;
+  optional uint32 minimum_boundary_margin = 3016 [default = 0]; // Minimum distance to keep to clip boundaries when looking for samples
+}
+
+message DataEntry {
+  required string name = 3001;
+  optional int32 offset = 3002 [default = 0];
+}
+
+message DataSample {
+  repeated DataEntry entry = 3001;
 }
 
 message DownsampleParameter {
