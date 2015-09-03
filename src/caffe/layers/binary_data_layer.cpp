@@ -57,7 +57,35 @@ BinaryDataLayer<Dtype>::BinaryDataLayer(const LayerParameter& param)
 template <typename Dtype>
 BinaryDataLayer<Dtype>::~BinaryDataLayer<Dtype>() {
   this->StopInternalThread();
-  /// TODO Clean up the reader?
+
+  /// Tidy up
+  /// Depublish data buckets and ensure that all are accounted for
+  {
+    unsigned int total = PREFETCH_COUNT;
+    while (prefetch_free_.size() > 0) {
+      prefetch_free_.pop();
+      ++total;
+    }
+    while (prefetch_full_.size() > 0) {
+      prefetch_full_.pop();
+      ++total;
+    }
+    if (total > 0)
+      LOG(FATAL) << "There are " << PREFETCH_COUNT << " prefetching"
+                 << " buckets, but " << total << " of these could not"
+                 << " be accounted for.";
+    else if (total < 0)
+      LOG(FATAL) << "There are " << PREFETCH_COUNT << " prefetching"
+                 << " buckets, but " << -total+PREFETCH_COUNT 
+                 << " were found in the prefetching queues.";
+  }
+  /// Delete unmanaged Blob pointers within the buckets
+  for (unsigned int i = 0; i < PREFETCH_COUNT; ++i) {
+    Container& container = prefetch_[i];
+    for (unsigned int j = 0; j < container.size(); ++j) {
+      delete container[i];
+    }
+  }
 }
 
 
