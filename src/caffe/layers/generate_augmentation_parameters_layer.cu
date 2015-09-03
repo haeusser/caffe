@@ -34,7 +34,7 @@ void GenerateAugmentationParametersLayer<Dtype>::Forward_gpu(const vector<Blob<D
   bool gen_effect_transform    = false;
   bool gen_chromatic_eigen_transform = false;
   if(this->phase_ == TRAIN || aug_.augment_during_test()) {
-      if(aug_.has_mirror() || aug_.has_rotate() || aug_.has_zoom() || aug_.has_translate() || aug_.has_squeeze())
+      if(aug_.has_mirror() || aug_.has_rotate() || aug_.has_zoom() || aug_.has_translate() || aug_.has_squeeze() || aug_.has_translate_x() || aug_.has_translate_y())
           gen_spatial_transform   = true;
       if(aug_.has_brightness() || aug_.has_gamma() || aug_.has_contrast() || aug_.has_color())
           gen_chromatic_transform = true;

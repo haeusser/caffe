@@ -32,6 +32,8 @@ void FlowAugmentationLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom
 {
     CHECK_GT(this->layer_param_.augmentation_param().crop_width(),0) << "Please enter crop width if you want to perform augmentation";
     CHECK_GT(this->layer_param_.augmentation_param().crop_height(),0) << "Please enter crop height if you want to perform augmentation";
+    this->layer_param_.set_reshape_every_iter(false);
+    LOG(WARNING) << "FlowAugmentationLayer only runs Reshape only on setup";
 }
 
 template <typename Dtype>

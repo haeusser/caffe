@@ -33,6 +33,8 @@ template <typename T> int sgn(T val) {
 template <typename Dtype>
 void GenerateAugmentationParametersLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
+  this->layer_param_.set_reshape_every_iter(false);
+  LOG(WARNING) << "GenerateAugmentationParametersLayer only runs Reshape only on setup";
 }
 
 template <typename Dtype>

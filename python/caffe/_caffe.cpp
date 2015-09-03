@@ -290,13 +290,18 @@ BOOST_PYTHON_MODULE(_caffe) {
 
   bp::class_<SGDSolver<Dtype>, bp::bases<Solver<Dtype> >,
     shared_ptr<SGDSolver<Dtype> >, boost::noncopyable>(
-        "SGDSolver", bp::init<string>());
+        "SGDSolver", bp::init<string>())
+    .def("getLearningRate", &SGDSolver<Dtype>::GetLearningRate);
   bp::class_<NesterovSolver<Dtype>, bp::bases<Solver<Dtype> >,
     shared_ptr<NesterovSolver<Dtype> >, boost::noncopyable>(
         "NesterovSolver", bp::init<string>());
   bp::class_<AdaGradSolver<Dtype>, bp::bases<Solver<Dtype> >,
     shared_ptr<AdaGradSolver<Dtype> >, boost::noncopyable>(
         "AdaGradSolver", bp::init<string>());
+  bp::class_<AdamSolver<Dtype>, bp::bases<Solver<Dtype> >,
+    shared_ptr<AdamSolver<Dtype> >, boost::noncopyable>(
+        "AdamSolver", bp::init<string>())
+    .def("getLearningRate", &SGDSolver<Dtype>::GetLearningRate);
 
   bp::def("get_solver", &GetSolverFromFile,
       bp::return_value_policy<bp::manage_new_object>());
