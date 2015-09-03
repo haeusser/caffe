@@ -452,6 +452,24 @@ void Solver<Dtype>::Test(const int test_net_id) {
     }
     LOG(INFO) << "    Test net output #" << i << ": " << output_name << " = "
               << mean_score << loss_msg_stream.str();
+    // PHILIP: write this score in the respective test net output layer blob   
+#ifndef CPU_ONLY
+//     LOG(INFO) << "----------- GPU";
+//     LOG(INFO) << "----------- count = " << test_net->blobs()[output_blob_index]->count();
+//     LOG(INFO) << "----------- mean_score = " << mean_score;
+//     LOG(INFO) << "----------- target = " << test_net->blobs()[output_blob_index]->mutable_gpu_data() << " (" << output_name << ")";
+    caffe_gpu_set(test_net->blobs()[output_blob_index]->count(),
+	      mean_score,
+	      test_net->blobs()[output_blob_index]->mutable_gpu_data()
+	     );
+#else
+    caffe_set(test_net->blobs()[output_blob_index]->count(),
+	  mean_score,
+	  test_net->blobs()[output_blob_index]->mutable_cpu_data()
+	  );
+#endif	      
+	      
+   
   }
 }
 
