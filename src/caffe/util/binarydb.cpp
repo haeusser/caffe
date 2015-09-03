@@ -52,8 +52,9 @@ void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param) {
     
     // Store samples
     // [[(0, 3110400, 1), (1, 4147200, 3), (2, 3110400, 3)], [(),(),()], ... ]
-    samples_.resize(bp::len(all_samples));
-    for(int sample=0; sample<bp::len(all_samples); sample++) {
+    num_samples_ = bp::len(all_samples);
+    samples_.resize(num_samples_);
+    for(int sample=0; sample<num_samples_; sample++) {
       samples_[sample].resize(top_num_);
       for(int entry=0; entry<top_num_; entry++) {
         samples_[sample][entry].binfile_idx = boost::python::extract<int>(all_samples[sample][entry][0]);
@@ -77,6 +78,8 @@ void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param) {
     }
   }
 
+  
+  
   // permute the samples
   if (param.data_param().rand_permute()) {  
     int seed = param.data_param().rand_permute_seed();

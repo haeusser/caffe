@@ -118,7 +118,7 @@ class BinaryDB:
                 # for the needed entries and store where to find what
                 for binfile in bindb_index.file:
                     print("Scanning entry_formats for binfile %s" % binfile.filename)
-                    for entry_format in binfile.content.entry_format:
+                    for entry_format_idx, entry_format in enumerate(binfile.content.entry_format):
                         if entry_format.name in self.sample_props[sampidx].needed_entries:
                             # Create lookup entry
                             if entry_format.name in entry_lookup:
@@ -127,7 +127,9 @@ class BinaryDB:
                             entry_lookup[entry_format.name] = {
                                 'filename': binfile.filename,
                                 'encoding': entry_format.data_encoding,
-                                'dimensions': (entry_format.width, entry_format.height, entry_format.channels)
+                                'dimensions': (entry_format.width, entry_format.height, entry_format.channels),
+                                'index': entry_format_idx,
+                                'num': len(binfile.content.entry_format)
                             }
                 # Now for current sample definition find all samples in this CLIP/DB
                 num_total = bindb_index.num
@@ -155,7 +157,7 @@ class BinaryDB:
                         encoding = el['encoding']
                         self.setOrCheckDimensions(entry.name, el['dimensions'])
 
-                        entry_index = index + entry.offset
+                        entry_index = (index + entry.offset) * el['num'] + el['index']
                         byte_offset = (dims[0]*dims[1]*dims[2]*self.enc_size(encoding)+4)*entry_index
                         entries.append((bin_file_index, byte_offset, encoding))
 

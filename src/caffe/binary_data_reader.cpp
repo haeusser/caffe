@@ -100,6 +100,10 @@ void BinaryDataReader<Dtype>::Body::InternalThreadEntry() {
   shared_ptr<db::BinaryDB<Dtype> > db(new db::BinaryDB<Dtype>);
   db->Open(param_.data_param().source(), param_);
   
+  if(db->get_num_samples() < 1) {
+    LOG(FATAL) << "No samples in DB";
+  }
+  
   int index = 0;
   vector<shared_ptr<BinaryQueuePair> > qps;
   

@@ -16,7 +16,7 @@ template <typename Dtype>
 class BinaryDB {
  public:
   BinaryDB() {
-    
+    num_samples_ = 0;
   }
   ~BinaryDB() { Close(); }
   void Open(const string& source, const LayerParameter& param);
