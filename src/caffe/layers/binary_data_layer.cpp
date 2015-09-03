@@ -176,8 +176,6 @@ void BinaryDataLayer<Dtype>::load_batch(Container* output_ptr)
   double read_time = 0;
   double trans_time = 0;
   CPUTimer timer;
-  for (unsigned int i = 0; i < output.size(); ++i)
-    CHECK(output[i]->count());
 
   /// Reshape output to match source data
   const int batch_size = this->layer_param_.data_param().batch_size();
@@ -189,6 +187,9 @@ void BinaryDataLayer<Dtype>::load_batch(Container* output_ptr)
     shape[0] = batch_size;
     output[i]->Reshape(shape);
   }
+  
+  for (unsigned int i = 0; i < output.size(); ++i)
+    CHECK(output[i]->count());
 
   /// Fill output
   for (unsigned int i = 0; i < batch_size; ++i)
@@ -200,13 +201,13 @@ void BinaryDataLayer<Dtype>::load_batch(Container* output_ptr)
     read_time += timer.MicroSeconds();
     timer.Start();
     /// Copy data from new sample into output
-    for (unsigned int i = 0; i < output.size(); ++i)
+    for (unsigned int j = 0; j < output.size(); ++j)
     {
-      Blob<Dtype>* target_ptr = output[i];
-      Blob<Dtype>* const source_ptr = data[i];
+      Blob<Dtype>* target_ptr = output[j];
+      Blob<Dtype>* const source_ptr = data[j];
       const int offset = target_ptr->offset(i, 0, 0, 0);
       caffe_copy(source_ptr->count(),
-                 source_ptr->cpu_data()+offset,
+                 source_ptr->cpu_data(),
                  target_ptr->mutable_cpu_data()+offset);
     }
     trans_time += timer.MicroSeconds();
