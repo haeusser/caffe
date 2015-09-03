@@ -64,18 +64,18 @@ BinaryDataLayer<Dtype>::~BinaryDataLayer<Dtype>() {
     unsigned int total = PREFETCH_COUNT;
     while (prefetch_free_.size() > 0) {
       prefetch_free_.pop();
-      ++total;
+      --total;
     }
     while (prefetch_full_.size() > 0) {
       prefetch_full_.pop();
-      ++total;
+      --total;
     }
     if (total > 0)
-      LOG(FATAL) << "There are " << PREFETCH_COUNT << " prefetching"
+      LOG(INFO) << "There are " << PREFETCH_COUNT << " prefetching"
                  << " buckets, but " << total << " of these could not"
                  << " be accounted for.";
     else if (total < 0)
-      LOG(FATAL) << "There are " << PREFETCH_COUNT << " prefetching"
+      LOG(INFO) << "There are " << PREFETCH_COUNT << " prefetching"
                  << " buckets, but " << -total+PREFETCH_COUNT 
                  << " were found in the prefetching queues.";
   }
@@ -83,7 +83,7 @@ BinaryDataLayer<Dtype>::~BinaryDataLayer<Dtype>() {
   for (unsigned int i = 0; i < PREFETCH_COUNT; ++i) {
     Container& container = prefetch_[i];
     for (unsigned int j = 0; j < container.size(); ++j) {
-      delete container[i];
+      delete container[j];
     }
   }
 }
