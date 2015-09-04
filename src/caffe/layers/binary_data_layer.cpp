@@ -102,8 +102,7 @@ void BinaryDataLayer<Dtype>::LayerSetUp(const Container& bottom,
 
   /// Look at a data sample and use it to initialize the top blobs
   const int batch_size = this->layer_param_.data_param().batch_size();
-  Container* peek_data_ptr = reader_.full().peek();
-  const Container& peek_data = *(peek_data_ptr);
+  Container& peek_data = *(reader_.full().peek());
   assert(top.size() == peek_data.size());
   for (unsigned int i = 0; i < top.size(); ++i)
   {
@@ -196,8 +195,7 @@ void BinaryDataLayer<Dtype>::load_batch(Container* output_ptr)
   {
     timer.Start();
     /// Fetch one data sample from internal reader
-    Container* data_ptr = reader_.full().pop("Waiting for data");
-    const Container& data = (*data_ptr);
+    Container& data = *(reader_.full().pop("Waiting for data"));
     read_time += timer.MicroSeconds();
     timer.Start();
     /// Copy data from new sample into output
@@ -213,7 +211,7 @@ void BinaryDataLayer<Dtype>::load_batch(Container* output_ptr)
     trans_time += timer.MicroSeconds();
     
     /// Recycle spent data container for data reading
-    reader_.free().push(data_ptr);
+    reader_.free().push(const_cast<Container*>(&data));
   }
   timer.Stop();
   batch_timer.Stop();
