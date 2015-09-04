@@ -134,6 +134,29 @@ void Net_SetInputArrays(Net<Dtype>* net, bp::object data_obj,
       PyArray_DIMS(data_arr)[0]);
 }
 
+shared_ptr<P2PSync<Dtype> > P2PSync_Init(Solver<Dtype>* root_solver, string param_str) {
+  SolverParameter param;
+  param.ParseFromString(param_str);
+
+  shared_ptr<Solver<Dtype> > root_solver_ptr(root_solver);
+
+  shared_ptr<P2PSync<Dtype> > p2psync(new P2PSync<Dtype>(root_solver_ptr, NULL, param));
+
+  return p2psync;
+}
+
+void P2PSync_run(P2PSync<Dtype>& p2psync, bp::list gpu_list) {
+  vector<int> gpu_vec;
+
+  int len = bp::len(gpu_list);
+  gpu_vec.resize(len);
+
+  for (int i = 0; i < len; i++) {
+    gpu_vec[i] = bp::extract<int>(gpu_list[i]);
+  }
+  p2psync.run(gpu_vec);
+}
+
 Solver<Dtype>* GetSolverFromFile(const string& filename) {
   SolverParameter param;
   ReadProtoFromTextFileOrDie(filename, &param);
@@ -286,6 +309,14 @@ BOOST_PYTHON_MODULE(_caffe) {
   bp::register_ptr_to_python<shared_ptr<Layer<Dtype> > >();
 
   bp::class_<LayerParameter>("LayerParameter", bp::no_init);
+
+  bp::class_<P2PSync<Dtype>, shared_ptr<P2PSync<Dtype> >, boost::noncopyable>(
+    "P2PSync", bp::no_init)
+    .def("__init__", bp::make_constructor(&P2PSync_Init))
+    .add_property("solver", bp::make_function(&P2PSync<Dtype>::solver,
+          bp::return_internal_reference<>()))
+    .def("set_on_gradients_callback", &P2PSync<Dtype>::setPyCallbackGradientsReady)
+    .def("run", &P2PSync_run);
 
   bp::class_<Solver<Dtype>, shared_ptr<Solver<Dtype> >, boost::noncopyable>(
     "Solver", bp::no_init)
