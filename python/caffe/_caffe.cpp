@@ -36,6 +36,9 @@ const int NPY_DTYPE = NPY_FLOAT32;
 void set_mode_cpu() { Caffe::set_mode(Caffe::CPU); }
 void set_mode_gpu() { Caffe::set_mode(Caffe::GPU); }
 
+// Set solver count
+void set_solver_count(int count) { Caffe::set_solver_count(count); }
+
 // For convenience, check that input files can be opened, and raise an
 // exception that boost will send to Python if not (caffe could still crash
 // later if the input files are disturbed before they are actually used, but
@@ -137,6 +140,12 @@ Solver<Dtype>* GetSolverFromFile(const string& filename) {
   return GetSolver<Dtype>(param);
 }
 
+Solver<Dtype>* GetSolverFromString(const string& s) {
+  SolverParameter param;
+  param.ParseFromString(s);
+  return GetSolver<Dtype>(param);
+}
+
 struct NdarrayConverterGenerator {
   template <typename T> struct apply;
 };
@@ -214,6 +223,7 @@ BOOST_PYTHON_MODULE(_caffe) {
   bp::def("set_mode_cpu", &set_mode_cpu);
   bp::def("set_mode_gpu", &set_mode_gpu);
   bp::def("set_device", &Caffe::SetDevice);
+  bp::def("set_solver_count", &set_solver_count);
 
   bp::def("layer_type_list", &LayerRegistry<Dtype>::LayerTypeList);
 
@@ -304,6 +314,9 @@ BOOST_PYTHON_MODULE(_caffe) {
     .def("getLearningRate", &SGDSolver<Dtype>::GetLearningRate);
 
   bp::def("get_solver", &GetSolverFromFile,
+      bp::return_value_policy<bp::manage_new_object>());
+
+  bp::def("get_solver_from_string", &GetSolverFromString,
       bp::return_value_policy<bp::manage_new_object>());
 
   // vector wrappers for all the vector types we use
