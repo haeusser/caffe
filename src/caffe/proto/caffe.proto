@@ -265,7 +265,7 @@ message SolverParameter {
   
   optional int32 log_per = 2001 [default = 50];  // log per this number of iterations (simple log)
   optional int32 viz_per_logs = 2002 [default = 2];  // log visualization per this multiple of log_per
-  optional int32 test_per_logs = 2003 [default = 10];  // leg per this number of iterations (simple log)
+  optional int32 test_per_logs = 2003 [default = 10];  // log per this number of iterations (simple log)
   
 }
 
