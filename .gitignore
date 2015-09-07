@@ -94,3 +94,7 @@ LOCK
 LOG*
 CURRENT
 MANIFEST-*
+/hackathon-caffe2.includes
+*.config
+*.creator
+/hackathon-caffe2.files

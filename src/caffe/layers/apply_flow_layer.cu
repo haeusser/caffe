@@ -88,9 +88,6 @@ void ApplyFlowLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom, cons
       topheight, topwidth, top_data, flow_data);
 
   CUDA_POST_KERNEL_CHECK;
-  
-
-
 }
 
 
