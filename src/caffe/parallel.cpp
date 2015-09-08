@@ -388,7 +388,7 @@ void P2PSync<Dtype>::on_gradients_ready() {
   if(py_callback_gradients_ && (iter_next_py_callback_<0 || iter_next_py_callback_== solver_->iter())) {
     PyEval_InitThreads();
     PyGILState_STATE state = PyGILState_Ensure();
-    boost::python::call<void>(py_callback_gradients_, py_solver_);
+    boost::python::call<void>(py_callback_gradients_);
     PyGILState_Release(state);
   }
 #endif
