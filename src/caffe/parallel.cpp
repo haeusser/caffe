@@ -206,6 +206,7 @@ template<typename Dtype>
 P2PSync<Dtype>::P2PSync(shared_ptr<Solver<Dtype> > root_solver,
                         P2PSync<Dtype>* parent, const SolverParameter& param)
     : GPUParams<Dtype>(root_solver, param.device_id()),
+      py_solver_(NULL),
       py_callback_gradients_(NULL),
       iter_next_py_callback_(-1),
       parent_(parent),
@@ -445,7 +446,8 @@ void P2PSync<Dtype>::run(const vector<int>& gpus) {
 }
 
 template<typename Dtype>
-void P2PSync<Dtype>::setPyCallbackGradientsReady(PyObject *py_callback, int iter) {
+void P2PSync<Dtype>::setPyCallbackGradientsReady(PyObject *py_solver, PyObject *py_callback, int iter) {
+  py_solver_ = py_solver;
   py_callback_gradients_ = py_callback;
   iter_next_py_callback_ = iter;
 }
