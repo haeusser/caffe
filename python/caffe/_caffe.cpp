@@ -247,11 +247,8 @@ BOOST_PYTHON_MODULE(_caffe) {
   bp::def("set_mode_cpu", &set_mode_cpu);
   bp::def("set_mode_gpu", &set_mode_gpu);
   bp::def("set_device", &Caffe::SetDevice);
-<<<<<<< Updated upstream
   bp::def("set_solver_count", &set_solver_count);
-=======
   bp::def("set_logging_disabled", &set_logging_disabled);
->>>>>>> Stashed changes
 
   bp::def("layer_type_list", &LayerRegistry<Dtype>::LayerTypeList);
 

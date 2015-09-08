@@ -16,6 +16,9 @@ void Caffe::set_logging(bool value)
 {
     FLAGS_logtostderr = value ? 1 : 0;
     FLAGS_alsologtostderr = FLAGS_logtostderr;
+
+    if(!value) FLAGS_minloglevel=2;
+    else       FLAGS_minloglevel=0;
 }
 
 Caffe& Caffe::Get() {
