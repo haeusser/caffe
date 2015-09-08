@@ -102,7 +102,7 @@ class P2PSync : public GPUParams<Dtype>, public Solver<Dtype>::Callback,
   void on_start();
   void on_gradients_ready();
 
-  PyObject *py_solver_
+  PyObject *py_solver_;
   PyObject *py_callback_gradients_;
   int iter_next_py_callback_;
   
