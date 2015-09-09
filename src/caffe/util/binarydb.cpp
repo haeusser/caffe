@@ -73,12 +73,16 @@ void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param) {
   binstreams_.resize(binfiles_.size());
   for (int i = 0; i < binfiles_.size(); ++i) {
     binstreams_.at(i).reset(new std::ifstream(binfiles_.at(i).c_str(), std::ios::in | std::ios::binary));
-    if(!binstreams_.at(i)->is_open()) {
+    if(!binstreams_.at(i)->is_open() || !binstreams_.at(i)->good()) {
       LOG(FATAL) << "Could not open bin file " << binfiles_.at(i);
     }
   }
 
-  
+
+  // DEBUG
+//   int index = 792;
+//   int t = 0;
+//   LOG(INFO) << "Before shuffle: sample " << index << " blob " << t << " comes from bin file " << binfiles_.at(samples_.at(index).at(t).binfile_idx) << " offset " << samples_.at(index).at(t).byte_offset;
   
   // permute the samples
   if (param.data_param().rand_permute()) {  
@@ -86,6 +90,9 @@ void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param) {
     if(seed > 0) std::srand (unsigned(seed));
     std::random_shuffle ( samples_.begin(), samples_.end() );  
   }
+  
+  // DEBUG  
+//   LOG(FATAL) << "After shuffle: sample " << index << " blob " << t << " comes from bin file " << binfiles_.at(samples_.at(index).at(t).binfile_idx) << " offset " << samples_.at(index).at(t).byte_offset;
   
   LOG(INFO) << "Opened BinaryDB " << source;
 }
@@ -105,11 +112,35 @@ void BinaryDB<Dtype>::get_sample(int index, vector<Blob<Dtype>*>* dst) {
     std::ifstream* curr_binstream = binstreams_.at(entry.binfile_idx).get();
     curr_binstream->seekg(entry.byte_offset, ios::beg);
     
+    // check if the stream is ok, re-open if needed
+    if (!curr_binstream->is_open() || !curr_binstream->good()) {
+      LOG(INFO) << "Smth wrong eih the stream of file " << binfiles_.at(entry.binfile_idx);
+      
+      LOG(INFO) << " is_open()=" << curr_binstream->is_open();
+      LOG(INFO) << " good()=" << curr_binstream->good();
+      LOG(INFO) << " eof()=" << curr_binstream->eof();
+      LOG(INFO) << " fail()=" << curr_binstream->fail();
+      LOG(INFO) << " bad()=" << curr_binstream->bad();
+      
+      LOG(INFO) << "Attempting to re-open";
+      binstreams_.at(entry.binfile_idx).get()->close();
+      binstreams_.at(entry.binfile_idx).get()->open(binfiles_.at(entry.binfile_idx).c_str(), std::ios::in | std::ios::binary);
+      
+      if(!curr_binstream->is_open() || !curr_binstream->good()) 
+        LOG(FATAL) << "Could not re-open bin file " << binfiles_.at(entry.binfile_idx);
+      else {
+        curr_binstream = binstreams_.at(entry.binfile_idx).get();
+        curr_binstream->seekg(entry.byte_offset, ios::beg);
+      }
+        
+    }
+    
     // check the flag of the entry (4-byte thing)
     unsigned int flag;
     curr_binstream->read(reinterpret_cast<char *>(&flag), 4);
     if (flag == 0)
-      LOG(FATAL) << "Blob " << t << " of sample " << index << " marked invalid (flag == 0)";
+      LOG(FATAL) << "Flag of blob " << t << " of sample " << index << " is 0 "
+         << " (File " << binfiles_.at(entry.binfile_idx) << " offset " << entry.byte_offset << ")";
     else if (flag != 1)
       LOG(FATAL) << "Flag of blob " << t << " of sample " << index << " has invalid value " << flag
          << " (File " << binfiles_.at(entry.binfile_idx) << " offset " << entry.byte_offset << ")";
