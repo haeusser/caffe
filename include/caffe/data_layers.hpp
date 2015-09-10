@@ -274,7 +274,7 @@ public:
   virtual inline int MinTopBlobs() const { return 1; }
   
   /// Number of samples to prefetch (asynchronously if to GPU memory)
-  static const int PREFETCH_COUNT = 3;
+  static const int PREFETCH_COUNT = 8;
 
   virtual void Forward_cpu(
         const vector<Blob<Dtype>*>& bottom,

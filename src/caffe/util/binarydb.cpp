@@ -142,7 +142,6 @@ void BinaryDB<Dtype>::get_sample(int index, vector<Blob<Dtype>*>* dst, int* comp
         curr_binstream = binstreams_.at(entry.binfile_idx).get();
         curr_binstream->seekg(entry.byte_offset, ios::beg);
       }
-        
     }
     
     // check the flag of the entry (4-byte thing)
