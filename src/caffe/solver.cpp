@@ -209,6 +209,8 @@ void Solver<Dtype>::Step(int iters) {
 
   SolverParameter param;
   
+  Timer iteration_timer;
+  iteration_timer.Start();
   while (iter_ < stop_iter) {
     // zero-init the params
     net_->ClearParamDiffs();
@@ -265,6 +267,9 @@ void Solver<Dtype>::Step(int iters) {
               << result_vec[k] << loss_msg_stream.str();
         }
       }
+      iteration_timer.Stop();
+      TimingMonitor::addMeasure("iteration_time", iteration_timer.MilliSeconds()/param_.display());
+      iteration_timer.Start();
       TimingMonitor::collapseAndDisplay();
     }
     for (int i = 0; i < callbacks_.size(); ++i) {

@@ -190,11 +190,12 @@ void TimingMonitor::display()
     LOG(INFO) << "Timing information:";
     int batch_size = getMeasure("batch_size");
 
-    if(hasMeasure("data_rate"))        LOG(INFO) << "    Data rate:          " << getMeasure("data_rate") << "MB/s";
-    if(hasMeasure("data_read"))        LOG(INFO) << "    Data read time:     " << getMeasure("data_read")*batch_size << "ms";
-    if(hasMeasure("data_single_read")) LOG(INFO) << "    Data read time:     " << getMeasure("data_single_read")*batch_size/Caffe::solver_count() << "ms";
-    if(hasMeasure("train_reentry"))    LOG(INFO) << "    Train reentry time: " << getMeasure("train_reentry") << "ms";
-    if(hasMeasure("train_wait"))       LOG(INFO) << "    Train wait time:    " << getMeasure("train_wait") << "ms";
+    if(hasMeasure("data_rate"))             LOG(INFO) << "    Data rate:          " << getMeasure("data_rate") << "MB/s";
+    if(hasMeasure("data_read"))             LOG(INFO) << "    Data read time:     " << getMeasure("data_read")*batch_size << "ms";
+    if(hasMeasure("data_single_read"))      LOG(INFO) << "    Data read time:     " << getMeasure("data_single_read")*batch_size/Caffe::solver_count() << "ms";
+    if(hasMeasure("train_reentry"))         LOG(INFO) << "    Train reentry time: " << getMeasure("train_reentry") << "ms";
+    if(hasMeasure("train_wait"))            LOG(INFO) << "    Train wait time:    " << getMeasure("train_wait") << "ms";
+    if(hasMeasure("iteration_time"))        LOG(INFO) << "    Iteration time:     " << getMeasure("iteration_time")/1000.0 << "s";
 }
 
 void TimingMonitor::collapseHistories()
