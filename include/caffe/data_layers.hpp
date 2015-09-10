@@ -272,9 +272,6 @@ public:
   virtual inline const char* type() const { return "BinaryData"; }
   virtual inline int ExactNumBottomBlobs() const { return 0; }
   virtual inline int MinTopBlobs() const { return 1; }
-  
-  /// Number of samples to prefetch (asynchronously if to GPU memory)
-  static const int PREFETCH_COUNT = 3;
 
   virtual void Forward_cpu(
         const vector<Blob<Dtype>*>& bottom,
@@ -302,7 +299,7 @@ protected:
   /// Fetch data samples from reader_
   virtual void load_batch(vector<Blob<Dtype>*>* output_ptr);
   
-  vector<Blob<Dtype>*> prefetch_[PREFETCH_COUNT];
+  vector<vector<Blob<Dtype>*> > prefetch_;
   BlockingQueue<vector<Blob<Dtype>*>*> prefetch_free_;
   BlockingQueue<vector<Blob<Dtype>*>*> prefetch_full_;
   
