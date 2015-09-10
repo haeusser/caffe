@@ -318,6 +318,8 @@ BOOST_PYTHON_MODULE(_caffe) {
     .add_property("solver", bp::make_function(&P2PSync<Dtype>::solver,
           bp::return_internal_reference<>()))
     .def("set_on_gradients_callback", &P2PSync<Dtype>::setPyCallbackGradientsReady)
+    .def("set_callback_iteration", &P2PSync<Dtype>::setPyCallbackIteration)
+    .def("set_pysolver", &P2PSync<Dtype>::setPySolver)
     .def("run", &P2PSync_run);
 
   bp::class_<Solver<Dtype>, shared_ptr<Solver<Dtype> >, boost::noncopyable>(

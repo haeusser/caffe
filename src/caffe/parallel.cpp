@@ -385,10 +385,11 @@ void P2PSync<Dtype>::on_gradients_ready() {
     caffe_gpu_scal(size_, Dtype(1.0 / Caffe::solver_count()), diff_);
   }
   
-  if(py_callback_gradients_ && (iter_next_py_callback_<0 || iter_next_py_callback_== solver_->iter())) {
+//  if(py_callback_gradients_ && (iter_next_py_callback_<0 || iter_next_py_callback_== solver_->iter())) {
+  if(py_solver_ && (iter_next_py_callback_<0 || iter_next_py_callback_== solver_->iter())) {
     PyEval_InitThreads();
     PyGILState_STATE state = PyGILState_Ensure();
-    boost::python::call<void>(py_callback_gradients_);
+    boost::python::call_method<void>(py_solver_, "callback_gradients");
     PyGILState_Release(state);
   }
 #endif
@@ -450,6 +451,16 @@ void P2PSync<Dtype>::setPyCallbackGradientsReady(PyObject *py_solver, PyObject *
   py_solver_ = py_solver;
   py_callback_gradients_ = py_callback;
   iter_next_py_callback_ = iter;
+}
+
+template<typename Dtype>
+void P2PSync<Dtype>::setPyCallbackIteration(int iter) {
+  iter_next_py_callback_ = iter;
+}
+
+template<typename Dtype>
+void P2PSync<Dtype>::setPySolver(PyObject *py_solver) {
+  py_solver_ = py_solver;
 }
 
 INSTANTIATE_CLASS(Params);

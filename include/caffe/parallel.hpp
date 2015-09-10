@@ -97,6 +97,9 @@ class P2PSync : public GPUParams<Dtype>, public Solver<Dtype>::Callback,
   void run(const vector<int>& gpus);
 
   void setPyCallbackGradientsReady(PyObject *py_solver, PyObject *py_callback, int iter);
+  void setPyCallbackIteration(int iter);
+  void setPySolver(PyObject *py_solver);
+
   
  protected:
   void on_start();
