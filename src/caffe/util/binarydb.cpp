@@ -36,13 +36,22 @@ void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param) {
     if(bp::len(dimensions) != top_num_) LOG(FATAL) << "Number of entry dimensions passed from python not equal to top blob count";
     
     entry_dimensions_.resize(top_num_);
+    entry_buffer_size_ = 0;
     for(int entry = 0; entry < top_num_; entry++) {
       entry_dimensions_[entry].resize(4);
       entry_dimensions_[entry][0] = 1;
       entry_dimensions_[entry][1] = boost::python::extract<int>(dimensions[entry][2]);
       entry_dimensions_[entry][2] = boost::python::extract<int>(dimensions[entry][1]);
       entry_dimensions_[entry][3] = boost::python::extract<int>(dimensions[entry][0]);
+
+      int size = sizeof(float);
+      for(int i=0; i<4; i++)
+          size*=entry_dimensions_[entry][i];
+
+      if(size>entry_buffer_size_)
+          entry_buffer_size_ = size;
     }
+    entry_buffer_ = new unsigned char[entry_buffer_size_];
     
     // Store bin filenames:
     binfiles_.resize(bp::len(bin_filenames));
@@ -105,8 +114,9 @@ void BinaryDB<Dtype>::Close() {
 }
 
 template <typename Dtype>
-void BinaryDB<Dtype>::get_sample(int index, vector<Blob<Dtype>*>* dst) {
+void BinaryDB<Dtype>::get_sample(int index, vector<Blob<Dtype>*>* dst, int* compressed_size) {
   // loop through top blobs
+  if(compressed_size) *compressed_size=0;
   for (int t=0; t<top_num_; ++t) {
     Entry entry = samples_.at(index).at(t);
     std::ifstream* curr_binstream = binstreams_.at(entry.binfile_idx).get();
@@ -149,26 +159,37 @@ void BinaryDB<Dtype>::get_sample(int index, vector<Blob<Dtype>*>* dst) {
     dst->at(t)->Reshape(entry_dimensions_[t]);
     
     // actually read the data
-    read_binstream(curr_binstream, entry.data_encoding, dst->at(t)->count(), dst->at(t)->mutable_cpu_data());
+
+    int n_read;
+    read_binstream(curr_binstream, entry.data_encoding, dst->at(t)->count(), dst->at(t)->mutable_cpu_data(), &n_read);
+    if(compressed_size) *compressed_size+=n_read;
   }
 }
 
 // given a ifstream (with file pointer set correctly), reads N values from the stream to out with the given data_encoding
 template <typename Dtype>
-void BinaryDB<Dtype>::read_binstream(std::ifstream* binstream, BinaryDB_DataEncoding data_encoding, long int N, Dtype* out) {
+void BinaryDB<Dtype>::read_binstream(std::ifstream* binstream, BinaryDB_DataEncoding data_encoding, long int N, Dtype* out, int* n_read)
+{
+  if(n_read)
+      *n_read=0;
+
   switch(data_encoding)
   {
     case BinaryDB_DataEncoding_UINT8:
-      for(int i=0; i<N; i++) {
-        unsigned char c;
-        binstream->read(reinterpret_cast<char*>(&c), 1);
-        *(out++)=static_cast<Dtype>(c);
-      }
+      if(entry_buffer_size_<N) LOG(FATAL) << "UINT8: entry buffer too small, buffer size=" << entry_buffer_size_ << ", N=" << N;
+      binstream->read((char*)entry_buffer_, N);
+      if(n_read) (*n_read)+=N;
+
+      for(int i=0; i<N; i++)  *(out++)=static_cast<Dtype>(entry_buffer_[i]);
       break;
+
     case BinaryDB_DataEncoding_FIXED16DIV32:
+      if(entry_buffer_size_<2*N) LOG(FATAL) << "FIXED16DIV32: entry buffer too small, buffer size=" << entry_buffer_size_ << ", 2*N=" << 2*N;
+      binstream->read((char*)entry_buffer_, 2*N);
+      if(n_read) (*n_read)+=2*N;
+
       for(int i=0; i<N; i++) {
-        short v;
-        binstream->read(reinterpret_cast<char*>(&v), 2);
+        short v = *((short*)(&entry_buffer_[2*i]));
 
         Dtype value;
         if(v==std::numeric_limits<short>::max()) 
@@ -179,6 +200,7 @@ void BinaryDB<Dtype>::read_binstream(std::ifstream* binstream, BinaryDB_DataEnco
         *(out++)=value;
       }
       break;
+
     default:
         LOG(FATAL) << "Unknown data encoding " << data_encoding;
         break;

@@ -165,4 +165,70 @@ float CPUTimer::MicroSeconds() {
   return this->elapsed_microseconds_;
 }
 
+std::map<std::string, double > TimingMonitor::measures;
+std::map<std::string, std::vector<double> > TimingMonitor::histories;
+boost::mutex TimingMonitor::mutex;
+
+#define MAX_TIMINGS 1000
+
+void TimingMonitor::addMeasure(std::string type, double msTime)
+{
+    mutex.lock();
+    if(!histories.count(type))
+    {
+        histories[type] = vector<double>();
+        histories[type].reserve(MAX_TIMINGS); // Allocate enough space, don't resize every time
+    }
+
+    if(histories[type].size()<MAX_TIMINGS)
+        histories[type].push_back(msTime);
+    mutex.unlock();
+}
+
+void TimingMonitor::display()
+{
+    LOG(INFO) << "Timing information:";
+    int batch_size = getMeasure("batch_size");
+
+    if(hasMeasure("data_rate"))        LOG(INFO) << "    Data rate:          " << getMeasure("data_rate") << "MB/s";
+    if(hasMeasure("data_read"))        LOG(INFO) << "    Data read time:     " << getMeasure("data_read")*batch_size << "ms";
+    if(hasMeasure("data_single_read")) LOG(INFO) << "    Data read time:     " << getMeasure("data_single_read")*batch_size/Caffe::solver_count() << "ms";
+    if(hasMeasure("train_reentry"))    LOG(INFO) << "    Train reentry time: " << getMeasure("train_reentry") << "ms";
+    if(hasMeasure("train_wait"))       LOG(INFO) << "    Train wait time:    " << getMeasure("train_wait") << "ms";
+}
+
+void TimingMonitor::collapseHistories()
+{
+    mutex.lock();
+    measures.clear();
+
+    for (std::map<std::string,std::vector<double> >::iterator it=histories.begin(); it!=histories.end(); ++it)
+    {
+        std::vector<double>& list = it->second;
+        double total = 0;
+        for(int i=0; i<list.size(); i++)
+            total += list[i];
+        measures[it->first] = total / double(list.size());
+
+        list.clear();
+    }
+    mutex.unlock();
+}
+
+void TimingMonitor::collapseAndDisplay()
+{
+    collapseHistories();
+    display();
+}
+
+bool TimingMonitor::hasMeasure(std::string type)
+{
+    return measures.count(type);
+}
+
+double TimingMonitor::getMeasure(std::string type)
+{
+    return measures[type];
+}
+
 }  // namespace caffe

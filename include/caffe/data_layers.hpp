@@ -18,6 +18,7 @@
 #include "caffe/proto/caffe.pb.h"
 #include "caffe/util/blocking_queue.hpp"
 #include "caffe/util/db.hpp"
+#include "caffe/util/benchmark.hpp"
 
 #include "lmdb.h"
 
@@ -294,7 +295,8 @@ public:
   
   
 protected:
-  
+  Timer reentry_timer_;
+
   /// Entry point for internal prefetching thread
   virtual void InternalThreadEntry();
   /// Fetch data samples from reader_

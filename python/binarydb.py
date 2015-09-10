@@ -41,7 +41,7 @@ class BinaryDB:
         # Find valid samples in all clips
         self.findSamplesInClips()
 
-        print(self.all_samples)
+        #print(self.all_samples)
 
     def throw_error(self, str):
         raise AssertionError(str)

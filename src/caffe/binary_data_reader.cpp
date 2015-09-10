@@ -9,6 +9,7 @@
 #include "caffe/proto/caffe.pb.h"
 
 #include "caffe/util/binarydb.hpp"
+#include "caffe/util/benchmark.hpp"
 
 namespace caffe {
 
@@ -51,8 +52,6 @@ BinaryDataReader<Dtype>::~BinaryDataReader() {
     bodies_.erase(key);
   }
 }
-
-
 
 template <typename Dtype>
 BinaryDataReader<Dtype>::BinaryQueuePair::BinaryQueuePair(int size, int num_blobs) {
@@ -140,8 +139,15 @@ void BinaryDataReader<Dtype>::Body::read_one(db::BinaryDB<Dtype>* db, int &index
   
   vector<Blob<Dtype>*>* sample = qp->free_.pop();
 
-  db->get_sample(index, sample);
+  Timer t;
+  t.Start();
+  int compressed_size;
+  db->get_sample(index, sample, &compressed_size);
+  t.Stop();
+  TimingMonitor::addMeasure("data_single_read", t.MilliSeconds());
   
+  TimingMonitor::addMeasure("data_rate", compressed_size * 1000.0 / (t.MilliSeconds() * 1024.0 * 1024.0));
+
   qp->full_.push(sample);
 
   index++;

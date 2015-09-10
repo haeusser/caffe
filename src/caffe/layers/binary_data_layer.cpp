@@ -232,10 +232,17 @@ template <typename Dtype>
 void BinaryDataLayer<Dtype>::Forward_cpu(const Container& bottom,
                                          const Container& top) 
 {  
-  (void)bottom;
-  
+  TimingMonitor::addMeasure("batch_size", this->layer_param_.data_param().batch_size());
+
+  reentry_timer_.Stop();
+  TimingMonitor::addMeasure("train_reentry", reentry_timer_.MilliSeconds());
+
+  Timer wait_timer;
+  wait_timer.Start();
   Container* container_ptr = prefetch_full_.pop("Data layer prefetch queue empty");
   const Container& container = (*container_ptr);
+  wait_timer.Stop();
+  TimingMonitor::addMeasure("train_wait", wait_timer.MilliSeconds());
 
   /// Reshape tops and copy data
   for (unsigned int i = 0; i < top.size(); ++i) {
@@ -248,6 +255,8 @@ void BinaryDataLayer<Dtype>::Forward_cpu(const Container& bottom,
   
   /// Recycle spent data container for prefetching
   prefetch_free_.push(container_ptr);
+
+  reentry_timer_.Start();
 }
 
 

@@ -25,9 +25,9 @@ class BinaryDB {
   
   int get_num_samples() { return num_samples_; };
   
-  void get_sample(int index, vector<Blob<Dtype>*>* dst);
+  void get_sample(int index, vector<Blob<Dtype>*>* dst, int* compressed_size);
   
-  void read_binstream(std::ifstream* binstream, BinaryDB_DataEncoding data_encoding, long int N, Dtype* out);
+  void read_binstream(std::ifstream* binstream, BinaryDB_DataEncoding data_encoding, long int N, Dtype* out, int* n_read);
 
  private:
   struct Entry {
@@ -43,6 +43,9 @@ class BinaryDB {
   int num_samples_;
   int num_binfiles_;
   
+  int entry_buffer_size_;
+  unsigned char* entry_buffer_;
+
   vector<Sample> samples_;
   vector<vector<int> > entry_dimensions_;
   vector<std::string> binfiles_;

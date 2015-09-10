@@ -4,6 +4,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include "caffe/util/device_alternate.hpp"
+#include <boost/thread/mutex.hpp>
 
 namespace caffe {
 
@@ -45,6 +46,23 @@ class CPUTimer : public Timer {
   virtual void Stop();
   virtual float MilliSeconds();
   virtual float MicroSeconds();
+};
+
+class TimingMonitor
+{
+private:
+    static std::map<std::string, double > measures;
+    static std::map<std::string, std::vector<double> > histories;
+    static boost::mutex mutex;
+
+public:
+    static void addMeasure(std::string type, double msTime);
+
+    static void display();
+    static void collapseHistories();
+    static void collapseAndDisplay();
+    static bool hasMeasure(std::string type);
+    static double getMeasure(std::string type);
 };
 
 }  // namespace caffe

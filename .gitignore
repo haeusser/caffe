@@ -98,3 +98,4 @@ MANIFEST-*
 *.config
 *.creator
 /hackathon-caffe2.files
+/Makefile.qt
