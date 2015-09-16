@@ -24,6 +24,8 @@
 #include <iostream>
 #include <fstream>
 #include <omp.h>
+#include <sys/dir.h>
+
 
 using std::max;
 
@@ -49,6 +51,12 @@ void FLOWriterLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
     //const int width = bottom[0]->width();
 
     CHECK_EQ(channels, 2) << "FLOWRITER layer input must have two channels";
+
+    DIR* dir = opendir(this->layer_param_.writer_param().folder().c_str());
+    if (dir)
+        closedir(dir);
+    else if (ENOENT == errno)
+        system((std::string("mkdir -p ")+this->layer_param_.writer_param().folder()).c_str());
 }
 
 template <typename Dtype>
@@ -60,15 +68,8 @@ void FLOWriterLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     const int height = bottom[0]->height();
     const int width = bottom[0]->width();
 
-    int solver_iter = 0;
-    
     Net<Dtype> *net = this->GetNet();
-    if(net) {
-      Solver<Dtype> *solver = net->GetSolver();
-      if (solver) {
-        solver_iter = solver->iter();
-      }
-    }
+    int iter = net->iter();
 
     int size=height*width*channels;
     for(int n=0; n<num; n++)
@@ -77,13 +78,23 @@ void FLOWriterLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         if(this->layer_param_.writer_param().has_file())
             strcpy(filename,this->layer_param_.writer_param().file().c_str());
         else
-            sprintf(filename,"%s/%s%07d(%03d)%s.flo",
-                this->layer_param_.writer_param().folder().c_str(),
-                this->layer_param_.writer_param().prefix().c_str(),
-                solver_iter,
-                n,
-                this->layer_param_.writer_param().suffix().c_str()
-            );
+        {
+            if(num>1)
+                sprintf(filename,"%s/%s%07d(%03d)%s.flo",
+                    this->layer_param_.writer_param().folder().c_str(),
+                    this->layer_param_.writer_param().prefix().c_str(),
+                    iter,
+                    n,
+                    this->layer_param_.writer_param().suffix().c_str()
+                );
+            else
+                sprintf(filename,"%s/%s%07d%s.flo",
+                    this->layer_param_.writer_param().folder().c_str(),
+                    this->layer_param_.writer_param().prefix().c_str(),
+                    iter,
+                    this->layer_param_.writer_param().suffix().c_str()
+                );
+        }
 
         const Dtype* data=bottom[0]->cpu_data()+n*size;
 

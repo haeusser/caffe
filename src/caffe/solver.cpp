@@ -212,6 +212,8 @@ void Solver<Dtype>::Step(int iters) {
   Timer iteration_timer;
   iteration_timer.Start();
   while (iter_ < stop_iter) {
+    net_->set_iter(iter_);
+
     // zero-init the params
     net_->ClearParamDiffs();
     if (param_.test_interval() && iter_ % param_.test_interval() == 0
