@@ -1,3 +1,4 @@
+import sys
 import os
 import caffe.proto.caffe_pb2 as cpb
 import google.protobuf as pb
@@ -18,10 +19,10 @@ class BinaryDB:
 
         self.min_margin = param.data_param.minimum_boundary_margin
 
-        # Read clip list
-        assert(os.path.isfile(self.data_param.clip_list))
+        # Read collection list
+        assert(os.path.isfile(self.data_param.collection_list))
 
-        with open(self.data_param.clip_list) as f:
+        with open(self.data_param.collection_list) as f:
             self.clips = [line.rstrip('\n') for line in f if len(line.rstrip('\n')) > 0]
 
         print("Clips: ")
@@ -141,27 +142,27 @@ class BinaryDB:
                 for index in range(start_off, num_total+end_off):
                     for slice_point in slice_points:
                         if slice_point + end_off <= index < slice_point + start_off:
-                            continue
+                            break
+                    else:
+                        entries = []
+                        for entry in sample.entry:
+                            if entry.name not in entry_lookup:
+                                self.throw_error('The requested entry %s is not available in clip %s.\nAvailable: %s' % (entry.name, clip_folder, str(entry_lookup)))
+                            el = entry_lookup[entry.name]
+                            dims = el['dimensions']
 
-                    entries = []
-                    for entry in sample.entry:
-                        if entry.name not in entry_lookup:
-                            self.throw_error('The requested entry %s is not available in clip %s.\nAvailable: %s' % (entry.name, clip_folder, str(entry_lookup)))
-                        el = entry_lookup[entry.name]
-                        dims = el['dimensions']
+                            abs_file_path = os.path.join(self.data_param.source, clip_folder, el['filename'])
+                            if not os.path.isfile(abs_file_path):
+                                self.throw_error('Bin file %s from clip %s does not exist' % (abs_file_path, clip_folder))
+                            bin_file_index = self.filenameIndex(self.bin_filenames, abs_file_path)
+                            encoding = el['encoding']
+                            self.setOrCheckDimensions(entry.name, el['dimensions'])
 
-                        abs_file_path = os.path.join(self.data_param.source, clip_folder, el['filename'])
-                        if not os.path.isfile(abs_file_path):
-                            self.throw_error('Bin file %s from clip %s does not exist' % (abs_file_path, clip_folder))
-                        bin_file_index = self.filenameIndex(self.bin_filenames, abs_file_path)
-                        encoding = el['encoding']
-                        self.setOrCheckDimensions(entry.name, el['dimensions'])
+                            entry_index = (index + entry.offset) * el['num'] + el['index']
+                            byte_offset = (dims[0]*dims[1]*dims[2]*self.enc_size(encoding)+4)*entry_index
+                            entries.append((bin_file_index, byte_offset, encoding))
 
-                        entry_index = (index + entry.offset) * el['num'] + el['index']
-                        byte_offset = (dims[0]*dims[1]*dims[2]*self.enc_size(encoding)+4)*entry_index
-                        entries.append((bin_file_index, byte_offset, encoding))
-
-                    self.all_samples.append(entries)
+                        self.all_samples.append(entries)
 
                 # Store dimensions for all entries of this sample (Later will check if samples are compatible)
                 entries_dimensions = [entry_lookup[entry.name]['dimensions'] for entry in sample.entry]

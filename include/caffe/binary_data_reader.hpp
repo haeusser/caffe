@@ -70,7 +70,7 @@ class BinaryDataReader : public InternalThread {
   // A source is uniquely identified by its layer name + path, in case
   // the same database is read from two different locations in the net.
   static inline string source_key(const LayerParameter& param) {
-    return param.name() + ":" + param.data_param().clip_list();
+    return param.name() + ":" + param.data_param().collection_list();
   }
 
   const shared_ptr<BinaryQueuePair> queue_pair_;

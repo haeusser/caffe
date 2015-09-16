@@ -224,6 +224,9 @@ class Net {
   static bool StateMeetsRule(const NetState& state, const NetStateRule& rule,
       const string& layer_name);
 
+  inline void set_iter(int iter) { iter_=iter; }
+  int iter() { return iter_; }
+
  protected:
   // Helpers for Init.
   /// @brief Append a new input or top blob to the net.
@@ -308,6 +311,7 @@ class Net {
   const Net* const root_net_;
   
   Solver<Dtype> *solver_;
+  int iter_;
   
   DISABLE_COPY_AND_ASSIGN(Net);
 };
