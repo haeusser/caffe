@@ -13,8 +13,8 @@ def PhilData_OpticalFlow(net, **kwargs):
   '''
   data_param = {'source'     : kwargs['source'],
                 'backend'    : Params.Data.LMDB,
-                'batch_size' : kwargs[''],
-                'encoding  ' : (Proto.DataParameter.UINT8,
+                'batch_size' : kwargs['batch_size'],
+                'encoding'   : (Proto.DataParameter.UINT8,
                                 Proto.DataParameter.UINT8,
                                 Proto.DataParameter.UINT16FLOW,
                                 Proto.DataParameter.BOOL1),
@@ -62,4 +62,4 @@ def PhilData(net, **kwargs):
   default('preselection_label', 1)
     
 
-  return MakePhilData(net, **kwargs)
+  return PhilData_OpticalFlow(net, **kwargs)
