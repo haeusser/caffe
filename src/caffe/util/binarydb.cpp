@@ -4,6 +4,8 @@
 
 #include <boost/python.hpp>
 
+//#include <dlfcn.h> // this is to make matlab interface work
+
 namespace bp = boost::python;
 
 namespace caffe { namespace db {
@@ -18,6 +20,7 @@ void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param) {
   string param_str;
   param.SerializeToString(&param_str);
   
+  //dlopen("libpython2.7.so.1", RTLD_LAZY | RTLD_GLOBAL); // this is to make matlab interface work
   Py_Initialize();
   try {
     bp::object module = bp::import("binarydb");

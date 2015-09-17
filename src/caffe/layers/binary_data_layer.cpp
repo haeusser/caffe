@@ -36,12 +36,16 @@ namespace caffe {
 template <typename Dtype>
 BinaryDataLayer<Dtype>::BinaryDataLayer(const LayerParameter& param)
   : Layer<Dtype>(param),
+    prefetch_(),
     prefetch_free_(),
     prefetch_full_(),
     reader_(param)
 {
+  prefetch_.resize(param.data_param().prefetch()*
+                   param.data_param().batch_size());
+  
   /// Populate prefetching queue with empty buckets
-  for (int i = 0; i < PREFETCH_COUNT; ++i) {
+  for (int i = 0; i < prefetch_.size(); ++i) {
     for (int j = 0; j < param.top_size(); ++j) {
       Blob<Dtype> *tmpblob = new Blob<Dtype>();
       prefetch_[i].push_back(tmpblob);
@@ -61,7 +65,7 @@ BinaryDataLayer<Dtype>::~BinaryDataLayer<Dtype>() {
   /// Tidy up
   /// Depublish data buckets and ensure that all are accounted for
   {
-    unsigned int total = PREFETCH_COUNT;
+    unsigned int total = prefetch_.size();
     while (prefetch_free_.size() > 0) {
       prefetch_free_.pop();
       --total;
@@ -71,16 +75,16 @@ BinaryDataLayer<Dtype>::~BinaryDataLayer<Dtype>() {
       --total;
     }
     if (total > 0)
-      LOG(INFO) << "There are " << PREFETCH_COUNT << " prefetching"
+      LOG(INFO) << "There are " << prefetch_.size() << " prefetching"
                  << " buckets, but " << total << " of these could not"
                  << " be accounted for.";
     else if (total < 0)
-      LOG(INFO) << "There are " << PREFETCH_COUNT << " prefetching"
-                 << " buckets, but " << -total+PREFETCH_COUNT 
+      LOG(INFO) << "There are " << prefetch_.size() << " prefetching"
+                 << " buckets, but " << -total+prefetch_.size()
                  << " were found in the prefetching queues.";
   }
   /// Delete unmanaged Blob pointers within the buckets
-  for (unsigned int i = 0; i < PREFETCH_COUNT; ++i) {
+  for (unsigned int i = 0; i < prefetch_.size(); ++i) {
     Container& container = prefetch_[i];
     for (unsigned int j = 0; j < container.size(); ++j) {
       delete container[j];

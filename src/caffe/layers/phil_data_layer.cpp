@@ -372,8 +372,8 @@ void PhilDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     MDB_stat stat;
     CHECK_EQ(mdb_stat(mdb_txn_, mdb_dbi_, &stat), MDB_SUCCESS) << "mdb_stat failed";
     
-    if (verbose)
-      LOG(INFO) << "DB entries: " << stat.ms_entries;
+
+    LOG(INFO) << "DB entries: " << stat.ms_entries;
     database_entries_ = stat.ms_entries;
     
     CHECK_EQ(mdb_cursor_get(mdb_cursor_, &mdb_key_, &mdb_value_, MDB_FIRST),
