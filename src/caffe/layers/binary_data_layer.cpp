@@ -75,19 +75,23 @@ BinaryDataLayer<Dtype>::~BinaryDataLayer<Dtype>() {
       --total;
     }
     if (total > 0)
-      LOG(INFO) << "There are " << prefetch_.size() << " prefetching"
-                 << " buckets, but " << total << " of these could not"
-                 << " be accounted for.";
+      LOG(INFO) << "Warning: There are " << prefetch_.size() << " allocated"
+                << " prefetching buckets, but " << total << " of these could"
+                << " not be accounted for during cleanup. This is not fatal,"
+                << " but might indicate a memory leak.";
     else if (total < 0)
-      LOG(INFO) << "There are " << prefetch_.size() << " prefetching"
-                 << " buckets, but " << -total+prefetch_.size()
-                 << " were found in the prefetching queues.";
+      LOG(INFO) << "Warning: There are " << prefetch_.size() << " allocated"
+                << " prefetching buckets, but " << -total+prefetch_.size() 
+                << " were found in the prefetching queues during cleanup."
+                << " This is not fatal, but probably bad.";
   }
-  /// Delete unmanaged Blob pointers within the buckets
+  
+  /// Free raw Blob memory within the buckets
   for (unsigned int i = 0; i < prefetch_.size(); ++i) {
     Container& container = prefetch_[i];
     for (unsigned int j = 0; j < container.size(); ++j) {
-      delete container[j];
+      if (container[j])
+        delete container[j];
     }
   }
 }
