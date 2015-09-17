@@ -1,0 +1,301 @@
+#!/usr/bin/python
+
+from __future__ import division
+import caffe
+from pylab import *
+import numpy as np
+import os
+import sqlite3 as lite
+import json
+from datetime import datetime, date
+from caffe.proto import caffe_pb2
+from google.protobuf import text_format
+import threading
+
+
+class MillSolver(object):
+    def __init__(self, solver_def, solver_state=None, weights=None, gpus=[0], log_dir='log', log_db_prefix='log_db'):
+        """
+        Acts as a driver for training with smart logging.
+        Logs will be stored to a MySQL database.
+        All paths can be set relative to the location of the solver prototxt.
+
+        :param solver_def:      prototxt that defines the solver
+        :param solver_state:    optional: a .solverstate file from which to resume training \  NEVER SET THESE TWO
+        :param weights:         optional: a .caffemodel file from which to begin finetuning /   AT THE SAME TIME
+        :param gpus:            optional: a list of GPU IDs to use for (multi-)GPU training
+                                if set to None, caffe will operate in CPU mode
+        :param log_dir:         optional: will log into this directory under solver.prototxt
+        :param log_db_prefix:   prefix for both SQLite db names and table names
+
+        The following parameters need to be set in the solver prototxt file:
+        log_per [def = 50]:     log per this number of iterations (simple log)
+        viz_per_logs [def = 20]:log visualization per this multiple of log_per
+        test_per_logs [def = 10]:log per this number of iterations (simple log)
+        """
+        if not os.path.isabs(solver_def):
+            if not os.path.isfile(os.path.join(os.getcwd(), solver_def)):
+                os.chdir('..')
+                solver_def = os.path.join(os.getcwd(), solver_def)
+            else:
+                solver_def = os.path.join(os.getcwd(), solver_def)
+
+        self.solver_dir = solver_def[:solver_def.rfind('/')]
+        os.chdir(self.solver_dir)
+        self.log_dir = os.path.join(self.solver_dir, log_dir)
+        if not os.path.exists(self.log_dir):
+            os.mkdir(self.log_dir)
+        self.logprint("Logging to {}".format(self.log_dir))
+        self.log_db_prefix = log_db_prefix  # used for db name and as a prefix for tables
+        self.solver_param = caffe_pb2.SolverParameter()
+        text_format.Merge(open(solver_def).read(), self.solver_param)
+
+        # read params from solver definition
+        self.iterations = self.solver_param.max_iter
+        self.log_per = self.solver_param.log_per
+        self.viz_per_logs = self.solver_param.viz_per_logs
+        self.test_per_logs = self.solver_param.test_per_logs
+
+        # make solver param for net fail safe
+        if not os.path.isabs(self.solver_param.net):
+            self.solver_param.net = os.path.join(self.solver_dir, self.solver_param.net)
+            if not os.path.isfile(self.solver_param.net):
+                raise NameError('could not find net definition from solver prototxt!')
+        self.gpus = gpus
+        if gpus:
+            self.solver_param.device_id = gpus[0]
+            caffe.set_device(gpus[0])
+            caffe.set_mode_gpu()
+            caffe.set_solver_count(len(gpus))
+
+        self.solver = caffe.get_solver_from_string(self.solver_param.SerializeToString())
+
+        if solver_state:
+            # check if this file is in the current (or parent) directory or if the solver path needs to be prepended
+            if not os.path.isfile(os.path.join('..', solver_state)):
+                if not os.path.isfile(solver_state):
+                    solver_state = os.path.join(self.solver_dir, solver_state)
+                    if not os.path.isfile(solver_state):
+                        raise NameError('could not find solver state specified!')
+            else:
+                solver_state = os.path.join('..', solver_state)
+            self.solver.restore(solver_state)
+
+            if weights:
+                raise NameError(
+                    'should not specify both solverstate and caffemodel! Preference will be given to solverstate.')
+
+        if weights and not solver_state:
+            self.solver.net.copy_from(weights)
+
+        self.sync = None
+
+        self.viz_counter = 0
+        self.test_counter = 0
+
+        self.viz_thread = None
+
+    def run_solver(self):
+        """
+        Kicks off (multi-)GPU training
+        """
+
+        if len(self.gpus) > 1:
+            self.sync = caffe.P2PSync(self.solver, self.solver_param.SerializeToString())
+            self.sync.set_pysolver(self)
+            self.sync.set_callback_iteration(self.log_per)
+            self.sync.run(self.gpus)
+
+        else:
+            # FALLBACK: classical single GPU training
+            for it in range(int(ceil(self.iterations / self.log_per))):
+                self.solver.step(self.log_per)  # run log_per forward/backward passes
+                self.stats_and_log()
+
+    def stats_and_log(self):
+        iteration = self.solver.iter
+        # extract loss
+        loss_log = dict()
+        for output in self.solver.net.outputs:
+            loss_log[output] = float(self.solver.net.blobs[output].data)
+
+        # extract percentiles
+        blob_percentiles_log = dict()
+        for blob in self.solver.net.blobs:
+            if len(self.solver.net.blobs[blob].data.shape) > 1:
+                blob_percentiles_log[blob] = self.get_percentiles(self.solver.net.blobs[blob])
+
+        weight_percentiles_log = dict()
+        for blob in self.solver.net.params:
+            if len(self.solver.net.blobs[blob].data.shape) > 1:
+                weight_percentiles_log[blob] = self.get_percentiles(self.solver.net.blobs[blob])
+
+        # extract learning rate
+        try:
+            lr_log = self.solver.getLearningRate()
+        except:
+            raise NameError('solver does not support extracting learning rate!')
+
+        # write to DB
+        self.write_out_log(iteration, lr_log, loss_log, blob_percentiles_log, weight_percentiles_log)
+
+        # visualization log
+        if self.viz_per_logs and self.viz_counter % self.viz_per_logs == 0:
+            self.viz_thread = threading.Thread(target=self.write_out_viz, args=(iteration, self.solver.net.blobs,))
+            self.viz_thread.setDaemon(True)
+            self.viz_thread.start()
+            # self.write_out_viz(iteration, self.solver.net.blobs)
+
+        # run test if necessary
+        if self.test_per_logs and self.test_counter % self.test_per_logs == 0:
+            test_loss_log = dict()
+            for tn in range(len(self.solver.test_nets)):
+                # logprint("== Test net #{} (iteration {}):".format(tn, solver.iter-log_per))
+                for outp in self.solver.test_nets[tn].outputs:
+                    test_loss_log["tn{}-{}".format(tn, outp)] = float(self.solver.test_nets[tn].blobs[outp].data)
+                    # logprint("==   {} = {}".format(outp, float(solver.test_nets[tn].blobs[outp].data)))
+            self.write_out_log(iteration - self.log_per, lr_log, test_loss_log, lr_log, lr_log, phase="TEST")
+
+        self.viz_counter += 1
+        self.test_counter += 1
+
+    def callback_gradients(self):
+        if not self.solver.iter + self.log_per > self.iterations:
+            self.sync.set_callback_iteration(self.solver.iter + self.log_per)
+            self.stats_and_log()
+
+    def step_debug(self):
+        for i in range(1000):
+            self.solver.step(self.log_per)
+            for tn in range(len(self.solver.test_nets)):
+                self.logprint("== Test net #{} (iteration {}):".format(tn, self.solver.iter - self.log_per))
+                for outp in self.solver.test_nets[tn].outputs:
+                    self.logprint("==   {} = {}".format(outp, float(self.solver.test_nets[tn].blobs[outp].data)))
+
+    def get_percentiles(self, blob):
+        """
+        Calculates the percentiles for each channel of each data/diff blob and each data/diff layer param
+        :param blob: Caffe blob
+        :return: list consisting of the percentiles for the data and diff blobs, respectively
+        """
+        blob_data = blob.data.swapaxes(0, 1)  # squeeze channel to first index s.th.
+        blob_diff = blob.diff.swapaxes(0, 1)  # percentiles can be computed more efficiently
+        data_percentiles = list(np.percentile(blob_data.flatten(), [0, 15.87, 50, 84.13, 100]))  # JSON serialization
+        diff_percentiles = list(np.percentile(blob_diff.flatten(), [0, 15.87, 50, 84.13, 100]))  # can't deal w/ numpy
+
+        return [data_percentiles, diff_percentiles]
+
+    def write_out_viz(self, iteration, blobs):
+        con = None
+        try:
+            con, cur = self.get_db_connection(viz=True, timeout=5*60)
+            cur.execute(
+                "create table if not exists {}_viz(ID INT PRIMARY KEY, name TEXT, blob BLOB)".format(
+                    self.log_db_prefix))
+            cur.execute('begin')
+            cmd = '''INSERT OR REPLACE INTO {}_viz VALUES(?, ?, ?);'''.format(self.log_db_prefix)
+            for idx, blob in enumerate(blobs):
+                cur.execute(cmd, [idx, blob, lite.Binary(blobs[blob].data)])
+                con.commit()
+            self.logprint(
+                "logged {} blobs for iteration {} to {}/{}_viz.db".format(len(blobs), iteration, self.log_dir,
+                                                                          self.log_db_prefix))
+
+        except lite.Error, e:
+            raise NameError('Error %s:' % e.args[0])
+            # sys.exit(1)
+
+        finally:
+            if con:
+                con.close()
+        self.logprint(" // DEBUG // VIZ thread END")
+
+    def write_out_log(self, iteration, lr_log, loss_log, blob_percentiles_log, weight_percentiles_log,
+                      phase="TRAIN"):
+        """
+        Writes log contents to a SQLite database. Dicts are JSON-serialized.
+
+        :param solver_dir:
+        :param iteration:
+        :param lr_log:
+        :param loss_log:
+        :param blob_percentiles_log:
+        :param weight_percentiles_log:
+        :param testing_results:         set this to true for logging TESTING results, as opposed to training results
+        :return:
+        """
+        con = None
+        try:
+            con, cur = self.get_db_connection()
+            cur.execute(
+                "create table if not exists {}(Iteration INT, LearningRate NUMERIC, Losses BLOB, BlobPercentiles BLOB, WeightPercentiles BLOB, timestamp TEXT, Phase TEXT)".format(
+                    self.log_db_prefix))
+
+            # housekeeping: delete keys with iteration number >= current iteration number
+            cur.execute('''DELETE FROM {} WHERE Phase = '{}' AND Iteration >= {};'''.format(self.log_db_prefix, phase,
+                                                                                            iteration))
+            con.commit()
+
+            sql = '''INSERT OR REPLACE INTO {} VALUES(?, ?, ?, ?, ?, ?, ?);'''.format(self.log_db_prefix)
+            con.execute(sql, [iteration,
+                              lr_log,
+                              lite.Binary(json.dumps(loss_log)),
+                              lite.Binary(json.dumps(blob_percentiles_log)),
+                              lite.Binary(json.dumps(weight_percentiles_log)),
+                              datetime.now(),
+                              phase])
+            con.commit()
+            self.logprint(
+                "wrote {} iteration {} (lr={}) to {}/{}.db".format(phase, iteration, lr_log, self.log_dir,
+                                                                   self.log_db_prefix))
+
+        except lite.Error, e:
+            raise NameError('Error %s:' % e.args[0])
+            # sys.exit(1)
+
+        finally:
+            if con:
+                con.close()
+
+    def print_db(self, count=None, viz=False):
+        sort_by = "ID" if viz else "Iteration"
+        con = None
+        try:
+            # con = lite.connect(os.path.join(self.log_dir, "{}{}.db".format(self.log_db_prefix, suffix)))
+            con, cur = self.get_db_connection(viz=viz)
+            cur.execute("SELECT * FROM {}{} ORDER BY {} ASC".format(self.log_db_prefix, suffix, sort_by))
+            data = cur.fetchall()
+            if count:
+                max_idx = min(len(data), count)
+            else:
+                max_idx = len(data)
+            headers = list(map(lambda x: x[0], cur.description))
+            for s in data[:max_idx]:
+                tmp = ""
+                for idx, field in enumerate(headers):
+                    tmp += "{}: {}\t".format(field, np.array(s[idx]))
+                print(tmp + "\n")
+
+        except lite.Error, e:
+            raise NameError('Error %s:' % e.args[0])
+            # sys.exit(1)
+
+        finally:
+            if con:
+                con.close()
+
+    def logprint(self, string):
+        """
+        convenience function for console logging with prefix and timestamp
+        :param string: stuff to log
+        """
+        print("VIZLOG [{}]: {}".format(datetime.now(), string))
+
+    def get_db_connection(self, viz=False, timeout=10):
+        suffix = "_viz" if viz else ""
+        try:
+            con = lite.connect(os.path.join(self.log_dir, "{}{}.db".format(self.log_db_prefix, suffix)), timeout=timeout)
+            return con, con.cursor()
+
+        except lite.Error, e:
+            raise NameError('Error %s:' % e.args[0])

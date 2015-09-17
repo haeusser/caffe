@@ -1,0 +1,10 @@
+# PyCharm stuff
+.idea/
+*.pyc
+
+# IPython stuff
+.ipynb_checkpoints/
+
+# Caffe stuff
+*.caffemodel
+*.solverstate
