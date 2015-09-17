@@ -6,7 +6,7 @@ from pymill import Toolbox as tb
 import os
 
 
-BIN_DB_DIR   = '/scratch/global/hackathon/data/4_binarydb'
+BIN_DB_DIR   = '/scratch/global/hackathon/data/4_bin-db'
 COLLECTIONLIST_DIR = '/misc/lmbraid17/sceneflownet/common/data/4_bin-db/collection_lists'
 
 
@@ -91,8 +91,8 @@ def BinaryData_OpticalFlow(net, **kwargs):
                      Entry('backwardFlowR', 0))))
 
   return Layers.BinaryData(net,
-                    nout=NumberOfEntries(samples),
-                    data_param=DataParams(samples, **kwargs))
+                           nout=NumberOfEntries(samples),
+                           data_param=DataParams(samples, **kwargs))
 
 
 def BinaryData_SceneFlow(net, **kwargs):
@@ -122,8 +122,8 @@ def BinaryData_SceneFlow(net, **kwargs):
                      Entry('backwardDispChangeR', 0))))
 
   return Layers.BinaryData(net,
-                                nout=NumberOfEntries(samples),
-                                data_param=DataParams(samples, **kwargs))
+                           nout=NumberOfEntries(samples),
+                           data_param=DataParams(samples, **kwargs))
 
 def instantiate(net):
   net.input, net.gt = BinaryData(
@@ -150,8 +150,8 @@ def BinaryData_Disparity(net, **kwargs):
                      Entry('dispR',  0))))
 
   return Layers.BinaryData(net,
-                                nout=NumberOfEntries(samples),
-                                data_param=DataParams(samples, **kwargs))
+                           nout=NumberOfEntries(samples),
+                           data_param=DataParams(samples, **kwargs))
 
 
 def BinaryData(net, setting, **kwargs):
@@ -165,16 +165,25 @@ def BinaryData(net, setting, **kwargs):
     'DISPARITY'   : BinaryData_Disparity,
   }
 
-  if 'collection_list' not in kwargs: raise Exception('BinaryData requires parameter collectionList')
+  if 'collection_list' not in kwargs: 
+    raise Exception('BinaryData requires parameter collectionList')
 
-  if not 'batch_size' in kwargs: kwargs['batch_size'] = 1
-  if not 'verbose' in kwargs: kwargs['verbose'] = True
-  if not 'rand_permute' in kwargs: kwargs['rand_permute'] = True
-  if not 'rand_permute_seed' in kwargs: kwargs['rand_permute_seed'] = 77
 
-  if not 'bin_db_dir' in kwargs: kwargs['bin_db_dir'] = BIN_DB_DIR
-  if not 'collection_list_dir' in kwargs: kwargs['collection_list_dir'] = COLLECTIONLIST_DIR
-  if not os.path.isfile(os.path.join(kwargs['collection_list_dir'],kwargs['collection_list'])): raise Exception('BinaryData: collection_list %s does not exist' % kwargs['collection_list'])
+  def default(arg, val):
+    if not arg in kwargs:
+      kwargs[arg] = val
+      
+  default('batch_size',        1)
+  default('verbose',           True)
+  default('rand_permute',      True)
+  default('rand_permute_seed', 77)
+  default('bin_db_dir',          BIN_DB_DIR)
+  default('collection_list_dir', COLLECTIONLIST_DIR)
+    
+  if not os.path.isfile(os.path.join(kwargs['collection_list_dir'],
+                                     kwargs['collection_list'])): 
+    raise Exception('BinaryData: collection_list %s does not exist' \
+                      %(kwargs['collection_list']))
 
   #
   # TODO: if kwargs['phase'] is not set do not add include: { phase: .. }
