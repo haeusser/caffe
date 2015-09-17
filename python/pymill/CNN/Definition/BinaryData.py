@@ -176,4 +176,10 @@ def BinaryData(net, setting, **kwargs):
   if not 'collection_list_dir' in kwargs: kwargs['collection_list_dir'] = COLLECTIONLIST_DIR
   if not os.path.isfile(os.path.join(kwargs['collection_list_dir'],kwargs['collection_list'])): raise Exception('BinaryData: collection_list %s does not exist' % kwargs['collection_list'])
 
+  #
+  # TODO: if kwargs['phase'] is not set do not add include: { phase: .. }
+  # TODO: if kwargs['phase'] is set to 'TRAIN' do not add include: { phase: TRAIN }
+  # TODO: if kwargs['phase'] is set to 'TEST' do not add include: { phase: TEST }
+  #
+
   return BinaryDataConstructors[setting](net, **kwargs)
