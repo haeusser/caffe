@@ -2,16 +2,37 @@
 
 from CaffeAdapter import *
 
-def writeImage(net, blob, folder='output', suffix=None, scale=1.0):
-    pass
 
-def writeFlow(net, blob, folder='output', suffix=None, scale=1.0):
-    pass
+def writeImage(net, blob, folder='output', prefix='image', suffix='', scale=1.0):
+    dummy = Layers.ImgWriter(net, 
+                             blob,
+                             writer_param={
+                               'folder' : folder,
+                               'prefix': prefix,
+                               'suffix': suffix,
+                               'scale' : scale })
 
-def writeFloat(net, blob, folder='output', suffix=None, scale=1.0):
-    pass
+def writeFlow( net, blob, folder='output', prefix='flow',  suffix='', scale=1.0):
+    dummy = Layers.FLOWriter(net, 
+                             blob,
+                              writer_param={
+                                'folder' : folder,
+                                'prefix': prefix,
+                                'suffix': suffix,
+                                'scale' : scale })
 
-def imageToRange01(net, image_blob)
+def writeFloat(net, blob, folder='output', prefix='',      suffix='', scale=1.0):
+    dummy = Layers.FloatWriter(net, 
+                               blob,
+                               writer_param={
+                                 'folder' : folder,
+                                 'prefix': prefix,
+                                 'suffix': suffix,
+                                 'scale' : scale })
+
+
+
+def imageToRange01(net, image_blob):
     # this should return the scaled blob (nout=1)
     # proto: layer { name: "img0_scaled" type: "Eltwise" bottom: "img0" top: "img0_scaled" eltwise_param { operation: SUM coeff: 0.003921569 } }
     pass
@@ -34,9 +55,17 @@ def addMean(net, image_blob, color, input_scale=1.0, mean_scale=1.0, ouptut_scal
     pass
 
 def concat(net, *args):
+    '''
+    @brief Setup a ConcatLayer that takes all ARGS and throws them together along the first dimension
+    @param net Current network
+    @returns A new blob (concatenation of all blobs in ARGS)
+    '''
     # this should concat all blobs given in args
     # and should return the concatenated blob (nout=1)
-    pass
+    return Layers.Concat(net,
+                         args,
+                         nout=1,
+                         concat_param={'concat_dim': 1})
 
 def downsample(net, input, width=None, height=None, reference=None):
     # this should return the downsampled blob (nout=1)
@@ -59,3 +88,4 @@ def downsample(net, input, width=None, height=None, reference=None):
     #   bottom: "img1"
     #   bottom: reference
     # }
+    pass
