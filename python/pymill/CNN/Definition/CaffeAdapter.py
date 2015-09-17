@@ -1,5 +1,6 @@
 from collections import OrderedDict, Counter
 
+import sys
 from caffe.proto import caffe_pb2
 from google import protobuf
 import six
@@ -63,12 +64,23 @@ class Blob(object):
         self._output = False
         self._inputRefCount = 0
         self._outputRefCount = 0
+        self._isSibling = False
+        self._master = None
 
     def name(self): return self._name
     def net(self): return self._net
     def output(self): return self._output
     def inputRefCount(self): return self._inputRefCount
     def outputRefCount(self): return self._outputRefCount
+
+    def makeSibling(self, master):
+        self._isSibling = True
+        self._master = master
+
+    def isSibling(self): return self._isSibling
+
+    def takeMasterName(self):
+        self._name = self._master.name()
 
     def setName(self, name):
         self._name = name
@@ -147,6 +159,21 @@ class Layer(object):
         return layer
 
 
+class NamedBlobs(object):
+    def __init__(self):
+        super(NamedBlobs, self).__setattr__('members', OrderedDict())
+
+    def dict(self): return self.members
+
+    def __setattr__(self, key, value):
+        if key in self.members:
+            value.makeSibling(self.members[key])
+        else:
+            self.members[key] = value
+
+    def __getattr__(self, item):
+        return self.members[item]
+
 class Network(object):
     """A NetSpec contains a set of Tops (assigned directly as attributes).
     Calling NetSpec.to_proto generates a NetParameter containing all of the
@@ -154,11 +181,15 @@ class Network(object):
     names."""
 
     def __init__(self, prefix=''):
-        super(Network, self).__setattr__('_members', OrderedDict())
+        self._members = NamedBlobs()
         self._layers = []
         self._blobs = []
         self._prefix = prefix
         self._counts = {}
+        self.layers = {}
+
+    def namedBlobs(self):
+        return self._members
 
     def addLayer(self, layer):
         self._layers.append(layer)
@@ -183,24 +214,23 @@ class Network(object):
 
         return '%s%d' % (type, i)
 
-    def __setattr__(self, name, value):
-        self._members[name] = value
-
-    def __getattr__(self, name):
-        return self._members[name]
-
     def toProto(self):
         i = 0
         for blob in self._blobs:
+            if blob.isSibling(): continue
             if blob.used() and blob.name() is None:
-                if blob in self._members.values():
-                    for member in self._members:
-                        if self._members[member] == blob:
+                if blob in self._members.dict().values():
+                    for member in self._members.dict():
+                        if self._members.dict()[member] == blob:
                             blob.setName(member)
                             break
                 else:
                     blob.setName(self.finalizeName('blob%d' % i))
                 i += 1
+
+        for blob in self._blobs:
+            if blob.isSibling():
+                blob.takeMasterName()
 
         for blob in self._blobs:
             if blob.used() and blob.inputRefCount() == 0 and not blob.output():
@@ -251,3 +281,4 @@ _param_names['Deconvolution'] = 'convolution'
 
 Layers = LayerCreator()
 Params = ParameterCreator()
+

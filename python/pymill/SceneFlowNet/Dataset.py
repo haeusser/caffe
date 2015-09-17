@@ -495,8 +495,8 @@ class Clip:
     def __repr__(self): return 'clip(%s)' % self._collection
 
 class BlenderClip:
-    #dataPath = '/misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres'
-    dataPath = '/mnt/sceneflownet_archive/sceneflownet/common/data/2_blender-out/lowres'
+    dataPath = '/misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres'
+    #dataPath = '/mnt/sceneflownet_archive/sceneflownet/common/data/2_blender-out/lowres'
 
     def __init__(self, line):
         parts = line.split()

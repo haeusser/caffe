@@ -6,7 +6,9 @@ from pymill import Toolbox as tb
 import os
 
 
-BIN_DB_DIR   = '/scratch/global/hackathon/data/4_bin-db'
+BIN_DB_DIR   = '/misc/lmbraid17/sceneflownet/common/data/4_bin-db'
+SSD_BIN_DB_DIR   = '/scratch/global/hackathon/data/4_bin-db'
+
 COLLECTIONLIST_DIR = '/misc/lmbraid17/sceneflownet/common/data/4_bin-db/collection_lists'
 
 
@@ -90,9 +92,13 @@ def BinaryData_OpticalFlow(net, **kwargs):
                      Entry('finalImageR', -1),
                      Entry('backwardFlowR', 0))))
 
+  phase = {}
+  if kwargs['phase'] is not None:
+      phase = (Proto.NetStateRule(phase=kwargs['phase']),)
+
   return Layers.BinaryData(net,
                            nout=NumberOfEntries(samples),
-                           include=(Proto.NetStateRule(phase=kwargs['phase']),),
+                           include=phase,
                            data_param=DataParams(samples, **kwargs))
 
 
@@ -176,23 +182,25 @@ def BinaryData(net, setting, **kwargs):
     if not arg in kwargs:
       kwargs[arg] = val
   
-  default('phase',             Proto.TRAIN)
+  default('phase',             'TEST')
   default('batch_size',        1)
   default('verbose',           True)
   default('rand_permute',      True)
   default('rand_permute_seed', 77)
-  default('bin_db_dir',          BIN_DB_DIR)
   default('collection_list_dir', COLLECTIONLIST_DIR)
-    
+
+  if kwargs['phase'] == 'TEST': kwargs['phase'] = Proto.TEST
+  if kwargs['phase'] == 'TRAIN': kwargs['phase'] = Proto.TRAIN
+
   if not os.path.isfile(os.path.join(kwargs['collection_list_dir'],
                                      kwargs['collection_list'])): 
     raise Exception('BinaryData: collection_list %s does not exist' \
                       %(kwargs['collection_list']))
 
-  #
-  # TODO: if kwargs['phase'] is not set do not add include: { phase: .. }
-  # TODO: if kwargs['phase'] is set to 'TRAIN' do not add include: { phase: TRAIN }
-  # TODO: if kwargs['phase'] is set to 'TEST' do not add include: { phase: TEST }
-  #
+  if 'bin_db_dir' not in kwargs:
+      if 'ssd_storage' in kwargs and kwargs['ssd_storage'] == True:
+          kwargs['bin_db_dir'] = SSD_BIN_DB_DIR
+      else:
+          kwargs['bin_db_dir'] = BIN_DB_DIR
 
   return BinaryDataConstructors[setting](net, **kwargs)

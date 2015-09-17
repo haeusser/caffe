@@ -489,13 +489,16 @@ class Environment:
 
         if iter == -1: iter = 1
 
+        # test requires weighs to be given,
+        # therefore we have to use a sovler
+
         tmpsolver = self._scratchDir + '/run_solver.prototxt'
 
         f = open(tmpsolver, 'w')
         f.write('train_net: "%s"\n' % finalProto)
         f.write('max_iter: %d\n' % iter)
         f.write('lr_policy: "fixed"\n')
-        f.write('snapshot: -1\n')
+        f.write('snapshot: 0\n')
         f.write('snapshot_after_train: false\n')
         f.close()
 

@@ -1,61 +1,144 @@
 #!/usr/bin/python
 
 from CaffeAdapter import *
+import pymill.Toolbox as tb
 
 def readImage(net, filename, num=1):
-    return Layers.ImageData(net, source=filename, batch_size=num)
+    return Layers.ImgReader(net,
+                            nout=1,
+                            reader_param = {
+                                'file': filename,
+                                'num': num
+                            })
+
+Network.readImage = readImage
 
 def readFloat(net, filename, num=1):
-    return Layers.FloatReader(net, file=filename, num=num)
+    return Layers.FloatReader(net,
+                            nout=1,
+                            reader_param = {
+                                'file': filename,
+                                'num': num
+                            })
 
-def writeImage(net, blob, folder='output', prefix='image', suffix='', scale=1.0):
-    Layers.ImgWriter(net,
-                     blob,
-                     writer_param={
-                       'folder' : folder,
-                       'prefix': prefix,
-                       'suffix': suffix,
-                       'scale' : scale })
+Network.readFloat = readFloat
 
-def writeFlow( net, blob, folder='output', prefix='flow', suffix='', scale=1.0):
-    Layers.FLOWriter(net,
-                             blob,
-                              writer_param={
-                                'folder' : folder,
-                                'prefix': prefix,
-                                'suffix': suffix,
-                                'scale' : scale })
+def writeImage(net, blob, folder='output', prefix='image', suffix='', scale=1.0, filename=None):
+    if filename is not None:
+        Layers.ImgWriter(net,
+                         blob,
+                         writer_param={
+                           'file' : filename,
+                           'scale' : scale })
+    else:
+        Layers.ImgWriter(net,
+                         blob,
+                         writer_param={
+                           'folder' : folder,
+                           'prefix': prefix,
+                           'suffix': suffix,
+                           'scale' : scale })
 
-def writeFloat(net, blob, folder='output', prefix='', suffix='', scale=1.0):
-    Layers.FloatWriter(net,
-                       blob,
-                       writer_param={
-                         'folder' : folder,
-                         'prefix': prefix,
-                         'suffix': suffix,
-                         'scale' : scale })
+Network.writeImage = writeImage
+
+def writeFlow( net, blob, folder='output', prefix='flow', suffix='', scale=1.0, filename=None):
+    if filename is not None:
+        Layers.FLOWriter(net,
+                         blob,
+                          writer_param={
+                            'file' : filename,
+                            'scale' : scale })
+    else:
+        Layers.FLOWriter(net,
+                         blob,
+                          writer_param={
+                            'folder' : folder,
+                            'prefix': prefix,
+                            'suffix': suffix,
+                            'scale' : scale })
+
+Network.writeFlow = writeFlow
+
+def writeFloat(net, blob, folder='output', prefix='', suffix='', scale=1.0, filename=None):
+    if filename is not None:
+        Layers.FloatWriter(net,
+                           blob,
+                           writer_param={
+                             'file' : filename,
+                             'prefix': prefix,
+                             'suffix': suffix,
+                             'scale' : scale })
+    else:
+        Layers.FloatWriter(net,
+                           blob,
+                           writer_param={
+                             'folder' : folder,
+                             'prefix': prefix,
+                             'suffix': suffix,
+                             'scale' : scale })
+
+Network.writeFloat = writeFloat
+
+def scale(net, image_blob, factor):
+    return Layers.Eltwise(net,
+                          image_blob,
+                          nout=1,
+                          eltwise_param={
+                            'operation': Params.Eltwise.SUM,
+                            'coeff': (factor,)
+                          })
+
+Network.scale = scale
 
 def imageToRange01(net, image_blob):
-    # this should return the scaled blob (nout=1)
-    # proto: layer { name: "img0_scaled" type: "Eltwise" bottom: "img0" top: "img0_scaled" eltwise_param { operation: SUM coeff: 0.003921569 } }
-    pass
+    return Layers.Eltwise(net,
+                          image_blob,
+                          nout=1,
+                          eltwise_param={
+                            'operation': Params.Eltwise.SUM,
+                            'coeff': (1.0/255.0,)
+                          })
+
+Network.imageToRange01 = imageToRange01
 
 def imageToRange0255(net, image_blob):
-    # this should return the scaled blob (nout=1)
-    # proto: layer { name: "img0_scaled" type: "Eltwise" bottom: "img0" top: "img0_scaled" eltwise_param { operation: SUM coeff: 255 } }
-    pass
+    return Layers.Eltwise(net,
+                          image_blob,
+                          nout=1,
+                          eltwise_param={
+                            'operation': Params.Eltwise.SUM,
+                            'coeff': (255.0,)
+                          })
+
+Network.imageToRange0255 = imageToRange0255
 
 def subtractMean(net, image_blob, color, input_scale=1.0, mean_scale=1.0, ouptut_scale=1.0):
-    # color = (r,g,b)
-    # this should return the scaled blob (nout=1)
-    # proto layer { name: "scaled_img1" bottom: "img1_ds" top: "scaled_img1" type: "Mean" mean_param: { operation: SUBTRACT input_scale: 1.0 mean_scale: 1.0 output_scale: 0.00392156862745 value: 76.4783107737 value: 69.4660111681 value: 58.0279756163 } }
-    pass
+    return Layers.Mean(net,
+                       image_blob,
+                       nout=1,
+                       mean_param={
+                         'operation': Params.Mean.SUBTRACT,
+                         'input_scale': input_scale,
+                         'mean_scale': mean_scale,
+                         'output_scale': output_scale,
+                         'value': color
+                       })
+
+Network.subtractMean = subtractMean
 
 def addMean(net, image_blob, color, input_scale=1.0, mean_scale=1.0, ouptut_scale=1.0):
-    # color = (r,g,b)
-    # this should return the scaled blob (nout=1)
-    # proto layer { name: "scaled_img1" bottom: "img1_ds" top: "scaled_img1" type: "Mean" mean_param: { operation: ADD input_scale: 1.0 mean_scale: 1.0 output_scale: 0.00392156862745 value: 76.4783107737 value: 69.4660111681 value: 58.0279756163 } }
-    pass
+    return Layers.Mean(net,
+                       image_blob,
+                       nout=1,
+                       mean_param={
+                         'operation': Params.Mean.ADD,
+                         'input_scale': input_scale,
+                         'mean_scale': mean_scale,
+                         'output_scale': output_scale,
+                         'value': color
+                       })
+
+Network.addMean = addMean
 
 def concat(net, *args):
     '''
@@ -63,35 +146,53 @@ def concat(net, *args):
     @param net Current network
     @returns A new blob (concatenation of all blobs in ARGS)
     '''
-    # this should concat all blobs given in args
-    # and should return the concatenated blob (nout=1)
     return Layers.Concat(net,
                          args,
                          nout=1,
                          concat_param={'concat_dim': 1})
 
-def resample(net, input, width=None, height=None, reference=None, antialias=False):
-#    if reference:
+Network.concat = concat
 
-#    return Layers.Resample(net, input, )
-    # this should return the downsampled blob (nout=1)
-    # if reference=None:
-    # layer {
-    #   name: "down0"
-    #   type: "Resample"
-    #   top: "img1_ds"
-    #   bottom: "img1"
-    #   resample_param {
-    #     width: ..
-    #     height: ..
-    #   }
-    # }
-    # else:
-    # layer {
-    #   name: "down0"
-    #   type: "Resample"
-    #   top: "img1_ds"
-    #   bottom: "img1"
-    #   bottom: reference
-    # }
-    pass
+def resample(net, input, width=None, height=None, reference=None, type='LINEAR', antialias=True):
+    #if type=='LINEAR': type=Params.Resample.LINEAR
+    #elif type=='CUBIC': type=Params.Resample.CUBIC
+
+    if reference is not None:
+        return Layers.Resample(net,
+                               (input, reference),
+                               nout=1,
+                               resample_param={
+                                 'antialias': antialias,
+                                 'type': getattr(Params.Resample, type)
+                               })
+    else:
+        return Layers.Resample(net,
+                               input,
+                               nout=1,
+                               resample_param={
+                                 'width': width,
+                                 'height': height,
+                                 'antialias': antialias,
+                                 'type': getattr(Params.Resample, type)
+                               })
+
+Network.resample = resample
+
+def UniformBernoulli(mean, spread, exp=False, prob=1.0):
+    return {
+      'rand_type': "uniform_bernoulli",
+      'mean': mean,
+      'spread': spread,
+      'exp': exp,
+      'prob': prob,
+    }
+
+def GaussianBernoulli(mean, spread, exp=False, prob=1.0):
+    return {
+      'rand_type': "gaussian_bernoulli",
+      'mean': mean,
+      'spread': spread,
+      'exp': exp,
+      'prob': prob,
+    }
+
