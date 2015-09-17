@@ -52,7 +52,7 @@ def NumberOfEntries(samples):
     raise ValueError('>samples< must be a DataSample or an iterable of DataSample')
 
 
-def DataParams(samples, bin_db_dir, collection_list_dir, collection_list, batch_size, verbose, rand_permute, rand_permute_seed=None):
+def DataParams(samples, bin_db_dir, collection_list_dir, collection_list, batch_size, verbose, rand_permute, rand_permute_seed=None, **kwargs):
   '''
   @brief Create a Protobuf DataParameter message instance for BinaryDB
   @param samples A tuple of DataSample messages
@@ -92,6 +92,7 @@ def BinaryData_OpticalFlow(net, **kwargs):
 
   return Layers.BinaryData(net,
                            nout=NumberOfEntries(samples),
+                           include=(Proto.NetStateRule(phase=kwargs['phase']),),
                            data_param=DataParams(samples, **kwargs))
 
 
@@ -123,6 +124,7 @@ def BinaryData_SceneFlow(net, **kwargs):
 
   return Layers.BinaryData(net,
                            nout=NumberOfEntries(samples),
+                           include=(Proto.NetStateRule(phase=kwargs['phase']),),
                            data_param=DataParams(samples, **kwargs))
 
 def instantiate(net):
@@ -151,6 +153,7 @@ def BinaryData_Disparity(net, **kwargs):
 
   return Layers.BinaryData(net,
                            nout=NumberOfEntries(samples),
+                           include=(Proto.NetStateRule(phase=kwargs['phase']),),
                            data_param=DataParams(samples, **kwargs))
 
 
@@ -172,7 +175,8 @@ def BinaryData(net, setting, **kwargs):
   def default(arg, val):
     if not arg in kwargs:
       kwargs[arg] = val
-      
+  
+  default('phase',             Proto.TRAIN)
   default('batch_size',        1)
   default('verbose',           True)
   default('rand_permute',      True)
