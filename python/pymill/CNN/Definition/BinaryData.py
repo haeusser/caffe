@@ -127,15 +127,15 @@ def BinaryData_SceneFlow(net, **kwargs):
                            include=(Proto.NetStateRule(phase=kwargs['phase']),),
                            data_param=DataParams(samples, **kwargs))
 
-def instantiate(net):
-  net.input, net.gt = BinaryData(
-      setting='OPTICAL_FLOW',
-      collectionList='cliplist_040915_train.txt',
-      batch_size=4,
-      verbose=True,
-      rand_permute=True,
-      rand_permute_seed=77
-    )
+#def instantiate(net):
+  #net.input, net.gt = BinaryData(
+      #setting='OPTICAL_FLOW',
+      #collectionList='cliplist_040915_train.txt',
+      #batch_size=4,
+      #verbose=True,
+      #rand_permute=True,
+      #rand_permute_seed=77
+    #)
 
 
 
