@@ -2,18 +2,23 @@
 
 from CaffeAdapter import *
 
+def readImage(net, filename, num=1):
+    return Layers.ImageData(net, source=filename, batch_size=num)
+
+def readFloat(net, filename, num=1):
+    return Layers.FloatReader(net, file=filename, num=num)
 
 def writeImage(net, blob, folder='output', prefix='image', suffix='', scale=1.0):
-    dummy = Layers.ImgWriter(net, 
-                             blob,
-                             writer_param={
-                               'folder' : folder,
-                               'prefix': prefix,
-                               'suffix': suffix,
-                               'scale' : scale })
+    Layers.ImgWriter(net,
+                     blob,
+                     writer_param={
+                       'folder' : folder,
+                       'prefix': prefix,
+                       'suffix': suffix,
+                       'scale' : scale })
 
-def writeFlow( net, blob, folder='output', prefix='flow',  suffix='', scale=1.0):
-    dummy = Layers.FLOWriter(net, 
+def writeFlow( net, blob, folder='output', prefix='flow', suffix='', scale=1.0):
+    Layers.FLOWriter(net,
                              blob,
                               writer_param={
                                 'folder' : folder,
@@ -21,16 +26,14 @@ def writeFlow( net, blob, folder='output', prefix='flow',  suffix='', scale=1.0)
                                 'suffix': suffix,
                                 'scale' : scale })
 
-def writeFloat(net, blob, folder='output', prefix='',      suffix='', scale=1.0):
-    dummy = Layers.FloatWriter(net, 
-                               blob,
-                               writer_param={
-                                 'folder' : folder,
-                                 'prefix': prefix,
-                                 'suffix': suffix,
-                                 'scale' : scale })
-
-
+def writeFloat(net, blob, folder='output', prefix='', suffix='', scale=1.0):
+    Layers.FloatWriter(net,
+                       blob,
+                       writer_param={
+                         'folder' : folder,
+                         'prefix': prefix,
+                         'suffix': suffix,
+                         'scale' : scale })
 
 def imageToRange01(net, image_blob):
     # this should return the scaled blob (nout=1)
@@ -67,7 +70,10 @@ def concat(net, *args):
                          nout=1,
                          concat_param={'concat_dim': 1})
 
-def downsample(net, input, width=None, height=None, reference=None):
+def resample(net, input, width=None, height=None, reference=None, antialias=False):
+#    if reference:
+
+#    return Layers.Resample(net, input, )
     # this should return the downsampled blob (nout=1)
     # if reference=None:
     # layer {
