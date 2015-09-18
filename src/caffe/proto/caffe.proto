@@ -441,10 +441,10 @@ message ResampleParameter {
         CUBIC = 3;
         AREA = 4;
     };
-    required bool antialias = 4 [ default = false ];
-    required uint32 width  = 1;
-    required uint32 height = 2;
-    optional ResampleType type = 3 [ default = CUBIC ];
+    optional bool antialias = 4 [ default = true ];
+    optional uint32 width  = 1;
+    optional uint32 height = 2;
+    optional ResampleType type = 3 [ default = LINEAR ];
 }
 
 message MeanParameter { // Eddy

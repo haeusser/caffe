@@ -91,33 +91,37 @@ void DownsampleLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   int bottomheight = (bottom)[0]->height();
   int bottomcount = (bottom)[0]->count();
   
-  // From bottom to top
+  if (bottomwidth != topwidth || bottomheight != topheight) { 
+    
+    // From bottom to top
+    
+    int bot_countpernum = bottomwidth * bottomheight * bottomchannels;
+    int bot_numstride = bottomwidth * bottomheight * bottomchannels;
+    
+    float widthScale = (float)(bottomwidth-1) / (float)(topwidth-1); // e.g. 2.0 if bottom pixeldist half compared to top. 
+    float heightScale = (float)(bottomheight-1) / (float)(topheight-1);
+    
+    const int wradius = ceil(widthScale); //One pixel from bottom is incfluenced by +- widthScale or heightScale pixels around that in top 
+    const int hradius = ceil(heightScale);
+    
+    // Loop over: bottomwidth,bottomheight,bottomlayers. (x,y,l)
+    // Accumulate data from top_diff_chanoffsetptr, at
+    //  topx = (x/(bottomwidth-1)) [0.0, 1.0]  * (topwidth-1) = [0.0, (topwidth-1)]
+    //  topy = analogously
+    // in a rectangle around that point width range [-wradius,+wradius][-hradius,+hradius]
+    // and weight each toppixel with "closeness" (=max(0,1-xdist)*max(0,1-ydist)) to [topx,topy] but xdist and ydist scaled by widthScale and heightScale.
+    
+    //LOG(INFO) << "Metrics: Bnum " << bottomnum << " Bchan " << bottomchannels << " Bw " << bottomwidth << " Bh " << bottomheight << " widSc " << widthScale << " hSc " << heightScale << " wrad " << wradius << " hrad " << hradius;
   
-  int bot_countpernum = bottomwidth * bottomheight * bottomchannels;
-  int bot_numstride = bottomwidth * bottomheight * bottomchannels;
   
-  float widthScale = (float)(bottomwidth-1) / (float)(topwidth-1); // e.g. 2.0 if bottom pixeldist half compared to top. 
-  float heightScale = (float)(bottomheight-1) / (float)(topheight-1);
-  
-  const int wradius = ceil(widthScale); //One pixel from bottom is incfluenced by +- widthScale or heightScale pixels around that in top 
-  const int hradius = ceil(heightScale);
-  
-  // Loop over: bottomwidth,bottomheight,bottomlayers. (x,y,l)
-  // Accumulate data from top_diff_chanoffsetptr, at
-  //  topx = (x/(bottomwidth-1)) [0.0, 1.0]  * (topwidth-1) = [0.0, (topwidth-1)]
-  //  topy = analogously
-  // in a rectangle around that point width range [-wradius,+wradius][-hradius,+hradius]
-  // and weight each toppixel with "closeness" (=max(0,1-xdist)*max(0,1-ydist)) to [topx,topy] but xdist and ydist scaled by widthScale and heightScale.
-  
-  //LOG(INFO) << "Metrics: Bnum " << bottomnum << " Bchan " << bottomchannels << " Bw " << bottomwidth << " Bh " << bottomheight << " widSc " << widthScale << " hSc " << heightScale << " wrad " << wradius << " hrad " << hradius;
-  
-            
-  DownsampleFeatures<Dtype><<<CAFFE_GET_BLOCKS(topcount), CAFFE_CUDA_NUM_THREADS>>>(
-          topcount,
-          bottomnum, bottomchannels, bottomwidth, bottomheight, 
-          topheight, topwidth, bot_countpernum, bot_numstride, widthScale, heightScale, wradius, hradius, bottom_data, top_data);
-  
-  CUDA_POST_KERNEL_CHECK;
+//     caffe_gpu_memcpy(topcount * sizeof(Dtype), bottom_data, top_data);      
+    DownsampleFeatures<Dtype><<<CAFFE_GET_BLOCKS(topcount), CAFFE_CUDA_NUM_THREADS>>>(
+            topcount,
+            bottomnum, bottomchannels, bottomwidth, bottomheight, 
+            topheight, topwidth, bot_countpernum, bot_numstride, widthScale, heightScale, wradius, hradius, bottom_data, top_data);
+    
+    CUDA_POST_KERNEL_CHECK;
+  }
   
   //*top_data = *bottom_data;
 }
