@@ -74,6 +74,7 @@ template <typename Dtype>
 void DownsampleLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
 
+
   Dtype* top_data = top[0]->mutable_gpu_data(); // dest
   int topwidth = top[0]->width();
   int topheight = top[0]->height();
