@@ -43,7 +43,7 @@ def NumberOfEntries(samples):
   @param samples A DataSample or an iterable of DataSample
   @returns The number of entries in the first sample
   '''
-  if isinstance(samples, tuple):
+  if isinstance(samples, tuple) or isinstance(samples, list):
     if samples:
       return len(samples[0].ListFields()[0][1])
     else:
@@ -79,26 +79,39 @@ def BinaryData_OpticalFlow(net, **kwargs):
   @brief Setup network inputs for optical flow
   @returns A list of single-blob network INPUT and LABEL
   '''
-  samples = (Sample((Entry('finalImageL',  0),
-                     Entry('finalImageL', +1),
-                     Entry('forwardFlowL',  0))),
-             Sample((Entry('finalImageL',  0),
-                     Entry('finalImageL', -1),
-                     Entry('backwardFlowL', 0))),
-             Sample((Entry('finalImageR',  0),
-                     Entry('finalImageR', +1),
-                     Entry('forwardFlowR',  0))),
-             Sample((Entry('finalImageR',  0),
-                     Entry('finalImageR', -1),
-                     Entry('backwardFlowR', 0))))
+  samples = []
 
-  phase = {}
-  if kwargs['phase'] is not None:
-      phase = (Proto.NetStateRule(phase=kwargs['phase']),)
+  if kwargs['rendertype'] == 'CLEAN' or kwargs['rendertype'] == 'BOTH':
+      samples += (Sample((Entry('cleanImageL',  0),
+                          Entry('cleanImageL', +1),
+                          Entry('forwardFlowL',  0))),
+                  Sample((Entry('cleanImageL',  0),
+                          Entry('cleanImageL', -1),
+                          Entry('backwardFlowL', 0))),
+                  Sample((Entry('cleanImageR',  0),
+                          Entry('cleanImageR', +1),
+                          Entry('forwardFlowR',  0))),
+                  Sample((Entry('cleanImageR',  0),
+                          Entry('cleanImageR', -1),
+                          Entry('backwardFlowR', 0))))
+
+  if kwargs['rendertype'] == 'FINAL' or kwargs['rendertype'] == 'BOTH':
+      samples += (Sample((Entry('finalImageL',  0),
+                          Entry('finalImageL', +1),
+                          Entry('forwardFlowL',  0))),
+                  Sample((Entry('finalImageL',  0),
+                          Entry('finalImageL', -1),
+                          Entry('backwardFlowL', 0))),
+                  Sample((Entry('finalImageR',  0),
+                          Entry('finalImageR', +1),
+                          Entry('forwardFlowR',  0))),
+                  Sample((Entry('finalImageR',  0),
+                          Entry('finalImageR', -1),
+                          Entry('backwardFlowR', 0))))
 
   return Layers.BinaryData(net,
                            nout=NumberOfEntries(samples),
-                           include=phase,
+                           include=(Proto.NetStateRule(phase=kwargs['phase']),),
                            data_param=DataParams(samples, **kwargs))
 
 
@@ -107,26 +120,51 @@ def BinaryData_SceneFlow(net, **kwargs):
   @brief Setup network inputs for scene flow
   @returns A list of single-blob network INPUT and LABEL
   '''
-  samples = (Sample((Entry('finalImageL',  0),
-                     Entry('finalImageR',  0),
-                     Entry('finalImageL', +1),
-                     Entry('finalImageR', +1),
-                     Entry('forwardFlowL',  0),
-                     Entry('forwardFlowR',  0),
-                     Entry('dispL',  0),
-                     Entry('dispL', +1),
-                     Entry('forwardDispChangeL', 0),
-                     Entry('forwardDispChangeR', 0))),
-             Sample((Entry('finalImageL',  0),
-                     Entry('finalImageR',  0),
-                     Entry('finalImageL', -1),
-                     Entry('finalImageR', -1),
-                     Entry('backwardFlowL',  0),
-                     Entry('backwardFlowR',  0),
-                     Entry('dispL',  0),
-                     Entry('dispL', -1),
-                     Entry('backwardDispChangeL', 0),
-                     Entry('backwardDispChangeR', 0))))
+  samples = []
+
+  if kwargs['rendertype'] == 'CLEAN' or kwargs['rendertype'] == 'BOTH':
+      samples += (Sample((Entry('cleanImageL',  0),
+                          Entry('cleanImageR',  0),
+                          Entry('cleanImageL', +1),
+                          Entry('cleanImageR', +1),
+                          Entry('forwardFlowL',  0),
+                          Entry('forwardFlowR',  0),
+                          Entry('dispL',  0),
+                          Entry('dispL', +1),
+                          Entry('forwardDispChangeL', 0),
+                          Entry('forwardDispChangeR', 0))),
+                  Sample((Entry('cleanImageL',  0),
+                          Entry('cleanImageR',  0),
+                          Entry('cleanImageL', -1),
+                          Entry('cleanImageR', -1),
+                          Entry('backwardFlowL',  0),
+                          Entry('backwardFlowR',  0),
+                          Entry('dispL',  0),
+                          Entry('dispL', -1),
+                          Entry('backwardDispChangeL', 0),
+                          Entry('backwardDispChangeR', 0))))
+
+  if kwargs['rendertype'] == 'FINAL' or kwargs['rendertype'] == 'BOTH':
+      samples += (Sample((Entry('finalImageL',  0),
+                          Entry('finalImageR',  0),
+                          Entry('finalImageL', +1),
+                          Entry('finalImageR', +1),
+                          Entry('forwardFlowL',  0),
+                          Entry('forwardFlowR',  0),
+                          Entry('dispL',  0),
+                          Entry('dispL', +1),
+                          Entry('forwardDispChangeL', 0),
+                          Entry('forwardDispChangeR', 0))),
+                  Sample((Entry('finalImageL',  0),
+                          Entry('finalImageR',  0),
+                          Entry('finalImageL', -1),
+                          Entry('finalImageR', -1),
+                          Entry('backwardFlowL',  0),
+                          Entry('backwardFlowR',  0),
+                          Entry('dispL',  0),
+                          Entry('dispL', -1),
+                          Entry('backwardDispChangeL', 0),
+                          Entry('backwardDispChangeR', 0))))
 
   return Layers.BinaryData(net,
                            nout=NumberOfEntries(samples),
@@ -150,12 +188,24 @@ def BinaryData_Disparity(net, **kwargs):
   @brief Setup network inputs for disparity
   @returns A two-element list of single-blob network INPUT and LABEL
   '''
-  samples = (Sample((Entry('finalImageL',  0),
-                     Entry('finalImageR',  0),
-                     Entry('dispL',  0))),
-             Sample((Entry('finalImageR',  0),
-                     Entry('finalImageL',  0),
-                     Entry('dispR',  0))))
+
+  samples = []
+
+  if kwargs['rendertype'] == 'CLEAN' or kwargs['rendertype'] == 'BOTH':
+      samples += (Sample((Entry('cleanImageL',  0),
+                          Entry('cleanImageR',  0),
+                          Entry('dispL',  0))),
+                  Sample((Entry('cleanImageR',  0),
+                          Entry('cleanImageL',  0),
+                          Entry('dispR',  0))))
+
+  if kwargs['rendertype'] == 'FINAL' or kwargs['rendertype'] == 'BOTH':
+      samples += (Sample((Entry('finalImageL',  0),
+                          Entry('finalImageR',  0),
+                          Entry('dispL',  0))),
+                  Sample((Entry('finalImageR',  0),
+                          Entry('finalImageL',  0),
+                          Entry('dispR',  0))))
 
   return Layers.BinaryData(net,
                            nout=NumberOfEntries(samples),
@@ -182,6 +232,7 @@ def BinaryData(net, setting, **kwargs):
     if not arg in kwargs:
       kwargs[arg] = val
   
+  default('rendertype',        'CLEAN')
   default('phase',             'TEST')
   default('batch_size',        1)
   default('verbose',           True)
