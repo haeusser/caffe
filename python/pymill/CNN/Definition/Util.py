@@ -23,7 +23,7 @@ def readFloat(net, filename, num=1):
 
 Network.readFloat = readFloat
 
-def writeImage(net, blob, folder='output', prefix='image', suffix='', scale=1.0, filename=None):
+def writeImage(net, blob, folder='output', prefix='', suffix='', scale=1.0, filename=None):
     if filename is not None:
         Layers.ImgWriter(net,
                          blob,
@@ -41,7 +41,7 @@ def writeImage(net, blob, folder='output', prefix='image', suffix='', scale=1.0,
 
 Network.writeImage = writeImage
 
-def writeFlow( net, blob, folder='output', prefix='flow', suffix='', scale=1.0, filename=None):
+def writeFlow( net, blob, folder='output', prefix='', suffix='', scale=1.0, filename=None):
     if filename is not None:
         Layers.FLOWriter(net,
                          blob,
