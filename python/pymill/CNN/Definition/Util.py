@@ -3,6 +3,17 @@
 from CaffeAdapter import *
 import pymill.Toolbox as tb
 
+def sliceIn2(net, input_blob, slice_point, axis=1):
+    return Layers.Slice(net,
+                        input_blob,
+                        nout=2,
+                        slice_param={
+                          'slice_point': (slice_point,),
+                          'axis': axis
+                        })
+
+Network.slice = sliceIn2
+
 def readImage(net, filename, num=1):
     return Layers.ImgReader(net,
                             nout=1,

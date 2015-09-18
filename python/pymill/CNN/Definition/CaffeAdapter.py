@@ -207,8 +207,8 @@ class Network(object):
     def newLayerName(self, type):
         i = 1
         if type in self._counts:
-            i = self._counts[type]
             self._counts[type] += 1
+            i = self._counts[type]
         else:
             self._counts[type] = i
 

@@ -45,6 +45,11 @@ void DownsampleLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   
   top[0]->Reshape(num_, channels_, height_, width_);
   CHECK_EQ(count_, top[0]->count());
+  
+  if(bottom[0]->width() == width_ && bottom[0]->height() == height_) {   
+    top[0]->ShareData(*bottom[0]);
+    top[0]->ShareDiff(*bottom[0]); 
+  }
 }
 
 template <typename Dtype>
