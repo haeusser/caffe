@@ -20,11 +20,12 @@ def PhilData_OpticalFlow(net, **kwargs):
                                 Proto.DataParameter.BOOL1),
                 'slice_point': (3, 6, 8),
                 'verbose'    : kwargs['verbose'],
-                'preselection_file'  : kwargs['preselection_file'],
-                'preselection_label' : kwargs['preselection_label'],
                 'rand_permute'       : kwargs['rand_permute'],
                 'rand_permute_seed'  : kwargs['rand_permute_seed']}
-  
+
+  if 'preselection_file' in kwargs: data_param['preselection_file'] = kwargs['preselection_file']
+  if 'preselection_label' in kwargs: data_param['preselection_label'] = kwargs['preselection_label']
+
   ## Always returns (img_from, img_to, flow, occlusion)
   return Layers.PhilData(net, nout=4,
                          include=(Proto.NetStateRule(phase=kwargs['phase']),),
@@ -39,27 +40,22 @@ def PhilData(net, **kwargs):
 
   if 'source' not in kwargs: 
     raise Exception('PhilData requires parameter >source<')
-  if 'preselection_file' not in kwargs: 
-    raise Exception('PhilData requires parameter >preselection_file<')
-  
-  if not os.path.isfile(kwargs['source']): 
+
+  if not os.path.exists(kwargs['source']):
     raise Exception('PhilData: >source< %s does not exist'
                     %(kwargs['source']))
-  if not os.path.isfile(kwargs['preselection_file']): 
-    raise Exception('PhilData: >preselection_file< %s does not exist'
-                    %(kwargs['preselection_file']))
-
 
   def default(arg, val):
     if not arg in kwargs:
       kwargs[arg] = val
   
-  default('phase',              Proto.TRAIN)
+  default('phase',              'TRAIN')
   default('batch_size',         1)
   default('verbose',            True)
   default('rand_permute',       True)
   default('rand_permute_seed',  77)
-  default('preselection_label', 1)
-    
+
+  if kwargs['phase'] == 'TEST': kwargs['phase'] = Proto.TEST
+  if kwargs['phase'] == 'TRAIN': kwargs['phase'] = Proto.TRAIN
 
   return PhilData_OpticalFlow(net, **kwargs)
