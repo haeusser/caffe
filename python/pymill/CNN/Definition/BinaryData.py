@@ -114,6 +114,28 @@ def BinaryData_OpticalFlow(net, **kwargs):
                            include=(Proto.NetStateRule(phase=kwargs['phase']),),
                            data_param=DataParams(samples, **kwargs))
 
+def BinaryData_OpticalFlow_Single(net, **kwargs):
+  '''
+  @brief Setup network inputs for optical flow
+  @returns A list of single-blob network INPUT and LABEL
+  '''
+  samples = []
+
+  if kwargs['rendertype'] == 'CLEAN' or kwargs['rendertype'] == 'BOTH':
+      samples += (Sample((Entry('cleanImageL',  0),
+                          Entry('cleanImageL', +1),
+                          Entry('forwardFlowL',  0))),)
+
+  if kwargs['rendertype'] == 'FINAL' or kwargs['rendertype'] == 'BOTH':
+      samples += (Sample((Entry('finalImageL',  0),
+                          Entry('finalImageL', +1),
+                          Entry('forwardFlowL',  0))),)
+
+  return Layers.BinaryData(net,
+                           nout=NumberOfEntries(samples),
+                           include=(Proto.NetStateRule(phase=kwargs['phase']),),
+                           data_param=DataParams(samples, **kwargs))
+
 
 def BinaryData_SceneFlow(net, **kwargs):
   '''
@@ -213,15 +235,41 @@ def BinaryData_Disparity(net, **kwargs):
                            data_param=DataParams(samples, **kwargs))
 
 
+def BinaryData_Disparity_Single(net, **kwargs):
+  '''
+  @brief Setup network inputs for disparity
+  @returns A two-element list of single-blob network INPUT and LABEL
+  '''
+
+  samples = []
+
+  if kwargs['rendertype'] == 'CLEAN' or kwargs['rendertype'] == 'BOTH':
+      samples += (Sample((Entry('cleanImageL',  0),
+                          Entry('cleanImageR',  0),
+                          Entry('dispL',  0))),
+
+  if kwargs['rendertype'] == 'FINAL' or kwargs['rendertype'] == 'BOTH':
+      samples += (Sample((Entry('finalImageL',  0),
+                          Entry('finalImageR',  0),
+                          Entry('dispL',  0))),
+
+  return Layers.BinaryData(net,
+                           nout=NumberOfEntries(samples),
+                           include=(Proto.NetStateRule(phase=kwargs['phase']),),
+                           data_param=DataParams(samples, **kwargs))
+
+
 def BinaryData(net, setting, **kwargs):
   '''
   @brief Setup network inputs by instantiating a BinaryDataLayer
   @returns A list of single-blob network INPUT and LABEL
   '''
   BinaryDataConstructors = {
-    'OPTICAL_FLOW': BinaryData_OpticalFlow,
-    'SCENE_FLOW'  : BinaryData_SceneFlow,
-    'DISPARITY'   : BinaryData_Disparity,
+    'OPTICAL_FLOW'          : BinaryData_OpticalFlow,
+    'OPTICAL_FLOW_SINGLE'   : BinaryData_OpticalFlow_Single,
+    'SCENE_FLOW'            : BinaryData_SceneFlow,
+    'DISPARITY'             : BinaryData_Disparity,
+    'DISPARITY_SINGLE'      : BinaryData_Disparity_Single,
   }
 
   if 'collection_list' not in kwargs: 

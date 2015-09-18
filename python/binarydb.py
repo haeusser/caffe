@@ -175,6 +175,9 @@ class BinaryDB:
                         if entries_dimensions[i] != self.output_entries_dimensions[i]:
                             self.throw_error('Dimensions of sample %d not consistent over clips (because of entry %d)' % (sampidx, i))
 
+        print 'Number of samples: %d' % len(self.all_samples)
+        sys.stdout.flush()
+
 
     def getInfos(self):
         if self.num_entries_per_sample != len(self.output_entries_dimensions):

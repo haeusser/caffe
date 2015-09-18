@@ -234,6 +234,7 @@ class Network(object):
 
         for blob in self._blobs:
             if blob.used() and blob.inputRefCount() == 0 and not blob.output():
+                sys.stderr.write('silencing blob %s\n' % blob.name())
                 Layers.Silence(self, blob)
 
         protoLayers = []

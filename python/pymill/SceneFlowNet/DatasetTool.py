@@ -79,17 +79,14 @@ if args.command == 'create-bindb':
 
 
 elif args.command == 'create-histograms':
-    rendertype = 'clean'
+    selectedCollections = getSelectedCollections()
 
-    collections = getCollections(args.resolution)
-
-    print '%s:' % resolution
-    for name, collection in collections.iteritems():
+    for name, collection in selectedCollections.iteritems():
         print '%s: %s' % (name, collection)
 
         ds.computeHistograms(
-            resolution=resolution,
-            rendertype=rendertype,
+            resolution='960x540',
+            subpath='.',
             collectionName=name,
             clips=collection,
             skipIfExists=args.skip_if_exists
