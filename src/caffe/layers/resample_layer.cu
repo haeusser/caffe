@@ -37,7 +37,7 @@ static __device__ __forceinline__ float triangleCoeff(float x)
 #define FILTER_TRIANGLE 2
 
 template <typename Dtype>
-__global__ void BicubicInterpolationKernel(
+__global__ void InterpolationKernel(
         const int nthreads,
         const Dtype* in_ptr,
         const int in_width,
@@ -69,6 +69,8 @@ __global__ void BicubicInterpolationKernel(
         float ay = 1.0 / (antialias ? fy : 1.0);
         int rx = (fx < 1.0) ? 2 : fx/ax;
         int ry = (fy < 1.0) ? 2 : fy/ay;
+        
+        printf("rx=%d , ry=%d \n", rx, ry);
 
         for(int y=y_in_round-rx; y<=y_in_round+rx; y++)
             for(int x=x_in_round-ry; x<=x_in_round+ry; x++)
@@ -96,6 +98,8 @@ template <typename Dtype>
 void ResampleLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
 
+  LOG(INFO) << "Entering resample Forward";
+  
   Dtype* top_data = top[0]->mutable_gpu_data(); // dest
   int topwidth = top[0]->width();
   int topheight = top[0]->height();
@@ -131,7 +135,7 @@ void ResampleLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   {
       for(int i=0; i<bottomchannels; i++)
       {
-            BicubicInterpolationKernel<Dtype><<<CAFFE_GET_BLOCKS(topchannelsize), CAFFE_CUDA_NUM_THREADS>>>(
+            InterpolationKernel<Dtype><<<CAFFE_GET_BLOCKS(topchannelsize), CAFFE_CUDA_NUM_THREADS>>>(
                 topchannelsize,
                 (Dtype*)bottom_data,
                 bottomwidth,
@@ -146,6 +150,8 @@ void ResampleLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
             bottom_data += botchannelsize;
       }
   }
+  
+  LOG(INFO) << "Leaving resample Forward";
 }
 
 template <typename Dtype>
@@ -153,6 +159,7 @@ void ResampleLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
   LOG(FATAL) << "ResampleLayer cannot do backward.";
 }
+
 
 INSTANTIATE_LAYER_GPU_FUNCS(ResampleLayer);
 

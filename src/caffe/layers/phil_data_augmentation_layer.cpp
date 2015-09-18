@@ -38,7 +38,7 @@ void PhilDataAugmentationLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bo
   // TODO This won't work when applying a net to images of size different from what the net was trained on
   aug_ = this->layer_param_.augmentation_param();
   this->layer_param_.set_reshape_every_iter(false);
-  LOG(WARNING) << "PhilDataAugmentationLayer only runs Reshape only on setup";
+  LOG(WARNING) << "PhilDataAugmentationLayer only runs Reshape on setup";
   if (this->blobs_.size() > 0)
     LOG(INFO) << "Skipping data mean blob initialization";
   else {

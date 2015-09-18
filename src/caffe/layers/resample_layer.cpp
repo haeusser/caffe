@@ -23,6 +23,9 @@ template <typename Dtype>
 void ResampleLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
  
+  this->layer_param_.set_reshape_every_iter(false);
+  LOG(WARNING) << "ResampleLayer only runs Reshape on setup";
+  
   CHECK_GE(bottom.size(), 1);
   CHECK_LE(bottom.size(), 2);
   CHECK_EQ(top.size(), 1);
