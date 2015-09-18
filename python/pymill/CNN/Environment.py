@@ -262,8 +262,6 @@ class Environment:
         for file in self._logFiles:
             if file.iteration() > startIter: return True
 
-        if startIter == -1 and os.path.isfile(self._logFile): return True
-
         return False
 
     def getModelFile(self, iter=-1):

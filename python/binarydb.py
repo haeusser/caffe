@@ -13,7 +13,7 @@ class BinaryDB:
         # Get the LayerParameters
         param = cpb.LayerParameter()
         param.ParseFromString(param_str)
-        print(param)
+        #print(param)
 
         self.data_param = param.data_param
 
@@ -106,25 +106,25 @@ class BinaryDB:
 
             bindb_index = cpb.BinaryDB()
             text_format.Merge(index_str, bindb_index)
-            print(bindb_index)
+            #print(bindb_index)
 
             slice_points = [int(s) for s in bindb_index.slice_before]
-            print("Slice points:")
-            print(slice_points)
+            #print("Slice points:")
+            #print(slice_points)
 
             for sampidx, sample in enumerate(self.data_param.sample):
                 entry_lookup = {}
-                print("== Considering sample %d" % sampidx)
+                #print("== Considering sample %d" % sampidx)
                 # Search all available BIN files mentioned in this index
                 # for the needed entries and store where to find what
                 for binfile in bindb_index.file:
-                    print("Scanning entry_formats for binfile %s" % binfile.filename)
+                    #print("Scanning entry_formats for binfile %s" % binfile.filename)
                     for entry_format_idx, entry_format in enumerate(binfile.content.entry_format):
                         if entry_format.name in self.sample_props[sampidx].needed_entries:
                             # Create lookup entry
                             if entry_format.name in entry_lookup:
                                 self.throw_error('Entry %s defined multiple times in %s' % (entry_format.name, index_file))
-                            print(" Adding entry_format %s" % entry_format.name)
+                            #print(" Adding entry_format %s" % entry_format.name)
                             entry_lookup[entry_format.name] = {
                                 'filename': binfile.filename,
                                 'encoding': entry_format.data_encoding,
@@ -136,8 +136,8 @@ class BinaryDB:
                 num_total = bindb_index.num
                 start_off = max(-self.sample_props[sampidx].min_offset, self.min_margin)
                 end_off = min(-self.sample_props[sampidx].max_offset, -self.min_margin)
-                print("Num_total: %d" % num_total)
-                print("Start/End off: %d/%d" % (start_off, end_off))
+                #print("Num_total: %d" % num_total)
+                #print("Start/End off: %d/%d" % (start_off, end_off))
 
                 for index in range(start_off, num_total+end_off):
                     for slice_point in slice_points:
@@ -177,8 +177,6 @@ class BinaryDB:
 
 
     def getInfos(self):
-        print("Called getInfos")
-
         if self.num_entries_per_sample != len(self.output_entries_dimensions):
             self.throw_error('Num of entries per sample is not consistent')
 
