@@ -89,11 +89,11 @@ class MillSolver(object):
             self.solver.net.copy_from(weights)
 
         self.sync = None
-
         self.viz_counter = 0
         self.test_counter = 0
-
         self.viz_thread = None
+        self.test_input = None
+        self.test_out_blobs = None
 
     def run_solver(self):
         """
@@ -106,8 +106,7 @@ class MillSolver(object):
             self.sync.set_callback_iteration(self.log_per)
             self.sync.run(self.gpus)
 
-        else:
-            # FALLBACK: classical single GPU training
+        else:  # fallback: classical single GPU training
             for it in range(int(ceil(self.iterations / self.log_per))):
                 self.solver.step(self.log_per)  # run log_per forward/backward passes
                 self.stats_and_log()
@@ -156,6 +155,12 @@ class MillSolver(object):
                     # logprint("==   {} = {}".format(outp, float(solver.test_nets[tn].blobs[outp].data)))
             self.write_out_log(iteration - self.log_per, lr_log, test_loss_log, lr_log, lr_log, phase="TEST")
 
+            if self.test_input:
+                for input in self.test_input:
+                    self.solver.net.blobs[input] = self.test_input[input]
+                test_output = self.solver.net.forward(blobs=self.test_out_blobs)
+                self.write_out_viz(iteration, test_output, test=True)
+
         self.viz_counter += 1
         self.test_counter += 1
 
@@ -185,21 +190,28 @@ class MillSolver(object):
 
         return [data_percentiles, diff_percentiles]
 
-    def write_out_viz(self, iteration, blobs):
+    def write_out_viz(self, iteration, blobs, test=False):
         con = None
+        suffix = "test_" if test else ""
+        table_name = "{}_{}viz".format(self.log_db_prefix, suffix)
         try:
-            con, cur = self.get_db_connection(viz=True, timeout=5*60)
+            con, cur = self.get_db_connection(viz=True, timeout=5 * 60)
             cur.execute(
-                "create table if not exists {}_viz(ID INT PRIMARY KEY, name TEXT, blob BLOB)".format(
-                    self.log_db_prefix))
+                "create table if not exists {} (ID INT PRIMARY KEY, name TEXT, blob BLOB)".format(
+                    table_name))
             cur.execute('begin')
-            cmd = '''INSERT OR REPLACE INTO {}_viz VALUES(?, ?, ?);'''.format(self.log_db_prefix)
-            for idx, blob in enumerate(blobs):
-                cur.execute(cmd, [idx, blob, lite.Binary(blobs[blob].data)])
+            cmd = '''INSERT OR REPLACE INTO {} VALUES(?, ?, ?);'''.format(table_name)
+            if test:
+                cur.execute(cmd,
+                            [iteration, "test-output-blobs", lite.Binary(json.dumps(blobs, default=self.json_default))])
                 con.commit()
-            self.logprint(
-                "logged {} blobs for iteration {} to {}/{}_viz.db".format(len(blobs), iteration, self.log_dir,
-                                                                          self.log_db_prefix))
+            else:
+                for idx, blob in enumerate(blobs):
+                    cur.execute(cmd, [idx, blob, lite.Binary(blobs[blob].data)])
+                    con.commit()
+                self.logprint(
+                    "logged {} blobs for iteration {} to {}/{}_viz.db/{}".format(len(blobs), iteration, self.log_dir,
+                                                                                 self.log_db_prefix, table_name))
 
         except lite.Error, e:
             raise NameError('Error %s:' % e.args[0])
@@ -294,8 +306,39 @@ class MillSolver(object):
     def get_db_connection(self, viz=False, timeout=10):
         suffix = "_viz" if viz else ""
         try:
-            con = lite.connect(os.path.join(self.log_dir, "{}{}.db".format(self.log_db_prefix, suffix)), timeout=timeout)
+            con = lite.connect(os.path.join(self.log_dir, "{}{}.db".format(self.log_db_prefix, suffix)),
+                               timeout=timeout)
             return con, con.cursor()
 
         except lite.Error, e:
             raise NameError('Error %s:' % e.args[0])
+
+    def set_test_input(self, input):
+        """
+        set a test input to be forwarded through the net every so many iterations
+        :param input: dict where keys are input blob names and values are blob ndarrays.
+        :return:
+        """
+        assert type(input) == dict or type(input) == type(self.solver.net.blobs), "Input must be of type (ordered) dict"
+        assert type(input[input.keys()[0]]) == type(
+            self.solver.net.blobs[self.solver.net.blobs.keys()[0]]), "Values must be of type caffe._caffe.Blob"
+        self.test_input = input
+
+    def set_test_outputs(self, blobs):
+        """
+        set the names of the blobs that should be captured for the test blob forward pass
+        :param blobs: list of blob names
+        :return:
+        """
+        assert type(blobs) == list, "Output test blobs must be provided as a list like ['conv1', 'ip2']."
+        self.test_out_blobs = blobs
+
+    def json_default(self, obj):
+        """
+        :param obj: makes a list of numpy arrays --> simpler JSON serialization
+        :return: the object as a list
+        """
+        try:
+            return obj.tolist()
+        except:
+            raise TypeError('Not serializable')
