@@ -108,9 +108,10 @@ class PythonBackend(BinaryBackend):
 
 class Environment:
     class Parameters:
-        def __init__(self):
+        def __init__(self, env):
             self._lines = ''
             self._gpu_arch = 'any'
+            self._env = env
 
         def read(self, filename):
             self._lines = open(filename).readlines()
@@ -123,6 +124,8 @@ class Environment:
                 value = value.strip()
                 if key == 'gpu-arch':
                     self._gpu_arch = value
+                if key == 'name':
+                    self._env._name = value
                 else:
                     raise Exception('invalid entry in params.txt: %s' % value)
 
@@ -215,7 +218,7 @@ class Environment:
 
         self._logFile = self._path + '/training/log.txt'
 
-        self._params = Environment.Parameters()
+        self._params = Environment.Parameters(self)
         if os.path.isfile(self._path + '/params.txt'):
             self._params.read(self._path + '/params.txt')
 

@@ -29,6 +29,8 @@ from Environment import PythonBackend
 from Environment import BinaryBackend
 import time
 
+# make files writeable for group lmb_hackathon !
+os.umask(002)
  
 def runOnCluster(env, node, gpus, background,insertLocal=True):
     gpuArch = env.params().gpuArch()
@@ -44,7 +46,7 @@ def runOnCluster(env, node, gpus, background,insertLocal=True):
     if args.background: qsubCommandFile = '%s/%s-%s.sh' % (env.jobDir(), env.name(), time.strftime('%d.%m.%Y-%H:%M:%S'))
     else:               qsubCommandFile = '%s/.qsub_command' % home
 
-    open(qsubCommandFile,'w').write('#!/bin/bash\necho -n "running on "; hostname\ncd "%s"\n%s\n' % (env.path(), cmd))
+    open(qsubCommandFile,'w').write('#!/bin/bash\necho -n -e "\e[30;42m --- running on" `hostname` "--- "\necho -e "\e[0m"\ncd "%s"\n%s\n' % (env.path(), cmd))
     tb.system('chmod a+x "%s"' % qsubCommandFile)
 
     qsub = 'qsub -l nodes=%s:gpus=%d%s,walltime=240:00:00 %s -q gpujob -d %s %s -N %s' % (

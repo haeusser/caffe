@@ -94,7 +94,7 @@ class Log:
             else:
                 break
 
-    def plot(self, name, select=''):
+    def plot(self, networkName, select=''):
         def plotList(list, style):
             x = np.zeros((len(list), 1))
             y = np.zeros((len(list), 1))
@@ -163,6 +163,8 @@ class Log:
                     value = match.group(2)
                     appendMeasure('test_'+name, iter, value)
 
+        print measureList
+
         tmpMeasureList = measureList
         measureList = []
 
@@ -182,7 +184,7 @@ class Log:
         fig.set_size_inches(8, 6, forward=True)
 
         plt.grid(color='0.65')
-        plt.title("Losses and accuracy over iterations for %s" % name)
+        plt.title("Losses and accuracy over iterations for %s" % networkName)
 
         legend = []
 
@@ -193,7 +195,7 @@ class Log:
 
         for name, (label, style) in Config.plotMeasureStyles.iteritems():
             if name in measureList:
-                plotMeasure(name, label, style)
+                plotMeasure(name, name, style)
 
         styles = tb.styleList()
         for name in measureList[:]:

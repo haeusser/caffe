@@ -115,9 +115,13 @@ def computeHistograms(resolution, subpath, collectionName, clips, skipIfExists=F
     dataPath = '/misc/lmbraid17/sceneflownet/common/data/4_bin-db'
     savePath = '%s/hists/%s/%s' % (dataPath, resolution, subpath)
     saveFile = '%s/%s.npz' % (savePath, collectionName)
-    os.system('mkdir -p %s' % savePath)
+
+    completePath = os.path.dirname(saveFile)
+    os.system('mkdir -p %s' % completePath)
 
     print 'savePath', savePath
+    print 'completePath', completePath
+    print 'saveFile', saveFile
 
     histFlow = np.zeros(numBins)
     histDisp = np.zeros(numBins)
