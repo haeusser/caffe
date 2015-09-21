@@ -124,7 +124,7 @@ class Environment:
                 value = value.strip()
                 if key == 'gpu-arch':
                     self._gpu_arch = value
-                if key == 'name':
+                elif key == 'name':
                     self._env._name = value
                 else:
                     raise Exception('invalid entry in params.txt: %s' % value)
