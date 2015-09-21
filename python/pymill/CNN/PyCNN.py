@@ -22,7 +22,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pymill import Toolbox as tb
 from pymill import CNN as CNN
-from MillSolver import MillSolver as ms
 import re
 from Environment import Environment
 from Environment import PythonBackend
@@ -81,7 +80,7 @@ parser = tb.Parser(
         "note:\n"
         "The operations train, test and continue will be executed on the\n"
         "cluster if --local is not specified. run is executed locally unless\n"
-        "--cluster is specified. Cluster jobs are interactive unlees\n"
+        "--cluster is specified. Cluster jobs are interactive unless\n"
         "you pass --background.\n"
         "\n"
         "note:\n"
@@ -92,6 +91,7 @@ parser = tb.Parser(
 parser.add_argument('--verbose',       help='verbose', action='store_true')
 parser.add_argument('--path',          help='model path (default=.)', default='.')
 parser.add_argument('--unattended',    help='always assume Y as answer (dangerous)', action='store_true')
+parser.add_argument('--yes',           help='same as unattended', action='store_true')
 parser.add_argument('--backend',       help='backend to use (default=binary)', choices=('binary','python'))
 parser.add_argument('--local',         help='run on local machine', action='store_true')
 parser.add_argument('--background',    help='run on cluster in background', action='store_true')
@@ -152,7 +152,7 @@ sub_parser.add_argument('--copy-snapshot', help='last snapshot', action='store_t
 sub_parser.add_argument('--iter', help='iteration of snapshot (default=last)', default=-1, type=int)
 
 # autocomplete very slow for some reason
-#argcomplete.autocomplete(parser)
+argcomplete.autocomplete(parser)
 
 if len(sys.argv) == 1:
     parser.print_help()
@@ -160,6 +160,8 @@ if len(sys.argv) == 1:
 
 args = parser.parse_args()
 tb.verbose = args.verbose
+
+args.unattended = args.yes
 
 if args.background: args.unattended = True
 

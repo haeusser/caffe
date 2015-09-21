@@ -7,7 +7,6 @@ import re
 import uuid
 from scipy import misc
 from fnmatch import fnmatch
-import cv2
 import subprocess
 import argparse
 import argcomplete
@@ -184,6 +183,7 @@ def largestNumber(files):
     return result
 
 def downsampleImage(image, f):
+    import cv2
     return cv2.resize(image, (image.shape[1] / f, image.shape[0] / f), interpolation=cv2.INTER_CUBIC)
 
 class PlotStyle:

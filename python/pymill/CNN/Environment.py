@@ -3,7 +3,6 @@
 import os
 import matplotlib.pyplot as plt
 from pymill import Toolbox as tb
-from pymill.CNN import MillSolver as ms
 import re
 from Files import iterFiles
 from Files import logFiles
@@ -86,16 +85,19 @@ class PythonBackend(BinaryBackend):
     def train(self, solverFilename, logFile, weights=None):
         # hackaround: this backend doesn't log to one file but to a db in a subdirectory
 
+        from pymill.CNN import MillSolver as ms
         self.solver = ms.MillSolver(solver_def=solverFilename, weights=weights, gpus=[int(x) for x in self._gpus.split(',')])
         self.solver.run_solver()
 
     def resume(self, solverFilename, solverstateFilename, logFile):
         # hackaround: this backend doesn't log to one file but to a db in a subdirectory
         log_dir = os.path.abspath(logFile)
+        from pymill.CNN import MillSolver as ms
         self.solver = ms.MillSolver(solver_def=solverFilename, solver_state=solverstateFilename, gpus=[int(x) for x in self._gpus.split(',')])
         self.solver.run_solver()
 
     def run(self, solverFilename):
+        from pymill.CNN import MillSolver as ms
         self.solver = ms.MillSolver(solverFilename=solverFilename, gpus=[int(x) for x in self._gpus.split(',')])
         self.solver.run_solver()
 

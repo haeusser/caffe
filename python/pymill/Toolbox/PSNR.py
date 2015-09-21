@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 import numpy as np
-import cv2
 import math
 from scipy import misc
 
@@ -92,6 +91,8 @@ class PSNRList:
         return str(self)
 
 def computeBasePSNRs(ent,downsampledExt='.caffe.downsampled.ppm',downsampledFilename=None, crop=4):
+    import cv2
+
     img = misc.imread(ent, flatten=False)
     width = img.shape[1]
     height = img.shape[0]
