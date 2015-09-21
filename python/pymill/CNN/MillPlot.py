@@ -26,6 +26,7 @@ class MillPlot(object):
         self.weight_percentiles_keys = None
         self.percentile_labels = ['0', '16', '50', '84', '100']
         self.num_percentiles = len(self.percentile_labels)
+        self.ylim_multiplier = 1.1
 
     def fetch_range(self, it_min=0, it_max=None):
         """
@@ -212,12 +213,13 @@ class MillPlot(object):
             axes[row, col].grid()
             axes[row, col].fill_between(iterations, blob_percentiles_data[:, 0], blob_percentiles_data[:, 4],
                                         color='0.75',
-                                        alpha=0.3)
+                                        alpha=0.1)
             axes[row, col].fill_between(iterations, blob_percentiles_data[:, 1], blob_percentiles_data[:, 3],
                                         color='0.75',
                                         alpha=0.3)
             descr = 'data' if col == 0 else 'diff'
             axes[row, col].set_title(layer + '-' + suffix + '-' + descr, fontsize=10)
             axes[row, col].locator_params(tight=True, axis='y', nbins=5)
-            if not row == len(self.blob_percentiles_keys) + len(self.weight_percentiles_keys):
-                axes[row, col].set_xticklabels()
+            axes[row, col].set_ylim([x*self.ylim_multiplier for x in axes[row, col].get_ylim()])
+            if 0 < row < len(self.blob_percentiles_keys) + len(self.weight_percentiles_keys) - 1:
+                axes[row, col].set_xticklabels([])
