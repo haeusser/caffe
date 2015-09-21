@@ -107,7 +107,7 @@ class TestMS(unittest.TestCase):
         solver = ms.MillSolver(solver_def='mnist/solver.prototxt')
         solver.solver.step(1)
         test_blob = dict({'data': solver.solver.net.blobs['data']})
-        test_outputs = ['ip2']
+        test_outputs = ['conv1', 'ip2']
         solver.set_test_input(test_blob)
         solver.set_test_outputs(test_outputs)
         solver.run_solver()
