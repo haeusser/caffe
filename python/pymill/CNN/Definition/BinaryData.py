@@ -246,12 +246,12 @@ def BinaryData_Disparity_Single(net, **kwargs):
   if kwargs['rendertype'] == 'CLEAN' or kwargs['rendertype'] == 'BOTH':
       samples += (Sample((Entry('cleanImageL',  0),
                           Entry('cleanImageR',  0),
-                          Entry('dispL',  0))),
+                          Entry('dispL',  0))),)
 
   if kwargs['rendertype'] == 'FINAL' or kwargs['rendertype'] == 'BOTH':
       samples += (Sample((Entry('finalImageL',  0),
                           Entry('finalImageR',  0),
-                          Entry('dispL',  0))),
+                          Entry('dispL',  0))),)
 
   return Layers.BinaryData(net,
                            nout=NumberOfEntries(samples),
