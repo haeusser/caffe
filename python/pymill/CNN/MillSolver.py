@@ -94,6 +94,7 @@ class MillSolver(object):
         self.viz_thread = None
         self.test_input = None
         self.test_out_blobs = None
+        self.test_start_layer = None
 
     def run_solver(self):
         """
@@ -158,7 +159,7 @@ class MillSolver(object):
             if self.test_input:
                 for input in self.test_input:
                     self.solver.net.blobs[input] = self.test_input[input]
-                test_output = self.solver.net.forward(blobs=self.test_out_blobs)
+                test_output = self.solver.net.forward(start=self.test_start_layer, blobs=self.test_out_blobs)
                 self.write_out_viz(iteration, test_output, test=True)
 
         self.viz_counter += 1
@@ -313,16 +314,21 @@ class MillSolver(object):
         except lite.Error, e:
             raise NameError('Error %s:' % e.args[0])
 
-    def set_test_input(self, input):
+    def set_test_input(self, input, start_layer):
         """
         set a test input to be forwarded through the net every so many iterations
         :param input: dict where keys are input blob names and values are blob ndarrays.
+        :param start_layer:
         :return:
         """
         assert type(input) == dict or type(input) == type(self.solver.net.blobs), "Input must be of type (ordered) dict"
         assert type(input[input.keys()[0]]) == type(
             self.solver.net.blobs[self.solver.net.blobs.keys()[0]]), "Values must be of type caffe._caffe.Blob"
         self.test_input = input
+
+        assert type(start_layer) == str, "start_layer must be a string with the name of the layer to which the test blob is input"
+        assert start_layer in self.solver.net._layer_names, "Could not find the start layer in the net definition. Typo?"
+        self.test_start_layer = start_layer
 
     def set_test_outputs(self, blobs):
         """
