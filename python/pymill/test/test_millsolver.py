@@ -76,6 +76,7 @@ class TestMS(unittest.TestCase):
         con, cur = ms.MillSolver.get_db_connection(solver)
         cur.execute("SELECT Iteration FROM {} ORDER BY Iteration DESC".format(log_db_prefix))
         iteration = cur.fetchone()
+        con.close()
         self.assertEqual(iteration[0], 100)
 
     def test_mnist_solver_long_finetune(self):
@@ -86,6 +87,7 @@ class TestMS(unittest.TestCase):
         con, cur = ms.MillSolver.get_db_connection(solver)
         cur.execute("SELECT Iteration FROM {} ORDER BY Iteration DESC".format(log_db_prefix))
         iteration = cur.fetchone()
+        con.close()
         self.assertEqual(iteration[0], 150)
 
         # clean up unnecessary snapshots
@@ -101,6 +103,7 @@ class TestMS(unittest.TestCase):
         con, cur = ms.MillSolver.get_db_connection(solver)
         cur.execute("SELECT Iteration FROM {} ORDER BY Iteration DESC".format(log_db_prefix))
         iteration = cur.fetchone()
+        con.close()
         self.assertEqual(iteration[0], 100)
 
     def test_test_blob(self):
