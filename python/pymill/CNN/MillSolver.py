@@ -127,8 +127,9 @@ class MillSolver(object):
 
         weight_percentiles_log = dict()
         for blob in self.solver.net.params:
-            if len(self.solver.net.blobs[blob].data.shape) > 1:
-                weight_percentiles_log[blob] = self.get_percentiles(self.solver.net.blobs[blob])
+            if len(self.solver.net.params[blob][0].data.shape) > 1:
+                weight_percentiles_log[blob + '-w'] = self.get_percentiles(self.solver.net.params[blob][0])
+                weight_percentiles_log[blob + '-b'] = self.get_percentiles(self.solver.net.params[blob][1])
 
         # extract learning rate
         try:
