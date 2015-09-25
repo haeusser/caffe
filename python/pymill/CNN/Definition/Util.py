@@ -8,7 +8,7 @@ def sliceIn2(net, input_blob, slice_point, axis=1):
                         input_blob,
                         nout=2,
                         slice_param={
-                          'slice_point': (slice_point,),
+                          'slice_point': slice_point if isinstance(slice_point, tuple) else (slice_point,) ,
                           'axis': axis
                         })
 
@@ -163,6 +163,19 @@ def concat(net, *args):
                          concat_param={'concat_dim': 1})
 
 Network.concat = concat
+
+def dummy_zeros(net, num, channels, height, width):
+    return Layers.DummyData(net, (), nout=1, 
+                              dummy_data_param={
+                                'num': (num,),
+                                'channels': (channels,),
+                                'height': (height,),
+                                'width': (width,),
+                                'data_filler': ({ 'type': 'constant', 'value': 0},) 
+                              }
+                           )
+                              
+Network.zeros = dummy_zeros
 
 def resample(net, input, width=None, height=None, reference=None, type='LINEAR', antialias=True):
     #if type=='LINEAR': type=Params.Resample.LINEAR
