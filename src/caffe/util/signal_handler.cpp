@@ -9,6 +9,7 @@
 namespace {
   static volatile sig_atomic_t got_sigint = false;
   static volatile sig_atomic_t got_sighup = false;
+  static volatile sig_atomic_t got_sigusr1 = false;
   static bool already_hooked_up = false;
 
   void handle_signal(int signal) {
@@ -18,6 +19,9 @@ namespace {
       break;
     case SIGINT:
       got_sigint = true;
+      break;
+    case SIGUSR1:
+      got_sigusr1 = true;
       break;
     }
   }
@@ -42,6 +46,9 @@ namespace {
     if (sigaction(SIGINT, &sa, NULL) == -1) {
       LOG(FATAL) << "Cannot install SIGINT handler.";
     }
+    if (sigaction(SIGUSR1, &sa, NULL) == -1) {
+      LOG(FATAL) << "Cannot install SIGINT handler.";
+    }
   }
 
   // Set the signal handlers to the default.
@@ -59,6 +66,9 @@ namespace {
         LOG(FATAL) << "Cannot uninstall SIGHUP handler.";
       }
       if (sigaction(SIGINT, &sa, NULL) == -1) {
+        LOG(FATAL) << "Cannot uninstall SIGINT handler.";
+      }
+      if (sigaction(SIGUSR1, &sa, NULL) == -1) {
         LOG(FATAL) << "Cannot uninstall SIGINT handler.";
       }
 
@@ -81,14 +91,23 @@ namespace {
     got_sighup = false;
     return result;
   }
+  bool GotSIGUSR1() {
+    bool result = got_sigusr1;
+    got_sigusr1 = false;
+    return result;
+  }
 }  // namespace
 
 namespace caffe {
 
 SignalHandler::SignalHandler(SolverAction::Enum SIGINT_action,
-                             SolverAction::Enum SIGHUP_action):
+                             SolverAction::Enum SIGHUP_action,
+                             SolverAction::Enum SIGUSR1_action
+                             ):
   SIGINT_action_(SIGINT_action),
-  SIGHUP_action_(SIGHUP_action) {
+  SIGHUP_action_(SIGHUP_action),
+  SIGUSR1_action_(SIGUSR1_action)
+{
   HookupHandler();
 }
 
@@ -102,6 +121,9 @@ SolverAction::Enum SignalHandler::CheckForSignals() const {
   }
   if (GotSIGINT()) {
     return SIGINT_action_;
+  }
+  if (GotSIGUSR1()) {
+    return SIGUSR1_action_;
   }
   return SolverAction::NONE;
 }

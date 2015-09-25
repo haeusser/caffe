@@ -10,10 +10,39 @@ from fnmatch import fnmatch
 import subprocess
 import argparse
 import argcomplete
+import caffe
 
 from Notice import notice
 from Notice import noticeVerbose
 from Notice import verbose
+
+def get_net_output(net, name):
+    return net.blobs[name].data[...].transpose(0, 2, 3, 1).squeeze()
+
+caffe.Net.get_output = get_net_output
+
+def caffeNet(modelFile=None, prototmp=None, inputs={}, phase=None, logging=False):
+    if phase is None: phase=caffe.TEST
+    if prototmp is not None:
+        modelFile = tempFilename('.prototmp')
+        open(modelFile,'w').write(prototmp)
+
+    if not logging: caffe.set_logging_disabled()
+    caffe.set_mode_gpu()
+    net = caffe.Net(
+        modelFile,
+        phase
+    )
+
+    if prototmp is not None:
+        os.remove(modelFile)
+
+    for name, value in inputs.iteritems():
+        value = value[np.newaxis, :, :, :].transpose(0, 3, 1, 2)
+        net.blobs[name].reshape(*value.shape)
+        net.blobs[name].data[...] = value
+
+    return net
 
 def pprint(x):
     import pprint

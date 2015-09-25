@@ -163,8 +163,6 @@ class Log:
                     value = match.group(2)
                     appendMeasure('test_'+name, iter, value)
 
-        print measureList
-
         tmpMeasureList = measureList
         measureList = []
 

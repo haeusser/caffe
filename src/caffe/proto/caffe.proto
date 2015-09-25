@@ -432,6 +432,7 @@ message LayerParameter {
   optional ReaderParameter reader_param = 3003;
   optional MeanParameter mean_param = 1000;
   optional ResampleParameter resample_param = 1001;
+  optional BlurParameter blur_param = 1002;
 }
 
 message ResampleParameter {
@@ -446,6 +447,15 @@ message ResampleParameter {
     optional uint32 height = 2;
     optional ResampleType type = 3 [ default = LINEAR ];
 }
+
+message BlurParameter {
+    enum BlurType {
+        GAUSSIAN = 1;
+    };
+    optional BlurType type = 1 [ default = GAUSSIAN ];
+    optional float sigma = 2 [ default = 1.0 ];
+}
+
 
 message MeanParameter { // Eddy
   enum MeanOperation {

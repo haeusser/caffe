@@ -4,6 +4,7 @@ import sys
 from caffe.proto import caffe_pb2
 from google import protobuf
 import six
+from termcolor import colored
 
 def param_name_dict():
     """Find out the correspondence between layer names and parameter names."""
@@ -233,8 +234,8 @@ class Network(object):
                 blob.takeMasterName()
 
         for blob in self._blobs:
-            if blob.used() and blob.inputRefCount() == 0 and not blob.output():
-                sys.stderr.write('silencing blob %s\n' % blob.name())
+            if blob.used() and blob.inputRefCount() == 0 and not blob.output() and not blob.isSibling():
+                sys.stderr.write(colored('silencing blob %s\n' % blob.name(),'red',attrs=['bold']))
                 Layers.Silence(self, blob)
 
         protoLayers = []

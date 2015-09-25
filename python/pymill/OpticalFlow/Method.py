@@ -1,6 +1,5 @@
 #!/usr/bin/python
 # coding: utf-8
-from distutils.command.config import config
 
 import os
 import shutil

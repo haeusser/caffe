@@ -192,7 +192,8 @@ int train() {
 
   caffe::SignalHandler signal_handler(
         GetRequestedAction(FLAGS_sigint_effect),
-        GetRequestedAction(FLAGS_sighup_effect));
+        GetRequestedAction(FLAGS_sighup_effect),
+        caffe::SolverAction::SNAPSHOT);
 
   shared_ptr<caffe::Solver<float> >
     solver(caffe::GetSolver<float>(solver_param));

@@ -41,7 +41,7 @@ class BinaryBackend:
         else:
             weightOption = ''
 
-        self._callBin(Template('train -solver $solverFilename $weightOption -gpu $gpu 2>&1 | tee $logFile').substitute({
+        self._callBin(Template('train -sighup_effect snapshot -solver $solverFilename $weightOption -gpu $gpu 2>&1 | tee -a $logFile').substitute({
             'solverFilename': solverFilename,
             'weightOption': weightOption,
             'gpu': self._gpus,
@@ -50,7 +50,7 @@ class BinaryBackend:
 
     def resume(self, solverFilename, solverstateFilename, logFile):
         self._callBin(Template(
-            'train -solver $solverFilename -snapshot $solverstateFilename -gpu $gpu 2>&1 | tee -a $logFile').substitute(
+            'train -sighup_effect snapshot -solver $solverFilename -snapshot $solverstateFilename -gpu $gpu 2>&1 | tee -a $logFile').substitute(
             {
                 'solverFilename': solverFilename,
                 'solverstateFilename': solverstateFilename,
@@ -481,8 +481,9 @@ class Environment:
                 continue
             if f == 'scratch': continue
             if f == 'jobs': continue
-            if f.startswith('test_') and not f.endswith('.prototmp'): continue
-            if f.startswith('output_') and not f.endswith('.prototmp'): continue
+            if f.endswith('.pyc'): continue
+            if os.path.isdir('%s/%s' % (source,f)) and f.startswith('test_'): continue
+            if os.path.isdir('%s/%s' % (source,f)) and f.startswith('output_'): continue
 
             tb.system('cp -r %s %s/%s %s' % ('' if self._silent else '-v', source, f, target))
 

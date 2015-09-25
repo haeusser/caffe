@@ -15,8 +15,9 @@ void ResampleLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
 
     if(this->layer_param().resample_param().type() != ResampleParameter_ResampleType_CUBIC
-            && this->layer_param().resample_param().type() != ResampleParameter_ResampleType_LINEAR)
-        LOG(FATAL) << "ResampleLayer: only CUBIC and LINEAR interpolation is supported for now";
+            && this->layer_param().resample_param().type() != ResampleParameter_ResampleType_LINEAR
+            && this->layer_param().resample_param().type() != ResampleParameter_ResampleType_NEAREST)
+        LOG(FATAL) << "ResampleLayer: only CUBIC, LINEAR and NEAREST interpolation is supported for now";
 }
 
 template <typename Dtype>

@@ -3,6 +3,7 @@
 #include <string>
 
 #include <boost/python.hpp>
+#include "caffe/util/benchmark.hpp"
 
 //#include <dlfcn.h> // this is to make matlab interface work
 
@@ -121,8 +122,11 @@ void BinaryDB<Dtype>::get_sample(int index, vector<Blob<Dtype>*>* dst, int* comp
   // loop through top blobs
   if(compressed_size) *compressed_size=0;
   for (int t=0; t<top_num_; ++t) {
-    Entry entry = samples_.at(index).at(t);
+    Entry entry = samples_.at(index).at(t);    
     std::ifstream* curr_binstream = binstreams_.at(entry.binfile_idx).get();
+
+    Timer timer;
+    timer.Start();
     curr_binstream->seekg(entry.byte_offset, ios::beg);
     
     // check if the stream is ok, re-open if needed
@@ -157,6 +161,9 @@ void BinaryDB<Dtype>::get_sample(int index, vector<Blob<Dtype>*>* dst, int* comp
       LOG(FATAL) << "Flag of blob " << t << " of sample " << index << " has invalid value " << flag
          << " (File " << binfiles_.at(entry.binfile_idx) << " offset " << entry.byte_offset << ")";
     
+    timer.Stop();
+    TimingMonitor::addMeasure("seek_time", timer.MilliSeconds());
+
     // reshape blob
     dst->at(t)->Reshape(entry_dimensions_[t]);
     
@@ -175,21 +182,32 @@ void BinaryDB<Dtype>::read_binstream(std::ifstream* binstream, BinaryDB_DataEnco
   if(n_read)
       *n_read=0;
 
+  Timer t1;
+  Timer t2;
+
   switch(data_encoding)
   {
     case BinaryDB_DataEncoding_UINT8:
       if(entry_buffer_size_<N) LOG(FATAL) << "UINT8: entry buffer too small, buffer size=" << entry_buffer_size_ << ", N=" << N;
-      binstream->read((char*)entry_buffer_, N);
+
+      t1.Start(); binstream->read((char*)entry_buffer_, N); t1.Stop();
+      TimingMonitor::addMeasure("raw_data_rate", N * 1000.0 / (t1.MilliSeconds() * 1024.0 * 1024.0));
       if(n_read) (*n_read)+=N;
 
+      t2.Start();
       for(int i=0; i<N; i++)  *(out++)=static_cast<Dtype>(entry_buffer_[i]);
+      t2.Stop();
+      TimingMonitor::addMeasure("decomp_data_rate", N * 1000.0 / (t2.MilliSeconds() * 1024.0 * 1024.0));
       break;
 
     case BinaryDB_DataEncoding_FIXED16DIV32:
       if(entry_buffer_size_<2*N) LOG(FATAL) << "FIXED16DIV32: entry buffer too small, buffer size=" << entry_buffer_size_ << ", 2*N=" << 2*N;
-      binstream->read((char*)entry_buffer_, 2*N);
+
+      t1.Start(); binstream->read((char*)entry_buffer_, 2*N); t1.Stop();
+      TimingMonitor::addMeasure("raw_data_rate", 2*N * 1000.0 / (t1.MilliSeconds() * 1024.0 * 1024.0));
       if(n_read) (*n_read)+=2*N;
 
+      t2.Start();
       for(int i=0; i<N; i++) {
         short v = *((short*)(&entry_buffer_[2*i]));
 
@@ -201,6 +219,8 @@ void BinaryDB<Dtype>::read_binstream(std::ifstream* binstream, BinaryDB_DataEnco
 
         *(out++)=value;
       }
+      t2.Stop();
+      TimingMonitor::addMeasure("decomp_data_rate", 2*N * 1000.0/ (t2.MilliSeconds() * 1024.0 * 1024.0));
       break;
 
     default:

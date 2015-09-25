@@ -27,6 +27,12 @@ from Environment import Environment
 from Environment import PythonBackend
 from Environment import BinaryBackend
 import time
+import signal
+
+def sigusr1(signum, stack):
+    print 'pycnn: got signal SIGUSR1'
+
+signal.signal(signal.SIGUSR1, sigusr1)
 
 # make files writeable for group lmb_hackathon !
 os.umask(002)
@@ -36,26 +42,50 @@ def runOnCluster(env, node, gpus, background,insertLocal=True):
     if node is not None: tb.notice('Forwarding job to cluster node %s with %d gpu(s) which are of type %s' % (node, gpus, gpuArch),'info')
     else:                tb.notice('Forwarding job to cluster with %d gpu(s) which are of type %s' % (gpus, gpuArch),'info')
 
+    env.makeJobDir()
+
+    currentId = '%s/current_id' %env.jobDir()
+    if os.path.exists(currentId):
+        raise Exception('%s exists, there seems to be a job already running' % currentId)
+
     sysargs = sys.argv
     if insertLocal:
-        sysargs.insert(1,'--local')
+        sysargs.insert(1,'--execute')
     cmd = ' '.join(sysargs)
     home = os.environ['HOME']
 
-    if args.background: qsubCommandFile = '%s/%s-%s.sh' % (env.jobDir(), env.name(), time.strftime('%d.%m.%Y-%H:%M:%S'))
-    else:               qsubCommandFile = '%s/.qsub_command' % home
+    if args.background: qsubCommandFile = '%s/%s-%s.sh' % (env.jobDir(), env.name().replace('/','_'), time.strftime('%d.%m.%Y-%H:%M:%S'))
+    else:               qsubCommandFile = '%s/interactive.sh' % env.jobDir()
 
-    open(qsubCommandFile,'w').write('#!/bin/bash\necho -n -e "\e[30;42m --- running on" `hostname` "--- "\necho -e "\e[0m"\ncd "%s"\n%s\n' % (env.path(), cmd))
+    epilogueScript = '%s/epilogue.sh' %env.jobDir()
+    open(epilogueScript, 'w').write("#!/bin/bash\ncd $path\nrm -f jobs/current_id\n")
+
+    script = Template(
+    '#!/bin/bash\n'
+    '\n'
+    'umask 0002\n'
+    'echo -e "\e[30;42m --- running on" `hostname` "--- \e[0m"\n'
+    'cd "$path"\n'
+    'echo $$PBS_JOBID > jobs/current_id\n'
+    'trap "echo got SIGHUP" SIGHUP\n'
+    'trap "echo got SIGUSR1" USR1\n'
+    '$command\n'
+    'echo done\n'
+    'rm -f jobs/current_id\n'
+    ).substitute(path=env.path(), command=cmd)
+
+    open(qsubCommandFile,'w').write(script)
     tb.system('chmod a+x "%s"' % qsubCommandFile)
 
-    qsub = 'qsub -l nodes=%s:gpus=%d%s,walltime=240:00:00 %s -q gpujob -d %s %s -N %s' % (
+    qsub = 'qsub -l nodes=%s:gpus=%d%s,walltime=240:00:00 %s -q gpujob -d %s %s -N %s -T %s' % (
         node if node is not None else '1',
         gpus,
         (':' + gpuArch) if gpuArch!='any' else '',
         '-I -x' if not background else '',
         env.path(),
         qsubCommandFile,
-        env.name()
+        env.name(),
+        epilogueScript
     )
 
     if background:
@@ -64,7 +94,8 @@ def runOnCluster(env, node, gpus, background,insertLocal=True):
 
     tb.notice("lmbtorque: running %s" % qsub, 'run')
 
-    tb.system('ssh lmbtorque "%s"' % qsub)
+    if not background: tb.system('ssh lmbtorque "umask 0002; cd %s; %s;  rm -f jobs/current_id"' % (env.path(), qsub))
+    else:              tb.system('ssh lmbtorque "umask 0002; %s"' % (qsub))
     sys.exit(0)
 
 
@@ -100,6 +131,7 @@ parser.add_argument('--gpus',          help='gpus to use: N (default=1)', defaul
 parser.add_argument('--cluster',       help='run on cluster interatively', action='store_true')
 parser.add_argument('--quiet',         help='suppress caffe output', action='store_true')
 parser.add_argument('--silent',        help='suppress all output', action='store_true')
+parser.add_argument('--execute',       help='(used internally only)', action='store_true')
 
 subparsers = parser.add_subparsers(dest='command', prog='pycnn')
 
@@ -151,6 +183,9 @@ sub_parser.add_argument('target', help='target directory')
 sub_parser.add_argument('--copy-snapshot', help='last snapshot', action='store_true')
 sub_parser.add_argument('--iter', help='iteration of snapshot (default=last)', default=-1, type=int)
 
+# snapshot
+sub_parser = subparsers.add_parser('snapshot', help='connect to current process and request snapshot')
+
 # autocomplete very slow for some reason
 argcomplete.autocomplete(parser)
 
@@ -164,6 +199,7 @@ tb.verbose = args.verbose
 args.unattended = args.yes
 
 if args.background: args.unattended = True
+if args.execute: args.local=True
 
 gpuIds = ''
 for i in range(0, args.gpus):
@@ -175,11 +211,24 @@ else:                        backend = BinaryBackend(gpuIds, args.quiet, args.si
 env = Environment(args.path, backend, args.unattended, args.silent)
 if args.command != 'copy': env.init()
 
+def checkJob():
+    currentId = '%s/current_id' % env.jobDir()
+    if not os.path.exists(currentId):
+        raise Exception('cannot find %s, no job seems to be running.' % currentId)
+    return open(currentId).read().strip()
+
+def checkNoJob():
+    currentId = '%s/current_id' % env.jobDir()
+    if os.path.exists(currentId):
+        raise Exception('%s exists, there seems to be a job running' % currentId)
+
 # local operations
 if   args.command == 'clean':
+    checkNoJob()
     env.clean(args.iter)
     sys.exit(0)
 if   args.command == 'sanitize':
+    checkNoJob()
     env.sanitize()
     sys.exit(0)
 elif args.command == 'plot':
@@ -197,9 +246,14 @@ elif args.command == 'copy':
 elif args.command == 'draw':
     sys.exit(0)
     os.system('gwenview %s &' % env.draw(args.file))
+elif args.command == 'snapshot':
+    id = checkJob()
+    os.system('ssh lmbtorque "qsig -s SIGHUP %s"' % id)
+    sys.exit(0)
 
 # gpu operations
 if   args.command == 'train':
+    if not args.execute: checkNoJob()
     if args.local:
         env.train(args.weights)
         sys.exit(0)
@@ -212,6 +266,7 @@ elif args.command == 'test':
     else:
         runOnCluster(env, args.node, args.gpus, args.background)
 elif args.command == 'continue':
+    if not args.execute: checkNoJob()
     if args.local:
         env.resume(args.iter)
         sys.exit(0)
