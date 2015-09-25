@@ -34,6 +34,7 @@ void BlurLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   int height = bottom[0]->height();
 
   top[0]->Reshape(num, channels, height, width);
+  intermediate_.Reshape(num, channels, height, width);
 }
 
 template <typename Dtype>

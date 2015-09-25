@@ -11,11 +11,10 @@
 
 namespace caffe {
 
-static __device__ __forceinline__ float gauss(float x, float sigma, float prefactor)
+static __device__ __forceinline__ float gauss(float x, float sigma)
 {
     float exponent = x / sigma;
-    exponent = exponent * exponent;
-    return prefactor*exp(-0.5*exponent);
+    return exp( -0.5 * exponent *exponent);
 }
 
 #define FILTER_GAUSSIAN 0
@@ -29,7 +28,6 @@ __global__ void BlurKernel(
         const int channelsize,
         const int filter_type,
         const float sigma,
-        const float prefactor,
         Dtype* out_ptr)
 {
     CUDA_KERNEL_LOOP(index, nthreads)
@@ -53,7 +51,7 @@ __global__ void BlurKernel(
                 int dx = xf - x;
                 int dy = yf - y;
                 float r = sqrt(double(dx*dx + dy*dy));
-                float w = gauss(r, sigma, prefactor);
+                float w = gauss(r, sigma);
                 sum += w * in_ptr[c*channelsize + yf*width+xf];
                 wsum += w;
             }
@@ -70,7 +68,6 @@ __global__ void GaussKernelX(
         const int height,
         const int channelsize,
         const float sigma,
-        const float prefactor,
         Dtype* out_ptr)
 {
     CUDA_KERNEL_LOOP(index, nthreads)
@@ -90,12 +87,12 @@ __global__ void GaussKernelX(
             if(xf>=width) continue;
 
             int dx = abs(xf - x);
-            float w = gauss(dx, sigma, prefactor);
+            float w = gauss(dx, sigma);
             sum += w * in_ptr[c*channelsize + y*width+xf];
             wsum += w;
         }
 
-        out_ptr[index] = (!wsum) ? 0 : (sum / wsum);
+        out_ptr[index] = (wsum == 0) ? 0 : (sum / wsum);
     }
 }
 
@@ -107,7 +104,6 @@ __global__ void GaussKernelY(
         const int height,
         const int channelsize,
         const float sigma,
-        const float prefactor,
         Dtype* out_ptr)
 {
     CUDA_KERNEL_LOOP(index, nthreads)
@@ -127,12 +123,12 @@ __global__ void GaussKernelY(
             if(yf>=height) continue;
 
             int dy = abs(yf - y);
-            float w = gauss(dy, sigma, prefactor);
+            float w = gauss(dy, sigma);
             sum += w * in_ptr[c*channelsize + yf*width+x];
             wsum += w;
         }
 
-        out_ptr[index] = (!wsum) ? 0 : (sum / wsum);
+        out_ptr[index] = (wsum == 0) ? 0 : (sum / wsum);
     }
 }
 
@@ -154,8 +150,6 @@ void BlurLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   int botsize = bottomwidth*bottomheight*bottomchannels*bottomnum;
   int botchannelsize = bottomwidth*bottomheight;
 
-  float prefactor = 1.0/(sigma*sqrt(2*M_PI));
-
   GaussKernelX<Dtype><<<CAFFE_GET_BLOCKS(botsize), CAFFE_CUDA_NUM_THREADS>>>(
       botsize,
       (Dtype*)bottom_data,
@@ -163,24 +157,22 @@ void BlurLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       bottomheight,
       botchannelsize,
       sigma,
-      prefactor,
-      (Dtype*)top_data);
+      intermediate_.mutable_gpu_data());
 
-//  GaussKernelY<Dtype><<<CAFFE_GET_BLOCKS(botsize), CAFFE_CUDA_NUM_THREADS>>>(
-//      botsize,
-//      (Dtype*)top_data,
-//      bottomwidth,
-//      bottomheight,
-//      botchannelsize,
-//      sigma,
-//      prefactor,
-//      (Dtype*)top_data);
+  GaussKernelY<Dtype><<<CAFFE_GET_BLOCKS(botsize), CAFFE_CUDA_NUM_THREADS>>>(
+      botsize,
+      intermediate_.gpu_data(),
+      bottomwidth,
+      bottomheight,
+      botchannelsize,
+      sigma,
+      (Dtype*)top_data);
 }
 
 template <typename Dtype>
 void BlurLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
-  LOG(FATAL) << "ResampleLayer cannot do backward.";
+  LOG(FATAL) << "BlurLayer cannot do backward.";
 }
 
 INSTANTIATE_LAYER_GPU_FUNCS(BlurLayer);
