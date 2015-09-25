@@ -112,6 +112,8 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     const Dtype kLossWeight = 5.67;
     layer_param.add_loss_weight(kLossWeight);
     layer_param.mutable_l1_loss_param()->set_l2_per_location(true);
+    layer_param.mutable_l1_loss_param()->set_l2_prescale_by_channels(true);
+    layer_param.mutable_l1_loss_param()->set_epsilon(1e-3);
     
     L1LossLayer<Dtype> layer_weight_2(layer_param);
     layer_weight_2.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
@@ -136,7 +138,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
                 int off = (n*channels + c)*height*width + xy;
                 per_location_loss += (bot0[off]-bot1[off]) * (bot0[off]-bot1[off]);
             }
-            refloss += sqrt(per_location_loss / (channels));
+            refloss += sqrt(per_location_loss / (channels) + 1e-3);
         }
     }
     refloss /= (Dtype)num;
@@ -154,7 +156,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     const Dtype kLossWeight = 5.67;
     layer_param.add_loss_weight(kLossWeight);
     layer_param.mutable_l1_loss_param()->set_l2_per_location(true);
-    layer_param.mutable_l1_loss_param()->set_l2_prescale_by_channels(false);
+//     layer_param.mutable_l1_loss_param()->set_l2_prescale_by_channels(false); now false by default
     layer_param.mutable_l1_loss_param()->set_normalize_by_num_entries(true);
     
     L1LossLayer<Dtype> layer_weight_2(layer_param);
@@ -189,7 +191,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
                   per_location_loss += (bot0[off]-bot1[off]) * (bot0[off]-bot1[off]);
                 }                
             }
-            refloss += sqrt(per_location_loss);
+            refloss += sqrt(per_location_loss + 1e-2); // default epsilon is 1e-2
         }
     }
     refloss /= (Dtype)num_entries;

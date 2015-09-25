@@ -55,7 +55,8 @@ void L1LossLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     sqrt_top_vec_.clear();
     sqrt_top_vec_.push_back(&sqrt_output_);
     LayerParameter sqrt_param;
-    sqrt_param.mutable_power_param()->set_power(Dtype(0.5));
+    sqrt_param.mutable_power_param()->set_power(0.5);
+    sqrt_param.mutable_power_param()->set_shift(this->layer_param_.l1_loss_param().epsilon());
     sqrt_layer_.reset(new PowerLayer<Dtype>(sqrt_param));
     sqrt_layer_->SetUp(sum_top_vec_, sqrt_top_vec_);
   }

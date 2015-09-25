@@ -153,8 +153,7 @@ def BinaryData_SceneFlow(net, **kwargs):
                           Entry('forwardFlowR',  0),
                           Entry('dispL',  0),
                           Entry('dispL', +1),
-                          Entry('forwardDispChangeL', 0),
-                          Entry('forwardDispChangeR', 0))),
+                          Entry('forwardDispChangeL', 0))),
                   Sample((Entry('cleanImageL',  0),
                           Entry('cleanImageR',  0),
                           Entry('cleanImageL', -1),
@@ -163,8 +162,7 @@ def BinaryData_SceneFlow(net, **kwargs):
                           Entry('backwardFlowR',  0),
                           Entry('dispL',  0),
                           Entry('dispL', -1),
-                          Entry('backwardDispChangeL', 0),
-                          Entry('backwardDispChangeR', 0))))
+                          Entry('backwardDispChangeL', 0))))
 
   if kwargs['rendertype'] == 'FINAL' or kwargs['rendertype'] == 'BOTH':
       samples += (Sample((Entry('finalImageL',  0),
@@ -175,8 +173,7 @@ def BinaryData_SceneFlow(net, **kwargs):
                           Entry('forwardFlowR',  0),
                           Entry('dispL',  0),
                           Entry('dispL', +1),
-                          Entry('forwardDispChangeL', 0),
-                          Entry('forwardDispChangeR', 0))),
+                          Entry('forwardDispChangeL', 0))),
                   Sample((Entry('finalImageL',  0),
                           Entry('finalImageR',  0),
                           Entry('finalImageL', -1),
@@ -185,8 +182,42 @@ def BinaryData_SceneFlow(net, **kwargs):
                           Entry('backwardFlowR',  0),
                           Entry('dispL',  0),
                           Entry('dispL', -1),
-                          Entry('backwardDispChangeL', 0),
-                          Entry('backwardDispChangeR', 0))))
+                          Entry('backwardDispChangeL', 0))))
+
+  return Layers.BinaryData(net,
+                           nout=NumberOfEntries(samples),
+                           include=(Proto.NetStateRule(phase=kwargs['phase']),),
+                           data_param=DataParams(samples, **kwargs))
+
+
+def BinaryData_SceneFlow_Single(net, **kwargs):
+  '''
+  @brief Setup network inputs for scene flow
+  @returns A list of single-blob network INPUT and LABEL
+  '''
+  samples = []
+
+  if kwargs['rendertype'] == 'CLEAN' or kwargs['rendertype'] == 'BOTH':
+      samples += (Sample((Entry('cleanImageL',  0),
+                          Entry('cleanImageR',  0),
+                          Entry('cleanImageL', +1),
+                          Entry('cleanImageR', +1),
+                          Entry('forwardFlowL',  0),
+                          Entry('forwardFlowR',  0),
+                          Entry('dispL',  0),
+                          Entry('dispL', +1),
+                          Entry('forwardDispChangeL', 0))))
+
+  if kwargs['rendertype'] == 'FINAL' or kwargs['rendertype'] == 'BOTH':
+      samples += (Sample((Entry('finalImageL',  0),
+                          Entry('finalImageR',  0),
+                          Entry('finalImageL', +1),
+                          Entry('finalImageR', +1),
+                          Entry('forwardFlowL',  0),
+                          Entry('forwardFlowR',  0),
+                          Entry('dispL',  0),
+                          Entry('dispL', +1),
+                          Entry('forwardDispChangeL', 0))))
 
   return Layers.BinaryData(net,
                            nout=NumberOfEntries(samples),
@@ -268,6 +299,7 @@ def BinaryData(net, setting, **kwargs):
     'OPTICAL_FLOW'          : BinaryData_OpticalFlow,
     'OPTICAL_FLOW_SINGLE'   : BinaryData_OpticalFlow_Single,
     'SCENE_FLOW'            : BinaryData_SceneFlow,
+    'SCENE_FLOW_SINGLE'     : BinaryData_SceneFlow_Single,
     'DISPARITY'             : BinaryData_Disparity,
     'DISPARITY_SINGLE'      : BinaryData_Disparity_Single,
   }

@@ -1000,8 +1000,9 @@ message InnerProductParameter {
 // Message that stores parameters used by L1LossLayer
 message L1LossParameter {
   optional bool l2_per_location = 1 [default = false];
-  optional bool l2_prescale_by_channels = 2 [default = true]; // Old style
+  optional bool l2_prescale_by_channels = 2 [default = false]; // Old style
   optional bool normalize_by_num_entries = 3 [default = false]; // if we want to normalize not by batch size, but by the number of non-NaN entries
+  optional float epsilon = 4 [default = 1e-2]; // constant for smoothing near zero
 }
 
 // Message that stores parameters used by LogLayer

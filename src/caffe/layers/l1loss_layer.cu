@@ -34,9 +34,9 @@ template <typename Dtype>
 __global__ void KillMasked(const int n, const Dtype* in, Dtype* out) {
   CUDA_KERNEL_LOOP(index, n) {
     out[index] = in[index]>0.5 ? out[index] : Dtype(0);
-    out[index] = out[index]==out[index] ? out[index] : Dtype(0);
-    out[index] = out[index]>1e3 ? 0 : out[index];
-    out[index] = out[index]<-1e3 ? 0 : out[index];
+//     out[index] = out[index]==out[index] ? out[index] : Dtype(0);
+//     out[index] = out[index]>1e3 ? 0 : out[index];
+//     out[index] = out[index]<-1e3 ? 0 : out[index];
   }
 }
   
@@ -90,8 +90,7 @@ void L1LossLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 template <typename Dtype>
 void L1LossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom)
-{
-  
+{  
   bool prop_down = propagate_down[0];
   if(bottom.size() > 1) prop_down |= propagate_down[1];
   
