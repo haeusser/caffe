@@ -110,6 +110,15 @@ void FlowAugmentationLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& botto
   CHECK_EQ(bottomchannels, 2);
   CHECK_EQ((bottom)[0]->num(), (top)[0]->num());
   
+  // Debug: check for NaNs and lare values:    
+  const Dtype* bottom_cpu_data = bottom[0]->cpu_data();
+  for(int i=0; i<bottomcount; i++) {
+      if (isnan(bottom_cpu_data[i]))
+          LOG(WARNING) << "bottom_data[" << i << "]=NaN";
+//       if (std::fabs(bottom_cpu_data[i])>1e3)
+//           LOG(WARNING) << "bottom_data[" << i << "]=" << bottom_cpu_data[i];
+  }
+  
   
   // Prepare matrices
   all_coeffs1_.ShareData(*bottom[1]); //reuse

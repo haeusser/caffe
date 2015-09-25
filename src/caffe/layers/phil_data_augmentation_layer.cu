@@ -336,6 +336,15 @@ void PhilDataAugmentationLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& b
     int bottomcount = (bottom)[0]->count();
 
     int num = (bottom)[0]->num(); CHECK_EQ((bottom)[0]->num(), top[0]->num());
+    
+    // Debug: check for NaNs and lare values:    
+    const Dtype* bottom_cpu_data = bottom[0]->cpu_data();
+    for(int i=0; i<bottomcount; i++) {
+        if (isnan(bottom_cpu_data[i]))
+            LOG(WARNING) << "bottom_data[" << i << "]=NaN";
+//         if (std::fabs(bottom_cpu_data[i])>1e3)
+//             LOG(WARNING) << "bottom_data[" << i << "]=" << bottom_cpu_data[i];
+    }
 
     // Data sharing
     if (input_params_)   all_coeffs_.ShareData(*bottom[1]); //reuse
@@ -622,7 +631,8 @@ void PhilDataAugmentationLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& b
             caffe_gpu_gemm(CblasNoTrans, CblasTrans, bottomchannels, area, 1,
                            Dtype(-1), data_mean_per_channel_gpu, data_ones_gpu, Dtype(1), top_data + n*count);
         }
-    }
+    }   
+      
 }
 
 INSTANTIATE_LAYER_GPU_FUNCS(PhilDataAugmentationLayer);
