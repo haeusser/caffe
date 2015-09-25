@@ -56,6 +56,8 @@ class MillSolver(object):
         self.viz_per_logs = self.solver_param.viz_per_logs
         self.test_per_logs = self.solver_param.test_per_logs
 
+        self.logprint(" // DEBUG: read params from solver.prototxt: viz_per_logs = {} /// test_per_logs = {}".format(self.viz_per_logs, self.test_per_logs))
+
         # make solver param for net fail safe
         if not os.path.isabs(self.solver_param.net):
             self.solver_param.net = os.path.join(self.solver_dir, self.solver_param.net)
