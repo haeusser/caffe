@@ -32,19 +32,16 @@ batch = True
 flowScale = 1.0
 flowStyle = 0
 
+floatScale = 1.0
+
 
 
 ## Configuration
 configuration = {}
-def readConfig(filename):
-  '''Read a configuration file'''
-  if not filename or not isinstance(filename, str) or \
-     not os.path.isfile(filename):
-    raise ValueError()
-  with open(filename) as f:
-    lines = f.readlines()
-  lines = [line.split('#')[0].strip() for line in lines]
+def parseConfig(lines):
+  '''Parse configuration data'''
   global configuration
+  configuration = {}
   configuration['X'], configuration['Y'] = \
       [int(v) for v in lines[0].split(' ')]
   cells = {}
@@ -55,14 +52,27 @@ def readConfig(filename):
   for x in range(configuration['X']):
     col = []
     for y in range(configuration['Y']):
-      col.append({'suffix': cells['%s %s'%(x,y)]})
+      index_str = '%s %s'%(x,y)
+      col.append({'suffix': cells[index_str]})
     grid.append(col)
   configuration['grid'] = grid
+
+def readConfig(filename):
+  '''Read a configuration file'''
+  if not filename or not isinstance(filename, str) or \
+     not os.path.isfile(filename):
+    raise ValueError()
+  with open(filename) as f:
+    lines = f.readlines()
+  lines = [line.split('#')[0].strip() for line in lines]
+  parseConfig(lines)
 
 
 
 def GenerateFilenames(suffix):
   '''List all existing files complying to a certain pattern'''
+  if suffix == 'none':
+    return ['dummy']
   if batch:
     files = []
     i = j = 0
@@ -141,6 +151,33 @@ def readFlow(name):
     return flow.astype(np.float32)
 
 
+def readFloat(name):
+  '''Read float file (binary blob with leading dimension info)'''
+  with open(name, 'rb') as f:
+    if f.readline() != b'float\n':
+      raise Exception('float file %s did not contain <float> keyword' % name)
+
+    dim = int(f.readline())
+    dims = []
+    count = 1
+    for i in range(0, dim):
+      d = int(f.readline())
+      dims.append(d)
+      count *= d
+
+    data = np.fromfile(f, np.float32, count).reshape(dims)
+    if dim == 2:
+      data = np.transpose(data, (1, 0))
+      data = np.transpose(data, (0, 1))
+    elif dim == 3:
+      data = np.transpose(data, (2, 1, 0))
+      data = np.transpose(data, (1, 0, 2))
+    else:
+      raise Exception('dim == %d (not supported)'%(dim))
+
+    return data
+
+
 class Cell(object):
   '''Image grid cell for normal images'''
   def __init__(self, imagelabel, caption, suffix):
@@ -184,6 +221,58 @@ class Cell(object):
                                    QtCore.Qt.KeepAspectRatio))
 
 
+class EmptyCell(Cell):
+  '''Empty grid cell'''
+  def __init__(self, imagelabel, caption, suffix):
+    self.suffix = suffix
+    pass
+
+  def clear(self):
+    pass
+
+  def addImage(self, filename):
+    pass
+
+  def index(self, idx, *args):
+    pass
+
+
+
+class FloatCell(Cell):
+  '''Image grid cell for floating point image'''
+  def __init__(self, imagelabel, caption, suffix):
+    super().__init__(imagelabel, caption, suffix)
+    self.raw_data = []
+
+  def clear(self):
+    '''Discard all data'''
+    super().clear()
+    self.raw_data = []
+
+  def addImage(self, filename):
+    '''Add image (or image source)'''
+    self.filenames.append(filename)
+    if preload:
+      raw_float_data = readFloat(filename)
+      self.raw_data.append(raw_float_data)
+
+  def index(self, idx, scale, *args):
+    '''Change displayed image'''
+    if not self.filenames:
+      return
+    self.caption.setText(self.namePart(self.filenames[idx]))
+    if preload:
+      raw_float_data = self.raw_data[idx]
+    else:
+      raw_float_data = readFloat(self.filenames[idx])
+    self.label.setPixmap(QtGui.QPixmap.fromImage(
+                         ImageQt(Image.fromarray(raw_float_data*scale)\
+                                 .convert('P')))\
+                         .scaled(self.label.size(),
+                                 QtCore.Qt.KeepAspectRatio))
+
+
+
 class FlowCell(Cell):
   '''Image grid cell for optical flow images'''
   def __init__(self, imagelabel, caption, suffix):
@@ -214,10 +303,6 @@ class FlowCell(Cell):
       else:
         flow_image = gridview_c_interface.ColorFlow2(self.raw_data[idx],
                                                      flowScale)
-      self.label.setPixmap(QtGui.QPixmap.fromImage(
-                           ImageQt(Image.fromarray(flow_image)))\
-                           .scaled(self.label.size(),
-                                   QtCore.Qt.KeepAspectRatio))
     else:
       raw_flow_data = readFlow(self.filenames[idx])
       if flowStyle == 0:
@@ -226,10 +311,10 @@ class FlowCell(Cell):
       else:
         flow_image = gridview_c_interface.ColorFlow2(raw_flow_data, 
                                                      flowScale)
-      self.label.setPixmap(QtGui.QPixmap.fromImage(\
-                           ImageQt(Image.fromarray(flow_image))\
-                           .scaled(self.label.size(),
-                                   QtCore.Qt.KeepAspectRatio)))
+    self.label.setPixmap(QtGui.QPixmap.fromImage(\
+                         ImageQt(Image.fromarray(flow_image))\
+                         .scaled(self.label.size(),
+                                 QtCore.Qt.KeepAspectRatio)))
 
   def scale(self, scale):
     '''Change optical flow scalingG'''
@@ -242,6 +327,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     self.currentIndex = 0
     self.grid = []
+    self.needFloatTools = False
     self.needFlowTools = False
 
     ## Grid of images
@@ -266,9 +352,16 @@ class MainWindow(QtWidgets.QMainWindow):
         suffix = configuration['grid'][x][y]['suffix']
         if suffix.endswith('ppm'):
           self.grid.append(Cell(image_label, image_caption, suffix))
-        else:
+        elif suffix.endswith('float'):
+          self.grid.append(FloatCell(image_label, image_caption, suffix))
+          self.needFloatTools = True
+        elif suffix.endswith('flo'):
           self.grid.append(FlowCell(image_label, image_caption, suffix))
           self.needFlowTools = True
+        elif suffix == 'none':
+          self.grid.append(EmptyCell(image_label, image_caption, suffix))
+        else:
+          raise Exception('Invalid suffix: >%s<'%(suffix))
     self.gridcontainer = QtWidgets.QWidget()
     self.gridcontainer.setLayout(gridlayout)
 
@@ -279,7 +372,12 @@ class MainWindow(QtWidgets.QMainWindow):
     toolsContainer = QtWidgets.QWidget()
     toolsLayout = QtWidgets.QHBoxLayout()
     toolsContainer.setLayout(toolsLayout)
-    toolsContainer.setFixedHeight(80)
+    h = 40
+    if self.needFloatTools:
+      h += 40
+    if self.needFlowTools:
+      h += 40
+    toolsContainer.setFixedHeight(h)
 
     sliderLayout = QtWidgets.QVBoxLayout()
     sliderContainer = QtWidgets.QWidget()
@@ -291,7 +389,7 @@ class MainWindow(QtWidgets.QMainWindow):
     self.frameSlider.setRange(0,0)
     self.frameSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
     self.frameSliderLabel = QtWidgets.QLabel("Frame: 0")
-    self.frameSliderLabel.setMinimumSize(80,10)
+    self.frameSliderLabel.setFixedSize(100,20)
     framesliderlayout = QtWidgets.QHBoxLayout()
     framesliderlayout.addWidget(self.frameSlider)
     framesliderlayout.addWidget(self.frameSliderLabel)
@@ -299,6 +397,22 @@ class MainWindow(QtWidgets.QMainWindow):
     frameslidercontainer.setLayout(framesliderlayout)
     frameslidercontainer.setFixedHeight(40)
     sliderLayout.addWidget(frameslidercontainer)
+
+    # Slider for float scaling if necessary
+    if self.needFloatTools:
+      self.floatScaleSlider = QtWidgets.QSlider(orientation=QtCore.Qt.Horizontal)
+      self.floatScaleSlider.setRange(1,3200)
+      self.floatScaleSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
+      self.floatScaleSlider.setValue(100)
+      self.floatScaleSliderLabel = QtWidgets.QLabel("Float scale: 1.0")
+      self.floatScaleSliderLabel.setFixedSize(100,20)
+      floatScaleSliderLayout = QtWidgets.QHBoxLayout()
+      floatScaleSliderLayout.addWidget(self.floatScaleSlider)
+      floatScaleSliderLayout.addWidget(self.floatScaleSliderLabel)
+      floatScaleSliderContainer = QtWidgets.QWidget()
+      floatScaleSliderContainer.setLayout(floatScaleSliderLayout)
+      floatScaleSliderContainer.setFixedHeight(40)
+      sliderLayout.addWidget(floatScaleSliderContainer)
     
     # Slider for optical flow scaling if necessary
     if self.needFlowTools:
@@ -307,7 +421,7 @@ class MainWindow(QtWidgets.QMainWindow):
       self.flowScaleSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
       self.flowScaleSlider.setValue(100)
       self.flowScaleSliderLabel = QtWidgets.QLabel("OF scale: 1.0")
-      self.flowScaleSliderLabel.setMinimumSize(80,10)
+      self.flowScaleSliderLabel.setFixedSize(100,20)
       flowScaleSliderLayout = QtWidgets.QHBoxLayout()
       flowScaleSliderLayout.addWidget(self.flowScaleSlider)
       flowScaleSliderLayout.addWidget(self.flowScaleSliderLabel)
@@ -315,9 +429,7 @@ class MainWindow(QtWidgets.QMainWindow):
       flowScaleSliderContainer.setLayout(flowScaleSliderLayout)
       flowScaleSliderContainer.setFixedHeight(40)
       sliderLayout.addWidget(flowScaleSliderContainer)
-
-    # Flow visualization choice
-    if self.needFlowTools:
+      # Flow visualization choice
       flowStyleContainer = QtWidgets.QWidget()
       flowStyleLayout = QtWidgets.QVBoxLayout()
       flowStyleWhiteButton = QtWidgets.QRadioButton('&Sintel style')
@@ -374,6 +486,8 @@ class MainWindow(QtWidgets.QMainWindow):
     self.setWindowTitle(QtWidgets.QApplication.applicationName())
     
     self.frameSlider.valueChanged.connect(self.frameSliderChange)
+    if self.needFloatTools:
+      self.floatScaleSlider.valueChanged.connect(self.floatScaleSliderChange)
     if self.needFlowTools:
       self.flowScaleSlider.valueChanged.connect(self.flowScaleSliderChange)
 
@@ -394,6 +508,18 @@ class MainWindow(QtWidgets.QMainWindow):
     if newValue == self.currentIndex:
       return
     self.changeFrame(newValue)
+
+
+  def floatScaleSliderChange(self, newValue):
+    """React to the user manipulating the float scale control slider"""
+    global floatScale
+    floatScale = 0.01*newValue
+    for cell in self.grid:
+      if isinstance(cell, FloatCell):
+        cell.index(self.currentIndex, floatScale)
+    self.floatScaleSliderLabel.setText("Float scale: %.2f" % (floatScale))
+    if self.needFloatTools:
+      self.floatScaleSlider.setValue(newValue)
 
 
   def flowScaleSliderChange(self, newValue):
@@ -502,7 +628,12 @@ class MainWindow(QtWidgets.QMainWindow):
     """Change the displayed frame"""
     self.currentIndex = index
     for cell in self.grid:
-      cell.index(index, flowScale)
+      if isinstance(cell, FloatCell):
+        cell.index(index, floatScale)
+      elif isinstance(cell, FlowCell):
+        cell.index(index, flowScale)
+      elif isinstance(cell, Cell):
+        cell.index(index)
 
     titlestr = "%s - %s" % \
                (dir, QtWidgets.QApplication.applicationName())
@@ -534,15 +665,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
 def main():
 
-  if len(sys.argv) >= 2:
-    readConfig(sys.argv[1])
-  else:
-    print('Using default.cfg layout')
-    readConfig('default.cfg')
+  ## Default configuration
+  parseConfig(['1 1', '0 0 img0.ppm'])
 
-  if '--no-preload' in sys.argv:
-    global preload
-    preload = False
+  if len(sys.argv) >= 2:
+    for v in sys.argv[1:]:
+      if v.endswith('.cfg'):
+        readConfig(v)
+      elif v == '--no-preload':
+        global preload
+        preload = False
 
   app = QtWidgets.QApplication(sys.argv)
   app.setApplicationName("Gridview")
