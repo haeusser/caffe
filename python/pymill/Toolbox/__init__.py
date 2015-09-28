@@ -16,6 +16,14 @@ from Notice import notice
 from Notice import noticeVerbose
 from Notice import verbose
 
+def isList(x):
+    return isinstance(x, (list, tuple)) and not isinstance(x, basestring)
+
+def makeList(x):
+    if not isList(x):
+        return (x,)
+    return x
+
 def get_net_output(net, name):
     return net.blobs[name].data[...].transpose(0, 2, 3, 1).squeeze()
 
@@ -112,9 +120,6 @@ class MyParser(argparse.ArgumentParser):
         sys.stderr.write('\033[91m\033[1m' + 'Error: %s\n' % message + '\033[0m')
         self.print_help()
         sys.exit(2)
-
-def isList(x):
-    return isinstance(x, (list, tuple)) and not isinstance(x, basestring)
 
 def wildcardMatch(haystack, needle):
     if isList(haystack):

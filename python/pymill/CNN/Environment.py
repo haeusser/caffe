@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import os
+import sys
 import matplotlib.pyplot as plt
 from pymill import Toolbox as tb
 import re
@@ -166,7 +167,7 @@ class Environment:
         tb.system('mkdir -p %s' % self._jobDir)
 
     def prototxt(self, inFile, outDir, defs={}):
-        defs['NAME'] = self._name
+        defs['name'] = self._name
 
         if not os.path.isfile(inFile):
             raise Exception('input file %s not file' % inFile)
@@ -181,8 +182,17 @@ class Environment:
             return prototxt
         elif inFile.endswith('.py'):
             prototxt = '%s/%s.prototxt' % (outDir, os.path.basename(inFile).replace('.py', ''))
-            if not self._silent: tb.notice('converting %s' % inFile, 'run')
-            if os.system('python %s > %s' % (inFile, prototxt)) != 0:
+            args = ''
+            for k, v in defs.iteritems():
+                if len(args): args += ' '
+                args += '%s=%s' % (k, v)
+
+            if not self._silent:
+                if not len(defs):
+                    tb.notice('converting %s' % inFile, 'run')
+                else:
+                    tb.notice('converting %s (%s)' % (inFile, args), 'run')
+            if os.system('python %s %s > %s' % (inFile, args, prototxt)) != 0:
                 raise Exception('conversion of %s failed' % inFile)
             return prototxt
         else:
@@ -389,15 +399,11 @@ class Environment:
         os.chdir(self._trainDir)
         self._backend.resume(solverFilename=solverFilename, solverstateFilename=stateFile, logFile=self._logFile)
 
-    def test(self, iter, output=False, variant=None):
+    def test(self, iter, output=False, variant=None, vars={}):
         modelFile, iter = self.getModelFile(iter)
 
-        vars = {}
         if output:
-            dir = self._path + '/output_%s_%d' % (variant, iter)
-            tb.system('mkdir -p %s' % dir)
-            vars['TEST_OUTPUT'] = 1
-            vars['TEST_OUTPUT_DIR'] = '"\\"%s\\""' % dir
+            vars['output'] = True
 
         self.cleanScratch()
         self.makeScratchDir()
@@ -419,9 +425,6 @@ class Environment:
             for l in open(solverProto).readlines():
                 if l.startswith('test_iter:'):
                     iterations = int(l.replace('test_iter:', ''))
-
-        if iterations == -1:
-            raise Exception('Cannot determine iteration count')
 
         self.notice('testing snapshot iteration %d for %d iterations...' % (iter, iterations), 'notice')
         os.chdir(self._path)

@@ -36,7 +36,18 @@ signal.signal(signal.SIGUSR1, sigusr1)
 
 # make files writeable for group lmb_hackathon !
 os.umask(002)
- 
+
+def parseParameters(params):
+    d = {}
+
+    for p in params:
+        if not '=' in p:
+            raise Exception('Parameter %s is not of the form key=value' % p)
+        k, v = p.split('=')
+        d[k] = v
+
+    return d
+
 def runOnCluster(env, node, gpus, background,insertLocal=True):
     gpuArch = env.params().gpuArch()
     if node is not None: tb.notice('Forwarding job to cluster node %s with %d gpu(s) which are of type %s' % (node, gpus, gpuArch),'info')
@@ -144,6 +155,8 @@ subparser = subparsers.add_parser('test', help='test a network')
 subparser.add_argument('--iter',       help='iteration of .caffemodel to use', default=-1, type=int)
 subparser.add_argument('--variant',    help='test variant', default=None)
 subparser.add_argument('--output',     help='output images to folder output_...', action='store_true')
+subparser.add_argument('param',        help='parameter to network', nargs='*')
+
 
 # continue
 subparser = subparsers.add_parser('continue', help='continue training from last saved (or specified) iteration')
@@ -261,7 +274,7 @@ if   args.command == 'train':
         runOnCluster(env, args.node, args.gpus, args.background)
 elif args.command == 'test':
     if args.local:
-        env.test(args.iter, args.output, args.variant)
+        env.test(args.iter, args.output, args.variant, parseParameters(args.param))
         sys.exit(0)
     else:
         runOnCluster(env, args.node, args.gpus, args.background)

@@ -22,3 +22,13 @@ def FlyingChairs(net, **kwargs):
 
   return PhilData(net, **kwargs)
 
+def Sintel(net, **kwargs):
+  if 'source' in kwargs: raise Exception('Sintel cannot take >source<')
+  if 'preselection_file' in kwargs: raise Exception('Sintel cannot take >preselection_file<')
+  if 'preselection_label' in kwargs: raise Exception('Sintel cannot take >preselection_label<')
+  if 'collection_list' in kwargs: raise Exception('Sintel cannot take >collection_list<')
+
+  kwargs['collection_list'] = '/misc/lmbraid17/sceneflownet/common/data/4_bin-db/collection_lists/sintel_train.txt'
+
+  return BinaryData(net, **kwargs)
+
