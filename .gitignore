@@ -99,3 +99,4 @@ MANIFEST-*
 *.creator
 /hackathon-caffe2.files
 /Makefile.qt
+Makefile.config-haeusser
