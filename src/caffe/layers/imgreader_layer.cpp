@@ -75,7 +75,7 @@ void ImgReaderLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 
     int num = this->layer_param_.reader_param().num();
     int size = data_.count();
-    assert(top.count()/size == num);
+    assert(top[0]->count()/size == num);
 
     for(int n=0; n<num; n++)
         memcpy(top[0]->mutable_cpu_data()+n*size,data_.cpu_data(),sizeof(float)*size);
