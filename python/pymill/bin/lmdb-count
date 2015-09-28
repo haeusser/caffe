@@ -1,0 +1,28 @@
+#!/usr/bin/python
+
+import os
+import sys
+import argparse
+from pymill import Toolbox as tb
+from scipy import misc
+import numpy as np
+
+parser = argparse.ArgumentParser()
+parser.add_argument('lmdb', help='path to lmdb')
+
+args = parser.parse_args()
+
+db = tb.openLMDB(args.lmdb)
+
+txn = db.begin()
+cursor = txn.cursor()
+n = 0
+for key in cursor:
+    n += 1
+
+print n
+
+filename = os.path.join(args.lmdb, 'count.txt')
+print 'writing to', filename
+open(filename, 'w').write('all: %d\n', n)
+
