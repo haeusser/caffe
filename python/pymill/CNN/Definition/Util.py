@@ -91,7 +91,7 @@ def writeFloat(net, blob, folder='output', prefix='', suffix='', scale=1.0, file
 Network.writeFloat = writeFloat
 
 def scale(net, image_blob, factor):
-    if isinstance(factor, tuple):
+    if tb.isList(factor):
       return Layers.Convolution(net,
                                 image_blob,
                                 nout=1,
@@ -136,7 +136,7 @@ def imageToRange0255(net, image_blob):
 
 Network.imageToRange0255 = imageToRange0255
 
-def subtractMean(net, image_blob, color, input_scale=1.0, mean_scale=1.0, ouptut_scale=1.0):
+def subtractMean(net, image_blob, color, input_scale=1.0, mean_scale=1.0, output_scale=1.0):
     return Layers.Mean(net,
                        image_blob,
                        nout=1,
@@ -191,9 +191,6 @@ def dummy_zeros(net, num, channels, height, width):
 Network.zeros = dummy_zeros
 
 def resample(net, input, width=None, height=None, reference=None, type='LINEAR', antialias=True):
-    #if type=='LINEAR': type=Params.Resample.LINEAR
-    #elif type=='CUBIC': type=Params.Resample.CUBIC
-
     if reference is not None:
         return Layers.Resample(net,
                                (input, reference),
@@ -207,8 +204,8 @@ def resample(net, input, width=None, height=None, reference=None, type='LINEAR',
                                input,
                                nout=1,
                                resample_param={
-                                 'width': width,
-                                 'height': height,
+                                 'width': int(width),
+                                 'height': int(height),
                                  'antialias': antialias,
                                  'type': getattr(Params.Resample, type)
                                })
