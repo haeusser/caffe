@@ -206,7 +206,7 @@ def BinaryData_SceneFlow_Single(net, **kwargs):
                           Entry('forwardFlowR',  0),
                           Entry('dispL',  0),
                           Entry('dispL', +1),
-                          Entry('forwardDispChangeL', 0))))
+                          Entry('forwardDispChangeL', 0))),)
 
   if kwargs['rendertype'] == 'FINAL' or kwargs['rendertype'] == 'BOTH':
       samples += (Sample((Entry('finalImageL',  0),
@@ -217,7 +217,7 @@ def BinaryData_SceneFlow_Single(net, **kwargs):
                           Entry('forwardFlowR',  0),
                           Entry('dispL',  0),
                           Entry('dispL', +1),
-                          Entry('forwardDispChangeL', 0))))
+                          Entry('forwardDispChangeL', 0))),)
 
   return Layers.BinaryData(net,
                            nout=NumberOfEntries(samples),

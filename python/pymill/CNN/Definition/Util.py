@@ -6,7 +6,7 @@ import pymill.Toolbox as tb
 def sliceIn2(net, input_blob, slice_point, axis=1):
     return Layers.Slice(net,
                         input_blob,
-                        nout=2,
+                        nout= len(slice_point)+1 if isinstance(slice_point, tuple) else 2,
                         slice_param={
                           'slice_point': slice_point if isinstance(slice_point, tuple) else (slice_point,) ,
                           'axis': axis
@@ -91,13 +91,26 @@ def writeFloat(net, blob, folder='output', prefix='', suffix='', scale=1.0, file
 Network.writeFloat = writeFloat
 
 def scale(net, image_blob, factor):
-    return Layers.Eltwise(net,
-                          image_blob,
-                          nout=1,
-                          eltwise_param={
-                            'operation': Params.Eltwise.SUM,
-                            'coeff': (factor,)
-                          })
+    if isinstance(factor, tuple):
+      return Layers.Convolution(net,
+                                image_blob,
+                                nout=1,
+                                convolution_param={
+                                  'num_output': len(factor),
+                                  'pad': 0,
+                                  'kernel_size': 1,
+                                  'stride': 1,
+                                  'weight_filler': {'type': 'diagonal', 'diag_val': factor},
+                                  'bias_filler': {'type': 'constant'}
+                                })
+    else:
+      return Layers.Eltwise(net,
+                            image_blob,
+                            nout=1,
+                            eltwise_param={
+                              'operation': Params.Eltwise.SUM,
+                              'coeff': (factor,)
+                            })
 
 Network.scale = scale
 
