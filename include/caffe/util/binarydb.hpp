@@ -1,40 +1,92 @@
 #ifndef CAFFE_UTIL_DB_BINARYDB_HPP
 #define CAFFE_UTIL_DB_BINARYDB_HPP
 
+/// System/STL
+#include <fstream>
+#include <queue>
 #include <string>
-
+#include <vector>
+/// Boost
+#include <boost/thread.hpp>
+#include <boost/thread/mutex.hpp>
+/// Caffe/local files
 #include "caffe/common.hpp"
 #include "caffe/proto/caffe.pb.h"
-
 #include "caffe/blob.hpp"
 
-namespace caffe { namespace db {
+namespace caffe { 
+namespace db {
 
  
   
 template <typename Dtype>
 class BinaryDB {
- public:
-  BinaryDB() {
-    num_samples_ = 0;
-  }
-  ~BinaryDB() { Close(); }
-  void Open(const string& source, const LayerParameter& param);
+public:
+  BinaryDB();
+  ~BinaryDB();
+  
+  void Open(
+        const string& source, 
+        const LayerParameter& param);
   
   void Close();
   
   int get_num_samples() { return num_samples_; };
   
-  void get_sample(int index, vector<Blob<Dtype>*>* dst, int* compressed_size);
+  void get_sample(
+        int index, 
+        vector<Blob<Dtype>*>* dst, 
+        int* compressed_size);
   
-  void read_binstream(std::ifstream* binstream, BinaryDB_DataEncoding data_encoding, long int N, Dtype* out, int* n_read);
+//   void read_binstream(
+//         std::ifstream* binstream, 
+//         BinaryDB_DataEncoding data_encoding, 
+//         long int N, 
+//         Dtype* out, 
+//         int* n_read);
 
- private:
+private:
+  
   struct Entry {
     int binfile_idx;
     long int byte_offset;
     BinaryDB_DataEncoding data_encoding;
-  };  
+  };
+  
+  struct ReadTask {
+    ReadTask( Entry& entry_ref,
+              boost::shared_ptr<std::ifstream> binstream_ptr,
+              long int N,
+              Dtype* dst_ptr,
+              unsigned char* entry_buffer)
+    : entry_ref(entry_ref),
+      binstream_ptr(binstream_ptr),
+      N(N),
+      dst_ptr(dst_ptr),
+      n_read(0),
+      entry_buffer(entry_buffer)
+    {}
+    Entry& entry_ref;
+    boost::shared_ptr<std::ifstream> binstream_ptr;
+    long int N;
+    Dtype* dst_ptr;
+    int n_read;
+    unsigned char* entry_buffer;
+  };
+  std::queue<ReadTask*> undone_tasks;
+  std::queue<ReadTask*> done_tasks;
+  boost::mutex undone_tasks__LOCK;
+  boost::mutex done_tasks__LOCK;
+  std::vector<boost::thread*> worker_threads;
+  std::vector<unsigned char*> entry_buffers_;
+  bool running;
+  
+  void check_flag(
+        unsigned char* buffer);
+  void process_readtask(
+        ReadTask* task_ptr);
+  void worker_thread_loop();
+  
   
   typedef vector<Entry> Sample;
   
@@ -44,15 +96,15 @@ class BinaryDB {
   int num_binfiles_;
   
   int entry_buffer_size_;
-  unsigned char* entry_buffer_;
 
-  vector<Sample> samples_;
-  vector<vector<int> > entry_dimensions_;
-  vector<std::string> binfiles_;
-  vector<boost::shared_ptr<std::ifstream> > binstreams_;
-  vector<int> permutation_;  
+  std::vector<Sample> samples_;
+  std::vector<std::vector<int> > entry_dimensions_;
+  std::vector<std::string> binfiles_;
+  std::vector<boost::shared_ptr<std::ifstream> > binstreams_;
+  std::vector<int> permutation_;  
   
 };
+
 
 }  // namespace db
 }  // namespace caffe
