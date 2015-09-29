@@ -6,13 +6,26 @@ import pymill.Toolbox as tb
 def sliceIn2(net, input_blob, slice_point, axis=1):
     return Layers.Slice(net,
                         input_blob,
-                        nout= len(slice_point)+1 if isinstance(slice_point, tuple) else 2,
+                        nout=len(slice_point)+1 if tb.isList(slice_point) else 2,
                         slice_param={
-                          'slice_point': slice_point if isinstance(slice_point, tuple) else (slice_point,) ,
+                          'slice_point': slice_point if tb.isList(slice_point) else (slice_point,) ,
                           'axis': axis
                         })
 
 Network.slice = sliceIn2
+
+def crop(net, input_blob, width, height):
+    return Layers.PhilDataAugmentation(net,
+                             input_blob,
+                             nout=1,
+                             augmentation_param={
+                                'crop_width': width,
+                                'crop_height': height,
+                                'augment_during_test': True
+                             })
+
+Network.crop = crop
+
 
 def readImage(net, filename, num=1):
     return Layers.ImgReader(net,

@@ -163,12 +163,12 @@ void PhilDataAugmentationLayer<Dtype>::adjust_blobs(const LayerParameter& source
 {
   if (aug_.recompute_mean() > 0 && source_layer.blobs().size() >= 2) {
     LOG(INFO) << "Data augmentation layer: adjusting mean blobs";
-    CHECK_EQ(this->blobs_[1]->channels(), source_layer.blobs(1).channels());
-    bool same_size = (this->blobs_[1]->width() == source_layer.blobs(1).width()) && 
-                     (this->blobs_[1]->height() == source_layer.blobs(1).height());
+    CHECK_EQ(this->blobs_[1]->channels(), source_layer.blobs(1).shape().dim(1));
+    bool same_size = (this->blobs_[1]->width() == source_layer.blobs(1).shape().dim(3)) &&
+                     (this->blobs_[1]->height() == source_layer.blobs(1).shape().dim(2));
     int channels = this->blobs_[1]->channels();
     int area = this->blobs_[1]->height() * this->blobs_[1]->width();
-    int source_area = source_layer.blobs(1).height() * source_layer.blobs(1).width();
+    int source_area = source_layer.blobs(1).shape().dim(2) * source_layer.blobs(1).shape().dim(3);
     this->blobs_[0]->FromProto(source_layer.blobs(0));
     if (same_size) {
       this->blobs_[1]->FromProto(source_layer.blobs(1));

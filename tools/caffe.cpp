@@ -239,7 +239,15 @@ int test() {
   // Instantiate the caffe net.
   Net<float> caffe_net(FLAGS_model, caffe::TEST);
   caffe_net.CopyTrainedLayersFrom(FLAGS_weights);
-  LOG(INFO) << "Running for " << FLAGS_iterations << " iterations.";
+
+  if(FLAGS_iterations<=0)
+  {
+      int net_test_iters = caffe_net.test_iter_count();
+      FLAGS_iterations = net_test_iters;
+      LOG(INFO) << "Running for " << FLAGS_iterations << " iterations (given by data layer).";
+  }
+  else
+      LOG(INFO) << "Running for " << FLAGS_iterations << " iterations (given by command line).";
 
   vector<Blob<float>* > bottom_vec;
   vector<int> test_score_output_id;

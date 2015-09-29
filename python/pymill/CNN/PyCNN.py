@@ -48,7 +48,7 @@ def parseParameters(params):
 
     return d
 
-def runOnCluster(env, node, gpus, background,insertLocal=True):
+def runOnCluster(env, node, gpus, background,insertLocal=True, trackJob=True):
     gpuArch = env.params().gpuArch()
     if node is not None: tb.notice('Forwarding job to cluster node %s with %d gpu(s) which are of type %s' % (node, gpus, gpuArch),'info')
     else:                tb.notice('Forwarding job to cluster with %d gpu(s) which are of type %s' % (gpus, gpuArch),'info')
@@ -56,7 +56,7 @@ def runOnCluster(env, node, gpus, background,insertLocal=True):
     env.makeJobDir()
 
     currentId = '%s/current_id' %env.jobDir()
-    if os.path.exists(currentId):
+    if trackJob and os.path.exists(currentId):
         raise Exception('%s exists, there seems to be a job already running' % currentId)
 
     sysargs = sys.argv
@@ -65,11 +65,13 @@ def runOnCluster(env, node, gpus, background,insertLocal=True):
     cmd = ' '.join(sysargs)
     home = os.environ['HOME']
 
-    if args.background: qsubCommandFile = '%s/%s-%s.sh' % (env.jobDir(), env.name().replace('/','_'), time.strftime('%d.%m.%Y-%H:%M:%S'))
-    else:               qsubCommandFile = '%s/interactive.sh' % env.jobDir()
+    qsubCommandFile = '%s/%s-%s.sh' % (env.jobDir(), env.name().replace('/','_'), time.strftime('%d.%m.%Y-%H:%M:%S'))
 
     epilogueScript = '%s/epilogue.sh' %env.jobDir()
     open(epilogueScript, 'w').write("#!/bin/bash\ncd $path\nrm -f jobs/current_id\n")
+
+    if trackJob: saveIdCommand = 'echo $$PBS_JOBID > jobs/current_id'
+    else:        saveIdCommand = ''
 
     script = Template(
     '#!/bin/bash\n'
@@ -77,13 +79,13 @@ def runOnCluster(env, node, gpus, background,insertLocal=True):
     'umask 0002\n'
     'echo -e "\e[30;42m --- running on" `hostname` "--- \e[0m"\n'
     'cd "$path"\n'
-    'echo $$PBS_JOBID > jobs/current_id\n'
+    '$saveIdCommand\n'
     'trap "echo got SIGHUP" SIGHUP\n'
     'trap "echo got SIGUSR1" USR1\n'
     '$command\n'
     'echo done\n'
     'rm -f jobs/current_id\n'
-    ).substitute(path=env.path(), command=cmd)
+    ).substitute(path=env.path(), command=cmd, saveIdCommand=saveIdCommand)
 
     open(qsubCommandFile,'w').write(script)
     tb.system('chmod a+x "%s"' % qsubCommandFile)
@@ -153,10 +155,10 @@ subparser.add_argument('--weights',    help='caffe model file to initialize from
 # test
 subparser = subparsers.add_parser('test', help='test a network')
 subparser.add_argument('--iter',       help='iteration of .caffemodel to use', default=-1, type=int)
-subparser.add_argument('--variant',    help='test variant', default=None)
+subparser.add_argument('--num-iter',   help='number of iterations to run (default=auto)', default=-1, type=int)
+subparser.add_argument('--def',        help='custom test definition (default test.proto*/.py)', default=None)
 subparser.add_argument('--output',     help='output images to folder output_...', action='store_true')
 subparser.add_argument('param',        help='parameter to network', nargs='*')
-
 
 # continue
 subparser = subparsers.add_parser('continue', help='continue training from last saved (or specified) iteration')
@@ -193,7 +195,7 @@ subparser.add_argument('file', help='filename of .prototxt or .prototmp file')
 sub_parser = subparsers.add_parser('copy', help='copy a model')
 sub_parser.add_argument('source', help='source directory')
 sub_parser.add_argument('target', help='target directory')
-sub_parser.add_argument('--copy-snapshot', help='last snapshot', action='store_true')
+sub_parser.add_argument('--with-snapshot', help='last snapshot', action='store_true')
 sub_parser.add_argument('--iter', help='iteration of snapshot (default=last)', default=-1, type=int)
 
 # snapshot
@@ -254,7 +256,7 @@ elif args.command == 'view':
     env.view(args.iter)
     sys.exit(0)
 elif args.command == 'copy':
-    env.copy(args.source, args.target, args.copy_snapshot, args.iter)
+    env.copy(args.source, args.target, args.with_snapshot, args.iter)
     sys.exit(0)
 elif args.command == 'draw':
     os.system('gwenview %s &' % env.draw(args.file))
@@ -274,10 +276,10 @@ if   args.command == 'train':
         runOnCluster(env, args.node, args.gpus, args.background)
 elif args.command == 'test':
     if args.local:
-        env.test(args.iter, args.output, args.variant, parseParameters(args.param))
+        env.test(args.iter, args.output, getattr(args,'def'), parseParameters(args.param), args.num_iter)
         sys.exit(0)
     else:
-        runOnCluster(env, args.node, args.gpus, args.background)
+        runOnCluster(env, args.node, args.gpus, args.background, trackJob=False)
 elif args.command == 'continue':
     if not args.execute: checkNoJob()
     if args.local:
@@ -287,7 +289,7 @@ elif args.command == 'continue':
         runOnCluster(env, args.node, args.gpus, args.background)
 elif args.command == 'run':
     if args.cluster:
-        runOnCluster(env, args.node, args.gpus, args.background,False)
+        runOnCluster(env, args.node, args.gpus, args.background,False, trackJob=False)
     else:
         env.execute(args.file, args.iter)
         sys.exit(0)

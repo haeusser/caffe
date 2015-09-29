@@ -335,6 +335,9 @@ class Environment:
                     os.remove(self._logFile)
 
     def sanitize(self):
+        self.notice('removing *.pyc', 'del')
+        os.system('rm -f %s/*.pyc' % (self._path, file))
+
         if self.haveTrainDir():
             self.notice('removing training', 'del')
             os.system('rm -rf %s' % self._trainDir)
@@ -399,36 +402,25 @@ class Environment:
         os.chdir(self._trainDir)
         self._backend.resume(solverFilename=solverFilename, solverstateFilename=stateFile, logFile=self._logFile)
 
-    def test(self, iter, output=False, variant=None, vars={}):
+    def test(self, iter, output=False, definition=None, vars={}, num_iter=-1):
         modelFile, iter = self.getModelFile(iter)
 
         if output:
             vars['output'] = True
+            vars['prefix'] = iter
 
         self.cleanScratch()
         self.makeScratchDir()
 
-        if variant is None: variant = 'test'
-        else: variant = 'test_' + variant
-        proto = self.findProto(variant)
+        if definition is None: definition = 'test'
+        proto = self.findProto(definition)
 
         finalProto = self.makeScratchPrototxt(proto, vars)
         solverProto = self.makeScratchPrototxt(self._solverProto, vars)
 
-        iterations = -1
-        for l in open(proto).readlines():
-            match = re.match('.*?ITERATIONS\s*=\s*([0-9]+)',l)
-            if match:
-                iterations = int(match.group(1))
-
-        if iterations == -1:
-            for l in open(solverProto).readlines():
-                if l.startswith('test_iter:'):
-                    iterations = int(l.replace('test_iter:', ''))
-
-        self.notice('testing snapshot iteration %d for %d iterations...' % (iter, iterations), 'notice')
+        self.notice('testing snapshot iteration %d for %d iterations...' % (iter, num_iter), 'notice')
         os.chdir(self._path)
-        self._backend.test(caffemodelFilename=modelFile, protoFilename=finalProto, iterations=iterations)
+        self._backend.test(caffemodelFilename=modelFile, protoFilename=finalProto, iterations=num_iter)
 
     def plot(self, select):
         if not self.haveLogFile():
