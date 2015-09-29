@@ -518,16 +518,20 @@ class Environment:
         import caffe, caffe.draw
         from caffe.proto import caffe_pb2
 
+        if not prototmp.endswith('prototxt'):
+            self.notice('you need to provide a prototxt file (as of now ...)')
+            sys.exit(1)
+        else:
+            prototxt = prototmp
+
+        outfile = self._scratchDir + '/%s.png' % os.path.basename(prototxt).replace('.prototxt', '')
         net = caffe_pb2.NetParameter()
-
-        prototxt = self._scratchDir + '/%s.prototxt' % os.path.basename(prototmp).replace('.prototmp', '')
-        self.preprocessFile(prototmp, prototxt)
         text_format.Merge(open(prototxt).read(), net)
-
-        outfile = self._scratchDir + '/%s.png' % os.path.basename(prototmp).replace('.prototmp', '')
         self.notice('drawing net to %s' % outfile)
-        caffe.set_logging_disabled()
-        params = caffe.Net(prototxt)
-        caffe.draw.draw_net_to_file(net, outfile, '', params)
+        try:
+            caffe.draw.draw_net_to_file(net, outfile, 'LR')
+        except:
+            self.notice("{}\nMaybe you need to sudo apt-get install graphviz".format(sys.exc_info()[0]))
+            raise
 
         return outfile

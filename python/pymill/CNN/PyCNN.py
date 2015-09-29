@@ -257,8 +257,8 @@ elif args.command == 'copy':
     env.copy(args.source, args.target, args.copy_snapshot, args.iter)
     sys.exit(0)
 elif args.command == 'draw':
-    sys.exit(0)
     os.system('gwenview %s &' % env.draw(args.file))
+    sys.exit(0)
 elif args.command == 'snapshot':
     id = checkJob()
     os.system('ssh lmbtorque "qsig -s SIGHUP %s"' % id)
