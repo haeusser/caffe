@@ -1,12 +1,16 @@
 
+from numpy.ctypeslib import ndpointer
 import ctypes
 import numpy as np
-from numpy.ctypeslib import ndpointer
+import os
 import gridview
 
 
+libfile = os.path.join(os.path.dirname(__file__),
+                       'c_backend',
+                       'FlowVisualization.so')
 
-lib = ctypes.cdll.LoadLibrary('./c_backend/FlowVisualization.so')
+lib = ctypes.cdll.LoadLibrary(libfile)
 
 
 cColorFlow = lib.ColorFlow
