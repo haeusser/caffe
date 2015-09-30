@@ -683,6 +683,7 @@ message BinaryDB {
   
   message Content {
     repeated EntryFormat entry_format = 1;
+    optional int32 boundary_entries = 2 [ default = 0 ];
   }
   message File {
     

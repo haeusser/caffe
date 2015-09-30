@@ -65,14 +65,15 @@ class BinaryBackend:
             'gpu': self._gpus
         }))
 
-    def test(self, caffemodelFilename, protoFilename, iterations):
+    def test(self, caffemodelFilename, protoFilename, iterations, logFile):
         self._callBin(Template(
-            'test -weights $caffemodelFilename -model $protoFilename -iterations $iterations -gpu $gpu 2>&1').substitute(
+            'test -weights $caffemodelFilename -model $protoFilename -iterations $iterations -gpu $gpu 2>&1 | tee $logFile').substitute(
             {
                 'caffemodelFilename': caffemodelFilename,
                 'protoFilename': protoFilename,
                 'gpu': self._gpus,
-                'iterations': iterations
+                'iterations': iterations,
+                'logFile': logFile
             }))
 
 
@@ -115,6 +116,8 @@ class Environment:
             self._lines = ''
             self._gpu_arch = 'any'
             self._env = env
+            self._task = None
+            self._measure = None
 
         def read(self, filename):
             self._lines = open(filename).readlines()
@@ -129,11 +132,17 @@ class Environment:
                     self._gpu_arch = value
                 elif key == 'name':
                     self._env._name = value
+                elif key == 'task':
+                    self._task = value
+                elif key == 'measure':
+                    self._measure = value
                 else:
-                    raise Exception('invalid entry in params.txt: %s' % value)
+                    raise Exception('invalid entry in params.txt: %s' % key)
 
-        def gpuArch(self):
-            return self._gpu_arch
+        def gpuArch(self): return self._gpu_arch
+        def task(self): return self._task
+        def measure(self): return self._measure
+
 
     def __init__(self, path='.', backend=BinaryBackend(), unattended=False, silent=False):
         self._path = os.path.abspath(path)
@@ -192,7 +201,7 @@ class Environment:
                     tb.notice('converting %s' % inFile, 'run')
                 else:
                     tb.notice('converting %s (%s)' % (inFile, args), 'run')
-            if os.system('python %s %s > %s' % (inFile, args, prototxt)) != 0:
+            if os.system('python -B %s %s > %s' % (inFile, args, prototxt)) != 0:
                 raise Exception('conversion of %s failed' % inFile)
             return prototxt
         else:
@@ -224,15 +233,22 @@ class Environment:
         self._stateFiles = iterFiles('.solverstate', self._trainDir)
         self._logFiles = logFiles(self._logDir)
 
-        self._testProto = self.findProto('test')
         self._trainProto = self.findProto('train')
         self._solverProto = self.findProto('solver')
 
         self._logFile = self._path + '/training/log.txt'
+        self._scratchLogFile = self._path + '/scratch/log.txt'
 
         self._params = Environment.Parameters(self)
         if os.path.isfile(self._path + '/params.txt'):
             self._params.read(self._path + '/params.txt')
+
+    def determineTestDatasets(self):
+        if self.params().task() is None: raise Exception('you need to specify a task in params.txt')
+
+        from pymill.CNN.Definition.Dataset import getDatasetNames
+
+        return getDatasetNames(self.params().task())
 
     def notice(self, message, type=None):
         if self._silent:
@@ -363,9 +379,6 @@ class Environment:
     def prepareTraining(self):
         self.makeTrainDir()
 
-        if self._testProto != None:
-            self.makeTrainingPrototxt(self._testProto)
-
         self.makeTrainingPrototxt(self._trainProto)
         return self.makeTrainingPrototxt(self._solverProto)
 
@@ -420,7 +433,28 @@ class Environment:
 
         self.notice('testing snapshot iteration %d for %d iterations...' % (iter, num_iter), 'notice')
         os.chdir(self._path)
-        self._backend.test(caffemodelFilename=modelFile, protoFilename=finalProto, iterations=num_iter)
+        self._backend.test(caffemodelFilename=modelFile, protoFilename=finalProto, iterations=num_iter, logFile=self._scratchLogFile)
+
+    def runTests(self, iter, datasets, output=False, definition=None, vars={}):
+        if isinstance(datasets,str): datasets = datasets.split(',')
+        if datasets is None: datasets = self.determineTestDatasets()
+
+        try:
+            results = []
+            for dataset in datasets:
+                vars['dataset'] = dataset
+                self.test(iter, output, definition, vars)
+
+                log = Log(self._scratchLogFile)
+                value = log.getAssignment(self.params().measure())
+                results.append((dataset, value))
+                x = a
+        finally:
+            print 'Results(%s):' % self.params().task()
+            print '--------------------------------------------------------------------------------'
+            for result in results:
+                print '%20s: %5.3f' % (result[0], result[1])
+            print '--------------------------------------------------------------------------------'
 
     def plot(self, select):
         if not self.haveLogFile():

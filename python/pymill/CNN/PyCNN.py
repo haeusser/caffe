@@ -160,6 +160,14 @@ subparser.add_argument('--def',        help='custom test definition (default tes
 subparser.add_argument('--output',     help='output images to folder output_...', action='store_true')
 subparser.add_argument('param',        help='parameter to network', nargs='*')
 
+# run-tests
+subparser = subparsers.add_parser('run-tests', help='run multiple tests')
+subparser.add_argument('--iter',       help='iteration of .caffemodel to use', default=-1, type=int)
+subparser.add_argument('--datasets',   help='list of datasets (default=all)', default=None)
+subparser.add_argument('--def',        help='custom test definition (default test.proto*/.py)', default=None)
+subparser.add_argument('--output',     help='output images to folder output_...', action='store_true')
+subparser.add_argument('param',        help='parameter to network', nargs='*')
+
 # continue
 subparser = subparsers.add_parser('continue', help='continue training from last saved (or specified) iteration')
 subparser.add_argument('--iter',       help='iteration from which to continue (default=last)', default=-1, type=int)
@@ -182,6 +190,9 @@ subparser.add_argument('--select', help='selection of measures, e.g. test_*,trai
 
 # plotlr
 subparser = subparsers.add_parser('plotlr', help='plot learning rate')
+
+# plotlr
+subparser = subparsers.add_parser('plot-test', help='plot test losses')
 
 # view
 subparser = subparsers.add_parser('view', help='view weights')
@@ -252,6 +263,9 @@ elif args.command == 'plot':
 elif args.command == 'plotlr':
     env.plotLR()
     sys.exit(0)
+elif args.command == 'plot-test':
+    env.plot(select='test*')
+    sys.exit(0)
 elif args.command == 'view':
     env.view(args.iter)
     sys.exit(0)
@@ -277,6 +291,12 @@ if   args.command == 'train':
 elif args.command == 'test':
     if args.local:
         env.test(args.iter, args.output, getattr(args,'def'), parseParameters(args.param), args.num_iter)
+        sys.exit(0)
+    else:
+        runOnCluster(env, args.node, args.gpus, args.background, trackJob=False)
+elif args.command == 'run-tests':
+    if args.local:
+        env.runTests(args.iter, args.datasets, args.output, getattr(args,'def'), parseParameters(args.param))
         sys.exit(0)
     else:
         runOnCluster(env, args.node, args.gpus, args.background, trackJob=False)

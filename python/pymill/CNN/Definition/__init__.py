@@ -20,3 +20,14 @@ def argVars():
         d[k] = v
 
     return d
+
+args = None
+
+
+def param(name, default=None):
+    global args
+    if args is None:
+        args = argVars()
+
+    if name in args: return args[name]
+    return default
