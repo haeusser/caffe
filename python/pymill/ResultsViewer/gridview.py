@@ -732,6 +732,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 def main():
   ## Try to use all command line arguments
+  preload = False
   if len(sys.argv) > 1:
     for arg in sys.argv[1:]:
       if os.path.isdir(arg):
@@ -741,10 +742,10 @@ def main():
       elif arg.endswith('.cfg') and os.path.isfile(arg):
         readConfig(arg)
         print('Using config file >%s<'%(arg))
-      elif arg == '--no-preload':
+      elif arg == '--preload':
         global preload
-        preload = False
-        print('Will not preload data')
+        preload = True
+        print('Will preload data')
 
   ## If no explicit configuration file was given
   #  the data folder

@@ -163,6 +163,21 @@ def subtractMean(net, image_blob, color, input_scale=1.0, mean_scale=1.0, output
 
 Network.subtractMean = subtractMean
 
+def subtractAugmentationMean(net, input, name, width, height):
+    return Layers.PhilDataAugmentation(net,
+         input,
+         nout=1,
+         name=name,
+         augmentation_param={
+            'crop_width': width,
+            'crop_height': height,
+            'augment_during_test': True,
+            'recompute_mean': 1000,
+            'mean_per_pixel': False
+         })
+
+Network.subtractAugmentationMean = subtractAugmentationMean
+
 def addMean(net, image_blob, color, input_scale=1.0, mean_scale=1.0, ouptut_scale=1.0):
     return Layers.Mean(net,
                        image_blob,

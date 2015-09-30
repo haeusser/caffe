@@ -27,6 +27,14 @@ class SintelTrain(Dataset):
         kwargs['rand_permute'] = False
         return Data.BinaryData(net, **kwargs)
 
+    def flowLayer(self, net, **kwargs):
+        kwargs['setting'] = 'OPTICAL_FLOW_SINGLE'
+        kwargs['rendertype'] = self._rendertype
+        kwargs['phase'] = self._phase
+        kwargs['collection_list'] = '/misc/lmbraid17/sceneflownet/common/data/4_bin-db/collection_lists/sintel_train.txt'
+        kwargs['rand_permute'] = False
+        return Data.BinaryData(net, **kwargs)
+
 class FlyingStuff3DTest(Dataset):
     def __init__(self, rendertype, phase):
         Dataset.__init__(self, 'sintel', rendertype, phase)
@@ -39,6 +47,14 @@ class FlyingStuff3DTest(Dataset):
 
     def dispLayer(self, net, **kwargs):
         kwargs['setting'] = 'DISPARITY_SINGLE'
+        kwargs['rendertype'] = self._rendertype
+        kwargs['phase'] = self._phase
+        kwargs['collection_list'] = '/misc/lmbraid17/sceneflownet/common/data/4_bin-db/collection_lists/v1/FlyingStuff3D_test.txt'
+        kwargs['rand_permute'] = False
+        return Data.BinaryData(net, **kwargs)
+
+    def flowLayer(self, net, **kwargs):
+        kwargs['setting'] = 'OPTICAL_FLOW_SINGLE'
         kwargs['rendertype'] = self._rendertype
         kwargs['phase'] = self._phase
         kwargs['collection_list'] = '/misc/lmbraid17/sceneflownet/common/data/4_bin-db/collection_lists/v1/FlyingStuff3D_test.txt'
