@@ -206,6 +206,8 @@ class MillSolver(object):
             cur.execute('begin')
             cmd = '''INSERT OR REPLACE INTO {} VALUES(?, ?, ?);'''.format(table_name)
             if test:
+                # housekeeping: delete keys with iteration number >= current iteration number
+                cur.execute('''DELETE FROM {} WHERE name = 'test-output-blobs' AND Iteration >= {};'''.format(table_name, iteration))
                 cur.execute(cmd,
                             [iteration, "test-output-blobs", lite.Binary(json.dumps(blobs, default=self.json_default))])
                 con.commit()
