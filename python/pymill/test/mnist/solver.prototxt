@@ -24,6 +24,6 @@ snapshot_prefix: "lenet"
 # solver mode: CPU or GPU
 solver_mode: GPU
 # MillSolver params
-log_per: 5       # log per this number of iterations (simple log)
-viz_per_logs: 5   # log visualization per this multiple of log_per
-test_per_logs: 4  # log per this number of iterations (simple log)
+log_per: 10       # log per this number of iterations (simple log)
+viz_per_logs: 2   # log visualization per this multiple of log_per
+test_per_logs: 4  # test per this number of iterations (test interval should be removed above)
