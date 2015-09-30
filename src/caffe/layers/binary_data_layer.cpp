@@ -122,8 +122,10 @@ void BinaryDataLayer<Dtype>::LayerSetUp(const Container& bottom,
   DLOG(INFO) << "Initializing prefetch";
   StartInternalThread();
   DLOG(INFO) << "Prefetch initialized.";
-}
 
+  if(this->phase_ == TEST)
+      this->GetNet()->set_test_iter_count(reader_.get_num_samples());
+}
 
 /**
  * Entry point for InternalThread (not called by user)

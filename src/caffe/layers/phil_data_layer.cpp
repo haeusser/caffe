@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <leveldb/db.h>
 #include <pthread.h>
+#include <boost/algorithm/string.hpp>
 
 #include <fstream>  // NOLINT(readability/streams)
 #include <string>
@@ -14,6 +15,7 @@
 #include "caffe/util/rng.hpp"
 #include "caffe/vision_layers.hpp"
 #include "caffe/proto/caffe.pb.h"
+#include "caffe/net.hpp"
 
 #include "lmdb.h"
 
@@ -351,34 +353,55 @@ void PhilDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     }
     break;
   case DataParameter_DB_LMDB:
-    CHECK_EQ(mdb_env_create(&mdb_env_), MDB_SUCCESS) << "mdb_env_create failed";
-    CHECK_EQ(mdb_env_set_mapsize(mdb_env_, 1099511627776), MDB_SUCCESS);  // 1TB
-    CHECK_EQ(mdb_env_open(mdb_env_,
-             this->layer_param_.data_param().source().c_str(),
-             MDB_RDONLY|MDB_NOTLS, 0664), MDB_SUCCESS) << "mdb_env_open failed";
-    int dead;
-    CHECK_EQ(mdb_reader_check(mdb_env_, &dead), MDB_SUCCESS) << "mdb_reader_check failed";
-    LOG(INFO) << "LMDB: Cleaned " << dead << " stale readers.";
-    CHECK_EQ(mdb_txn_begin(mdb_env_, NULL, MDB_RDONLY, &mdb_txn_), MDB_SUCCESS)
-        << "mdb_txn_begin failed";
-    CHECK_EQ(mdb_open(mdb_txn_, NULL, 0, &mdb_dbi_), MDB_SUCCESS)
-        << "mdb_open failed";
-    CHECK_EQ(mdb_cursor_open(mdb_txn_, mdb_dbi_, &mdb_cursor_), MDB_SUCCESS)
-        << "mdb_cursor_open failed";
-        
-    if (verbose)    
-      LOG(INFO) << "Opening lmdb " << this->layer_param_.data_param().source();
-    
-    MDB_stat stat;
-    CHECK_EQ(mdb_stat(mdb_txn_, mdb_dbi_, &stat), MDB_SUCCESS) << "mdb_stat failed";
-    
+    {
+        CHECK_EQ(mdb_env_create(&mdb_env_), MDB_SUCCESS) << "mdb_env_create failed";
+        CHECK_EQ(mdb_env_set_mapsize(mdb_env_, 1099511627776), MDB_SUCCESS);  // 1TB
+        CHECK_EQ(mdb_env_open(mdb_env_,
+                 this->layer_param_.data_param().source().c_str(),
+                 MDB_RDONLY|MDB_NOTLS, 0664), MDB_SUCCESS) << "mdb_env_open failed";
+        int dead;
+        CHECK_EQ(mdb_reader_check(mdb_env_, &dead), MDB_SUCCESS) << "mdb_reader_check failed";
+        LOG(INFO) << "LMDB: Cleaned " << dead << " stale readers.";
+        CHECK_EQ(mdb_txn_begin(mdb_env_, NULL, MDB_RDONLY, &mdb_txn_), MDB_SUCCESS)
+            << "mdb_txn_begin failed";
+        CHECK_EQ(mdb_open(mdb_txn_, NULL, 0, &mdb_dbi_), MDB_SUCCESS)
+            << "mdb_open failed";
+        CHECK_EQ(mdb_cursor_open(mdb_txn_, mdb_dbi_, &mdb_cursor_), MDB_SUCCESS)
+            << "mdb_cursor_open failed";
 
-    LOG(INFO) << "DB entries: " << stat.ms_entries;
-    database_entries_ = stat.ms_entries;
-    
-    CHECK_EQ(mdb_cursor_get(mdb_cursor_, &mdb_key_, &mdb_value_, MDB_FIRST),
-        MDB_SUCCESS) << "mdb_cursor_get failed";
-    datum_index_ = 0;
+        if (verbose)
+          LOG(INFO) << "Opening lmdb " << this->layer_param_.data_param().source();
+
+        MDB_stat stat;
+        CHECK_EQ(mdb_stat(mdb_txn_, mdb_dbi_, &stat), MDB_SUCCESS) << "mdb_stat failed";
+
+
+        LOG(INFO) << "DB entries: " << stat.ms_entries;
+        database_entries_ = stat.ms_entries;
+
+        CHECK_EQ(mdb_cursor_get(mdb_cursor_, &mdb_key_, &mdb_value_, MDB_FIRST),
+            MDB_SUCCESS) << "mdb_cursor_get failed";
+        datum_index_ = 0;
+
+        //
+        // Determine number of entries from file count.txt in lmdb directory
+        //
+        if(this->phase_ == TEST && !this->layer_param_.data_param().has_preselection_label())
+        {
+            std::ifstream file;
+            file.open((this->layer_param_.data_param().source() + "/count.txt").c_str(), std::ios::in);
+            if(!file.is_open())
+                LOG(WARNING) << "LMDB does not have count.txt file for label counts";
+            else
+            {
+                std::string line;
+                if(getline(file,line))
+                {
+                    this->GetNet()->set_test_iter_count(atoi(line.c_str()));
+                }
+            }
+        }
+    }
     break;
   default:
     LOG(FATAL) << "Unknown database backend";
@@ -431,6 +454,9 @@ void PhilDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   
   if (verbose)
     LOG(INFO) << "Data range: " << range_start_ << " to " << range_end_ << " = " << range_size_ << " entries.";
+
+  if(this->phase_ == TEST)
+    this->GetNet()->set_test_iter_count(range_size_);
   
   switch (this->layer_param_.data_param().rand_permute_order()) {
   case DataParameter_RANDPERMORDER_FIRST_PERMUTE_THEN_RANGE:

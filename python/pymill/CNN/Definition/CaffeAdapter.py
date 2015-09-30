@@ -75,6 +75,8 @@ class Blob(object):
     def outputRefCount(self): return self._outputRefCount
 
     def makeSibling(self, master):
+        if master == self: return
+
         self._isSibling = True
         self._master = master
 

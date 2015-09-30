@@ -35,7 +35,9 @@ class BinaryDataReader : public InternalThread {
     return queue_pair_->full_;
   }
   const LayerParameter param_;
-    
+
+  int get_num_samples() { return body_.get()->get_num_samples(); }
+
  protected:
   // Queue pairs are shared between a body and its readers
   class BinaryQueuePair {
@@ -55,13 +57,16 @@ class BinaryDataReader : public InternalThread {
     explicit Body(const LayerParameter& param);
     virtual ~Body();
 
+    int get_num_samples() { return db_->get_num_samples(); }
+
    protected:
     void InternalThreadEntry();
-    void read_one(db::BinaryDB<Dtype>* db, int &index, BinaryQueuePair* qp);
+    void read_one(int &index, BinaryQueuePair* qp);
 
     const LayerParameter param_;
     BlockingQueue<shared_ptr<BinaryQueuePair> > new_queue_pairs_;
 
+    db::BinaryDB<Dtype>* db_;
     friend class BinaryDataReader;
 
   DISABLE_COPY_AND_ASSIGN(Body);

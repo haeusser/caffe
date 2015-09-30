@@ -227,6 +227,9 @@ class Net {
   inline void set_iter(int iter) { iter_=iter; }
   int iter() { return iter_; }
 
+  inline void set_test_iter_count(int iter) { LOG(INFO) << "Setting test iteration count to " << iter; test_iter_count_=iter; }
+  int test_iter_count() { return test_iter_count_; }
+
  protected:
   // Helpers for Init.
   /// @brief Append a new input or top blob to the net.
@@ -312,6 +315,7 @@ class Net {
   
   Solver<Dtype> *solver_;
   int iter_;
+  int test_iter_count_;
   
   DISABLE_COPY_AND_ASSIGN(Net);
 };

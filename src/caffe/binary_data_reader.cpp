@@ -84,25 +84,27 @@ template <typename Dtype>
 BinaryDataReader<Dtype>::Body::Body(const LayerParameter& param)
     : param_(param),
       new_queue_pairs_() {
+  db_ = new db::BinaryDB<Dtype>;
+  db_->Open(param.data_param().source(), param);
+
+  if(db_->get_num_samples() < 1) {
+    LOG(FATAL) << "No samples in DB";
+  }
+
   StartInternalThread();
 }
 
 template <typename Dtype>
 BinaryDataReader<Dtype>::Body::~Body() {
   StopInternalThread();
+  db_->Close();
+  delete db_; db_ = 0;
 }
 
 template <typename Dtype>
 void BinaryDataReader<Dtype>::Body::InternalThreadEntry() {
   CHECK_EQ(param_.data_param().backend(), DataParameter_DB_BINARYDB);
 
-  shared_ptr<db::BinaryDB<Dtype> > db(new db::BinaryDB<Dtype>);
-  db->Open(param_.data_param().source(), param_);
-  
-  if(db->get_num_samples() < 1) {
-    LOG(FATAL) << "No samples in DB";
-  }
-  
   int index = 0;
   vector<shared_ptr<BinaryQueuePair> > qps;
   
@@ -114,13 +116,13 @@ void BinaryDataReader<Dtype>::Body::InternalThreadEntry() {
     // so read one item, then wait for the next solver.
     for (int i = 0; i < solver_count; ++i) {
       shared_ptr<BinaryQueuePair> qp(new_queue_pairs_.pop());
-      read_one(db.get(), index, qp.get());
+      read_one(index, qp.get());
       qps.push_back(qp);
     }
     // Main loop
     while (!must_stop()) {
       for (int i = 0; i < solver_count; ++i) {
-        read_one(db.get(), index, qps[i].get());
+        read_one(index, qps[i].get());
       }
       // Check no additional readers have been created. This can happen if
       // more than one net is trained at a time per process, whether single
@@ -131,18 +133,17 @@ void BinaryDataReader<Dtype>::Body::InternalThreadEntry() {
   } catch (boost::thread_interrupted&) {
     // Interrupted exception is expected on shutdown
   }
-  db->Close();
 }
 
 template <typename Dtype>
-void BinaryDataReader<Dtype>::Body::read_one(db::BinaryDB<Dtype>* db, int &index, BinaryQueuePair* qp) {
+void BinaryDataReader<Dtype>::Body::read_one(int &index, BinaryQueuePair* qp) {
   
   vector<Blob<Dtype>*>* sample = qp->free_.pop();
 
   Timer t;
   t.Start();
   int compressed_size;
-  db->get_sample(index, sample, &compressed_size);
+  db_->get_sample(index, sample, &compressed_size);
   t.Stop();
   TimingMonitor::addMeasure("data_single_read", t.MilliSeconds());
   
@@ -151,7 +152,7 @@ void BinaryDataReader<Dtype>::Body::read_one(db::BinaryDB<Dtype>* db, int &index
   qp->full_.push(sample);
 
   index++;
-  if(index >= db->get_num_samples()) {
+  if(index >= db_->get_num_samples()) {
     index = 0;
     DLOG(INFO) << "Restarting data prefetching from start.";
   }

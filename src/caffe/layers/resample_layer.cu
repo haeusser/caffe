@@ -61,7 +61,7 @@ __global__ void InterpolationKernel(
         int y_out = (index % out_channelsize) / out_width;
 
         float x_in = x_out * fx + fy / 2.0 - 0.5;
-        float y_in = y_out * fx + fy / 2.0 - 0.5;
+        float y_in = y_out * fy + fx / 2.0 - 0.5;
 
         int x_in_round = round(x_in);
         int y_in_round = round(y_in);
