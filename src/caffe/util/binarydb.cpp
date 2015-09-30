@@ -37,9 +37,8 @@ BinaryDB<Dtype>::~BinaryDB()
 { 
   Close();
   
-  /// Deinitialize and destroy worker threads
+  /// Destroy worker threads
   for (unsigned int i = 0; i < worker_threads.size(); ++i) {
-    worker_threads[i]->join();
     delete worker_threads[i];
   }
   
@@ -161,7 +160,8 @@ void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param)
   
   /// Create and start worker threads (one for each ENTRY)
   running = true;
-  worker_threads.resize(top_num_);
+  LOG(INFO) << "Spawning " << top_num_ << " worker threads.";
+  worker_threads.resize(1);
   for (unsigned int i=0; i < worker_threads.size(); ++i) {
     worker_threads[i] = new boost::thread(&BinaryDB<Dtype>::worker_thread_loop,
                                           this);
@@ -192,6 +192,11 @@ void BinaryDB<Dtype>::Close()
   /// Close file handles
   for (unsigned int i = 0; i < binstreams_.size(); ++i)
     binstreams_.at(i)->close();
+  
+  /// Stop worker threads
+  for (unsigned int i = 0; i < worker_threads.size(); ++i) {
+    worker_threads[i]->join();
+  }
 }
 
 
@@ -207,7 +212,13 @@ void BinaryDB<Dtype>::get_sample(int index,
                                  vector<Blob<Dtype>*>* dst, 
                                  int* compressed_size) 
 {
-  if(compressed_size) *compressed_size=0;
+  if (compressed_size) *compressed_size = 0;
+  
+  if (not dst)
+    LOG(FATAL) << ">dst< target blob vector is NULL";
+  if (dst->size() != top_num_)
+    LOG(FATAL) << ">dst< target blob vector has size " << dst->size()
+               << ", should have size " << top_num_;
   
   /// Create a read task for every top blob
   undone_tasks__LOCK.lock();
@@ -286,17 +297,16 @@ void BinaryDB<Dtype>::get_sample(int index,
 //   }
   
   /// Wait until all read tasks are complete
-  while (done_tasks.size() < top_num_) {
+  while (undone_tasks.size() > 0 or done_tasks.size() < top_num_) {
     boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
   }
   /// Delete done tasks
   done_tasks__LOCK.lock();
   while (done_tasks.size() > 0) {
     ReadTask* task_ptr = done_tasks.front();
-    if(compressed_size) 
-      *compressed_size += task_ptr->n_read;
-    done_tasks.pop();
+    if (compressed_size) *compressed_size += task_ptr->n_read;
     delete task_ptr;
+    done_tasks.pop();
   }
   done_tasks__LOCK.unlock();
 }
@@ -329,9 +339,13 @@ void BinaryDB<Dtype>::get_sample(int index,
 template <typename Dtype>
 void BinaryDB<Dtype>::check_flag(unsigned char* buffer)
 {
+  if (not buffer)
+    LOG(FATAL) << "Bad buffer";
+    
   uint flag = (reinterpret_cast<uint*>(buffer))[0];
   if (flag != 1)
     LOG(FATAL) << "Bad flag: " << flag;
+  
 //   if (flag == 0)
 //     LOG(FATAL) << "Flag of blob " << t << " of sample " << index 
 //                << " is 0 " << " (File " << binfiles_.at(entry.binfile_idx)
@@ -416,7 +430,7 @@ void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr)
                    << entry_buffer_size_ << ", N=" << N;
 
       t1.Start(); binstream->read((char*)entry_buffer_, N+4); t1.Stop();
-//       check_flag(entry_buffer_);
+      check_flag(entry_buffer_);
       entry_buffer_ += 4;
       
       TimingMonitor::addMeasure("raw_data_rate", N * 1000.0 / 
@@ -436,7 +450,7 @@ void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr)
                    << entry_buffer_size_ << ", 2*N=" << 2*N;
 
       t1.Start(); binstream->read((char*)entry_buffer_, 2*N+4); t1.Stop();
-//       check_flag(entry_buffer_);
+      check_flag(entry_buffer_);
       entry_buffer_ += 4;
       
       TimingMonitor::addMeasure("raw_data_rate", 2*N * 1000.0 / 
@@ -448,7 +462,7 @@ void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr)
         short v = *((short*)(&entry_buffer_[2*i]));
 
         Dtype value;
-        if(v==std::numeric_limits<short>::max()) 
+        if(v==std::numeric_limits<short>::max())
           value = std::numeric_limits<Dtype>::signaling_NaN();
         else
           value = ((Dtype)v)/32.0;
@@ -479,9 +493,13 @@ void BinaryDB<Dtype>::worker_thread_loop()
     {
       /// Fetch task
       undone_tasks__LOCK.lock();
+      if (undone_tasks.size() == 0) {
+        undone_tasks__LOCK.unlock();
+        continue;
+      }
       ReadTask* task_ptr = undone_tasks.front();
-//       LOG(INFO) << "Thread (" << boost::this_thread::get_id() << ") fetched"
-//                 << " a new task.";
+      LOG(INFO) << "Thread (" << boost::this_thread::get_id() << ") fetched"
+                << " a new task.";
       undone_tasks.pop();
       undone_tasks__LOCK.unlock();
       
