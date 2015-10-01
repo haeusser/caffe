@@ -67,6 +67,7 @@ def DataParams(samples, bin_db_dir, collection_list_dir, collection_list, batch_
             'sample'    : samples,
             'verbose'   : verbose,
             'rand_permute'     : rand_permute}
+  params.update(kwargs)
 
   if rand_permute_seed is not None:
       params['rand_permute_seed'] = rand_permute_seed
