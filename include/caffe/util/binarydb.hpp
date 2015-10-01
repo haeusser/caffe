@@ -3,6 +3,7 @@
 
 /// System/STL
 #include <fstream>
+#include <map>
 #include <queue>
 #include <string>
 #include <vector>
@@ -55,7 +56,7 @@ private:
   
   struct ReadTask {
     ReadTask( Entry& entry_ref,
-              boost::shared_ptr<std::ifstream> binstream_ptr,
+              std::ifstream* binstream_ptr,
               long int N,
               Dtype* dst_ptr,
               unsigned char* entry_buffer)
@@ -66,12 +67,20 @@ private:
       n_read(0),
       entry_buffer(entry_buffer)
     {}
+    
     Entry& entry_ref;
-    boost::shared_ptr<std::ifstream> binstream_ptr;
+    std::ifstream* binstream_ptr;
     long int N;
     Dtype* dst_ptr;
     int n_read;
     unsigned char* entry_buffer;
+    
+    /// DEBUG
+    void debug(int s, int i)
+    { sample=s; index=i; }
+    int sample;
+    int index;
+    /// DEBUG
   };
   std::queue<ReadTask*> undone_tasks;
   std::queue<ReadTask*> done_tasks;
@@ -100,8 +109,33 @@ private:
   std::vector<Sample> samples_;
   std::vector<std::vector<int> > entry_dimensions_;
   std::vector<std::string> binfiles_;
-  std::vector<boost::shared_ptr<std::ifstream> > binstreams_;
+//   std::vector<boost::shared_ptr<std::ifstream> > binstreams_;
+  std::map<int, std::map<int, std::ifstream*> > binstreams_;
   std::vector<int> permutation_;  
+  
+  
+  /**
+   * string.split() (from http://stackoverflow.com/a/236803)
+   */  
+  std::vector<std::string>& debug_m_split(const std::string &s,
+                                  char delim,
+                                  std::vector<std::string>& elems)
+  {
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+      elems.push_back(item);
+    }
+    return elems;
+  }
+
+  std::vector<std::string> debug_m_split(const std::string& s, 
+                                char delim) 
+  {
+    std::vector<std::string> elems;
+    debug_m_split(s, delim, elems);
+    return elems;
+  }
   
 };
 
