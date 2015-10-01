@@ -130,8 +130,14 @@ class BinaryDB:
                                 'encoding': entry_format.data_encoding,
                                 'dimensions': (entry_format.width, entry_format.height, entry_format.channels),
                                 'index': entry_format_idx,
-                                'num': len(binfile.content.entry_format)
+                                'num': len(binfile.content.entry_format),
+                                'num_boundary_entries': binfile.content.num_boundary_entries
                             }
+
+                for key, entry in entry_lookup.iteritems():
+                    self.min_margin = max(self.min_margin, entry['num_boundary_entries'])
+                if self.min_margin: print 'min_margin', self.min_margin
+
                 # Now for current sample definition find all samples in this CLIP/DB
                 num_total = bindb_index.num
                 start_off = max(-self.sample_props[sampidx].min_offset, self.min_margin)

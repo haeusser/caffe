@@ -79,6 +79,14 @@ class MonkaaTest(Dataset):
         kwargs['rand_permute'] = False
         return Data.BinaryData(net, **kwargs)
 
+    def flowLayer(self, net, **kwargs):
+        kwargs['setting'] = 'OPTICAL_FLOW_SINGLE'
+        kwargs['rendertype'] = self._rendertype
+        kwargs['phase'] = self._phase
+        kwargs['collection_list'] = '/misc/lmbraid17/sceneflownet/common/data/4_bin-db/collection_lists/v1/monkaa_test.txt'
+        kwargs['rand_permute'] = False
+        return Data.BinaryData(net, **kwargs)
+
 class Kitti2012Train(Dataset):
     def __init__(self, phase):
         Dataset.__init__(self, 'kitti2012', 'FINAL', phase)
@@ -91,6 +99,14 @@ class Kitti2012Train(Dataset):
 
     def dispLayer(self, net, **kwargs):
         kwargs['setting'] = 'DISPARITY_SINGLE'
+        kwargs['rendertype'] = self._rendertype
+        kwargs['phase'] = self._phase
+        kwargs['collection_list'] = '/misc/lmbraid17/sceneflownet/common/data/4_bin-db/collection_lists/kitti2012_train.txt'
+        kwargs['rand_permute'] = False
+        return Data.BinaryData(net, **kwargs)
+
+    def flowLayer(self, net, **kwargs):
+        kwargs['setting'] = 'OPTICAL_FLOW_SINGLE'
         kwargs['rendertype'] = self._rendertype
         kwargs['phase'] = self._phase
         kwargs['collection_list'] = '/misc/lmbraid17/sceneflownet/common/data/4_bin-db/collection_lists/kitti2012_train.txt'
@@ -115,6 +131,32 @@ class Kitti2015Train(Dataset):
         kwargs['rand_permute'] = False
         return Data.BinaryData(net, **kwargs)
 
+    def flowLayer(self, net, **kwargs):
+        kwargs['setting'] = 'OPTICAL_FLOW_SINGLE'
+        kwargs['rendertype'] = self._rendertype
+        kwargs['phase'] = self._phase
+        kwargs['collection_list'] = '/misc/lmbraid17/sceneflownet/common/data/4_bin-db/collection_lists/kitti2015_train.txt'
+        kwargs['rand_permute'] = False
+        return Data.BinaryData(net, **kwargs)
+
+class FlyingChairsValidation(Dataset):
+    def __init__(self, phase):
+        Dataset.__init__(self, 'chairs.val', 'CLEAN', phase)
+
+    def width(self): return 512
+    def height(self): return 384
+    def meanColors(self):               # FIX ME FIX ME FIX ME FIX ME FIX ME FIX ME!!!
+        if self._rendertype == 'CLEAN': return (76.4783107737, 69.4660111681, 58.0279756163)
+        else:                           return (91.2236713645, 82.6859238723, 69.5627393708)
+
+    def flowLayer(self, net, **kwargs):
+        img0, img1, flow_gt, occ = Data.FlyingChairs(net,
+            subset='TEST',
+            phase=self._phase,
+            **kwargs
+        )
+        return img0, img1, flow_gt
+
 def get(name=None, rendertype=None, phase=None):
     if   name == 'sintel.train.clean':        return SintelTrain('CLEAN', phase)
     elif name == 'sintel.train.final':        return SintelTrain('FINAL', phase)
@@ -124,6 +166,7 @@ def get(name=None, rendertype=None, phase=None):
     elif name == 'FlyingStuff3D.test.final':  return FlyingStuff3DTest('FINAL', phase)
     elif name == 'monkaa.test.clean':         return MonkaaTest('CLEAN', phase)
     elif name == 'monkaa.test.final':         return MonkaaTest('FINAL', phase)
+    elif name == 'chairs.val':                return FlyingChairsValidation(phase)
     else:
         raise Exception('unknown dataset: %s' % name)
 
@@ -135,7 +178,17 @@ def getDatasetNames(task):
                 'monkaa.test.final',
                 'FlyingStuff3D.test.clean',
                 'FlyingStuff3D.test.final',
-                'Kitti2012.train',
-                'Kitti2015.train')
+                'kitti2012.train',
+                'kitti2015.train')
+    elif task == 'flow':
+        return ('sintel.train.clean',
+                'sintel.train.final',
+                'monkaa.test.clean',
+                'monkaa.test.final',
+                'FlyingStuff3D.test.clean',
+                'FlyingStuff3D.test.final',
+                'kitti2012.train',
+                'kitti2015.train',
+                'chairs.val')
     else:
-        raise Exception('ukown task: %s' % task)
+        raise Exception('unknown task: %s' % task)
