@@ -368,6 +368,9 @@ class Environment:
             self.notice('removing jobs', 'del')
             os.system('rm -rf %s' % self._jobDir)
 
+        self.sweep()
+
+    def sweep(self):
         for file in os.listdir(self._path):
             if os.path.isdir(file) and file.startswith('output'):
                 self.notice('removing %s' % file, 'del')
@@ -431,6 +434,13 @@ class Environment:
 
         finalProto = self.makeScratchPrototxt(proto, vars)
         solverProto = self.makeScratchPrototxt(self._solverProto, vars)
+
+        if output and 'dataset' in vars:
+            outPath = '%s/output_%d_%s' % (self._path, iter, vars['dataset'])
+            if os.path.isdir(outPath):
+                if self._unattended or tb.queryYesNo('Output folder %s exists, do you want to delete it first?' % os.path.basename(outPath)):
+                    os.system('rm -rf %s' % outPath)
+
 
         self.notice('testing snapshot iteration %d for %d iterations...' % (iter, num_iter), 'notice')
         os.chdir(self._path)

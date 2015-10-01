@@ -181,6 +181,13 @@ subparser.add_argument('--iter',       help='number of iterations to run', defau
 subparser = subparsers.add_parser('clean', help='delete .caffemodel, .solverstate and log files')
 subparser.add_argument('--iter', help='delete only everything after ITER', default=-1, type=int)
 
+# clean
+subparser = subparsers.add_parser('clean', help='delete .caffemodel, .solverstate and log files')
+subparser.add_argument('--iter', help='delete only everything after ITER', default=-1, type=int)
+
+# sweep
+subparser = subparsers.add_parser('sweep', help='delete output folders')
+
 # sanitize
 subparser = subparsers.add_parser('sanitize', help='delete everything that was created by pycnn')
 
@@ -256,6 +263,9 @@ if   args.command == 'clean':
 if   args.command == 'sanitize':
     checkNoJob()
     env.sanitize()
+    sys.exit(0)
+if   args.command == 'sweep':
+    env.sweep()
     sys.exit(0)
 elif args.command == 'plot':
     env.plot(args.select)
