@@ -161,7 +161,7 @@ void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param)
   /// Create and start worker threads (one for each ENTRY)
   running = true;
   LOG(INFO) << "Spawning " << top_num_ << " worker threads.";
-  worker_threads.resize(1);
+  worker_threads.resize(top_num_);
   for (unsigned int i=0; i < worker_threads.size(); ++i) {
     worker_threads[i] = new boost::thread(&BinaryDB<Dtype>::worker_thread_loop,
                                           this);
