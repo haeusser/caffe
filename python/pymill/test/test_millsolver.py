@@ -8,6 +8,7 @@ import sys
 
 sys.path.append('/misc/lmbraid17/sceneflownet/haeusserp/hackathon-caffe2/python/pymill/CNN')  # avoid pymill __init__ for now
 sys.path.append('/home/haeusser/libs/hackathon-caffe2/python/pymill/CNN')  # avoid pymill __init__ for now
+sys.path.append('/usr/wiss/haeusser/libs/hackathon-caffe2/python/pymill/CNN')  # avoid pymill __init__ for now
 try:
     from CNN import MillSolver as ms
 except:

@@ -60,7 +60,7 @@ class MillPlot(object):
             self.cache_log_test = cur.fetchall()
 
         except lite.Error, e:
-            raise NameError('Error %s:' % e.args[0])
+            raise Exception('Error %s:' % e.args[0])
             # sys.exit(1)
 
         finally:
@@ -87,7 +87,7 @@ class MillPlot(object):
             self.cache_log_test = cur.fetchmany(samples)
 
         except lite.Error, e:
-            raise NameError('Error %s:' % e.args[0])
+            raise Exception('Error %s:' % e.args[0])
             # sys.exit(1)
 
         finally:
@@ -104,7 +104,7 @@ class MillPlot(object):
             return con, con.cursor()
 
         except lite.Error, e:
-            raise NameError('Error %s:' % e.args[0])
+            raise Exception('Error %s:' % e.args[0])
 
     def _get_cached_iterations(self):
         self.cached_iterations = np.zeros(len(self.cache_log_train))

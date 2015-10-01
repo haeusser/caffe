@@ -21,8 +21,16 @@ import gridview_c_interface
 __version__ = '0.2.0'
 
 
-preload = True
+## Preload data?
+preload = False
 
+## Randomize data?
+permute = True
+
+## Script file location
+here = os.path.dirname(__file__)
+
+## Structure of the names of the expected data files
 filename_template = '%07d%s'
 filename_template_batch = '%07d(%03d)%s'
 
@@ -30,7 +38,7 @@ dir = None
 batch = True
 
 flowScale = 1.0
-flowStyle = 0
+flowStyle = 1
 
 floatMin = 0.0
 floatMax = 1.0
@@ -47,8 +55,14 @@ def parseConfig(lines):
       [int(v) for v in lines[0].split(' ')[:2]]
   cells = {}
   for line in lines[1:]:
-    xstr,ystr,suffix = line.split(' ')
-    cells['%s %s'%(xstr,ystr)] = suffix
+    ## Options
+    if line.startswith('option'):
+      parts = line.split(' ')[1:]
+      configuration[parts[0]] = parts[1:]
+    ## Grid cells
+    else:
+      xstr,ystr,suffix = line.split(' ')
+      cells['%s %s'%(xstr,ystr)] = suffix
   grid = []
   for x in range(configuration['X']):
     col = []
@@ -57,6 +71,7 @@ def parseConfig(lines):
       col.append({'suffix': cells[index_str]})
     grid.append(col)
   configuration['grid'] = grid
+  print(configuration)
 
 def readConfig(filename):
   '''Read a configuration file'''
@@ -65,7 +80,9 @@ def readConfig(filename):
     raise ValueError()
   with open(filename) as f:
     lines = f.readlines()
-  lines = [line.split('#')[0].strip() for line in lines]
+  ## Discard comments and blank lines
+  lines = [line.split('#')[0].strip() for line in lines 
+        if line.split('#')[0].strip()]
   parseConfig(lines)
 
 
@@ -282,11 +299,11 @@ class FloatCell(Cell):
       raw_float_data = self.raw_data[idx]
     else:
       raw_float_data = readFloat(self.filenames[idx])
-    scale = floatMax-floatMin
+    scale = 255./(floatMax-floatMin)
     offset = -floatMin
     self.label.setPixmap(QtGui.QPixmap.fromImage(
                          ImageQt(Image.fromarray((raw_float_data+offset)*scale)\
-                                 .convert('P')))\
+                                 .convert('L')))\
                          .scaled(self.label.size(),
                                  QtCore.Qt.KeepAspectRatio))
 
@@ -316,20 +333,12 @@ class FlowCell(Cell):
       return
     self.caption.setText(self.namePart(self.filenames[idx]))
     if preload:
-      if flowStyle == 0:
-        flow_image = gridview_c_interface.ColorFlow(self.raw_data[idx],
-                                                    flowScale)
-      else:
-        flow_image = gridview_c_interface.ColorFlow2(self.raw_data[idx],
-                                                     flowScale)
+      raw_flow_data = self.raw_data[idx],
     else:
       raw_flow_data = readFlow(self.filenames[idx])
-      if flowStyle == 0:
-        flow_image = gridview_c_interface.ColorFlow(raw_flow_data, 
-                                                    flowScale)
-      else:
-        flow_image = gridview_c_interface.ColorFlow2(raw_flow_data, 
-                                                     flowScale)
+    flow_image = gridview_c_interface.Flow(flowStyle, 
+                                           raw_flow_data,
+                                           flowScale)
     self.label.setPixmap(QtGui.QPixmap.fromImage(\
                          ImageQt(Image.fromarray(flow_image))\
                          .scaled(self.label.size(),
@@ -384,6 +393,11 @@ class MainWindow(QtWidgets.QMainWindow):
     mainlayout = QtWidgets.QVBoxLayout()
     mainlayout.addWidget(self.gridcontainer)
 
+    ## Choose input mode
+    testfile = filename_template_batch%(0,0,self.grid[0].suffix)
+    global batch
+    batch = os.path.isfile(os.path.join(dir, testfile))
+
     ## Slider and buttons
     toolsContainer = QtWidgets.QWidget()
     toolsContainer.setContentsMargins(0,0,0,0)
@@ -422,12 +436,28 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # Sliders for float scaling if necessary
     if self.needFloatTools:
-      ## Min
+      ## Min, max
+      if 'floatlimits' in configuration:
+        limits = {'min': 100*float(configuration['floatlimits'][0]),
+                  'max': 100*float(configuration['floatlimits'][1])}
+      else:
+        limits = {'min': -25500,
+                  'max': 25500}
+      ## Preset values
+      if 'floatminmax' in configuration:
+        presets = {'min': 100*float(configuration['floatminmax'][0]),
+                   'max': 100*float(configuration['floatminmax'][1])}
+      else:
+        presets = {'min': 0, 
+                   'max': 100}
+      global floatMin, floatMax
+      floatMin, floatMax = presets['min']/100., presets['max']/100.
+
       self.floatMinSlider = QtWidgets.QSlider(orientation=QtCore.Qt.Horizontal)
-      self.floatMinSlider.setRange(-3200,3200)
+      self.floatMinSlider.setRange(limits['min'], limits['max'])
       self.floatMinSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
-      self.floatMinSlider.setValue(0)
-      self.floatMinSliderLabel = QtWidgets.QLabel("Float min: 0.0")
+      self.floatMinSlider.setValue(presets['min'])
+      self.floatMinSliderLabel = QtWidgets.QLabel("Float min: %.2f"%(presets['min']/100.))
       self.floatMinSliderLabel.setFixedSize(100,20)
       floatMinSliderLayout = QtWidgets.QHBoxLayout()
       floatMinSliderLayout.setContentsMargins(0,0,0,0)
@@ -439,10 +469,10 @@ class MainWindow(QtWidgets.QMainWindow):
       floatMinSliderContainer.setFixedHeight(40)
       ## Max
       self.floatMaxSlider = QtWidgets.QSlider(orientation=QtCore.Qt.Horizontal)
-      self.floatMaxSlider.setRange(-3200,3200)
+      self.floatMaxSlider.setRange(limits['min'], limits['max'])
       self.floatMaxSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
-      self.floatMaxSlider.setValue(100)
-      self.floatMaxSliderLabel = QtWidgets.QLabel("Float max: 1.0")
+      self.floatMaxSlider.setValue(presets['max'])
+      self.floatMaxSliderLabel = QtWidgets.QLabel("Float max: %.2f"%(presets['max']/100.))
       self.floatMaxSliderLabel.setFixedSize(100,20)
       floatMaxSliderLayout = QtWidgets.QHBoxLayout()
       floatMaxSliderLayout.setContentsMargins(0,0,0,0)
@@ -465,11 +495,13 @@ class MainWindow(QtWidgets.QMainWindow):
     
     # Slider for optical flow scaling if necessary
     if self.needFlowTools:
+      global flowScale
+      flowScale = 100*0.0005
       self.flowScaleSlider = QtWidgets.QSlider(orientation=QtCore.Qt.Horizontal)
       self.flowScaleSlider.setRange(1,3200)
       self.flowScaleSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
       self.flowScaleSlider.setValue(100)
-      self.flowScaleSliderLabel = QtWidgets.QLabel("OF scale: 1.0")
+      self.flowScaleSliderLabel = QtWidgets.QLabel("OF scale: 0.05")
       self.flowScaleSliderLabel.setFixedSize(100,20)
       flowScaleSliderLayout = QtWidgets.QHBoxLayout()
       flowScaleSliderLayout.setContentsMargins(0,0,0,0)
@@ -485,16 +517,19 @@ class MainWindow(QtWidgets.QMainWindow):
       flowStyleContainer.setContentsMargins(0,0,0,0)
       flowStyleLayout = QtWidgets.QVBoxLayout()
       flowStyleLayout.setContentsMargins(0,0,0,0)
-      flowStyleWhiteButton = QtWidgets.QRadioButton('&Sintel style')
-      flowStyleWhiteButton.setChecked(True)
-      flowStyleWhiteButton.clicked.connect(partial(self.setFlowStyle, 0))
-      flowStyleBlackButton = QtWidgets.QRadioButton('&Middlebury style')
-      flowStyleBlackButton.clicked.connect(partial(self.setFlowStyle, 1))
+      flowStyleSintelButton = QtWidgets.QRadioButton('&Sintel')
+      flowStyleSintelButton.clicked.connect(partial(self.setFlowStyle, 0))
+      flowStyleMiddleburyButton = QtWidgets.QRadioButton('&Middlebury')
+      flowStyleMiddleburyButton.setChecked(True)
+      flowStyleMiddleburyButton.clicked.connect(partial(self.setFlowStyle, 1))
       flowStyleButtonGroup = QtWidgets.QButtonGroup()
-      flowStyleButtonGroup.addButton(flowStyleWhiteButton)
-      flowStyleButtonGroup.addButton(flowStyleBlackButton)
-      flowStyleLayout.addWidget(flowStyleWhiteButton)
-      flowStyleLayout.addWidget(flowStyleBlackButton)
+      flowStyleButtonGroup.addButton(flowStyleSintelButton)
+      flowStyleButtonGroup.addButton(flowStyleMiddleburyButton)
+      flowStylesLabel = QtWidgets.QLabel()
+      flowStylesLabel.setText('Flow style')
+      flowStyleLayout.addWidget(flowStylesLabel)
+      flowStyleLayout.addWidget(flowStyleSintelButton)
+      flowStyleLayout.addWidget(flowStyleMiddleburyButton)
       flowStyleContainer.setLayout(flowStyleLayout)
       toolsLayout.addWidget(flowStyleContainer)
 
@@ -506,14 +541,15 @@ class MainWindow(QtWidgets.QMainWindow):
     # Status bar with resize grip, for status messages
     status = self.statusBar()
     status.setSizeGripEnabled(True)
-    status.showMessage("Ready", 5000)
+    self.updateStatus("Ready")
 
     ## Actions
     # Open one image set
-    fileOpenAction  = self.createAction("&Open folder",
-                                        self.fileOpen,
-                                        None,
-                                        "Open a folder containing images")
+    #fileOpenAction  = self.createAction("&Open folder",
+    #                                    self.fileOpen,
+    #                                    None,
+    #                                    "Open a folder containing images")
+
     # Exit program
     fileQuitAction = self.createAction("&Quit",
                                        self.close,
@@ -527,14 +563,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # Menus and toolbars
     self.fileMenu = self.menuBar().addMenu("&File")
-    self.addActions(self.fileMenu, (fileOpenAction,
-                                    None, 
-                                    fileQuitAction,))
+    #self.addActions(self.fileMenu, (fileOpenAction,
+    #                                None, 
+    #                                fileQuitAction,))
+    self.addActions(self.fileMenu, (fileQuitAction,))
     self.helpMenu = self.menuBar().addMenu("&Help")
     self.addActions(self.helpMenu, (helpAboutAction,))
-    fileToolBar = self.addToolBar("File")
-    fileToolBar.setObjectName("FileToolBar")
-    self.addActions(fileToolBar, (fileOpenAction,))
+    #fileToolBar = self.addToolBar("File")
+    #fileToolBar.setObjectName("FileToolBar")
+    #self.addActions(fileToolBar, (fileOpenAction,))
 
     self.setWindowTitle(QtWidgets.QApplication.applicationName())
     
@@ -555,6 +592,8 @@ class MainWindow(QtWidgets.QMainWindow):
     global flowStyle
     flowStyle = newStyle
     self.changeFrame(self.currentIndex)
+    self.flowScaleSliderChange(self.flowScaleSlider.value())
+
 
   def resizeEvent(self, resizeEvent):
     if self.grid[0].filenames:
@@ -595,11 +634,15 @@ class MainWindow(QtWidgets.QMainWindow):
   def flowScaleSliderChange(self, newValue):
     """React to the user manipulating the flow scale control slider"""
     global flowScale
-    flowScale = 0.01*newValue
+    if flowStyle == 0:    ## Sintel
+      flowScale = 0.01*newValue
+    elif flowStyle == 1:  ## Middlebury
+      flowScale = 0.0005*newValue
+
     for cell in self.grid:
       if isinstance(cell, FlowCell):
         cell.index(self.currentIndex, flowScale)
-    self.flowScaleSliderLabel.setText("OF scale: %.2f" % (flowScale))
+    self.flowScaleSliderLabel.setText("OF scale: %.3f" % (flowScale))
     if self.needFlowTools:
       self.flowScaleSlider.setValue(newValue)
 
@@ -647,20 +690,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
   def fileOpen(self, folder=None):
     """Load a set of images, discovered from one specimen selected by the user"""
-    ## If no folder is given, ask the user to choose one
-    if folder is None:
-      header = "Choose folder"
-      folder = QtWidgets.QFileDialog.getExistingDirectory(
-                self,
-                "%s - %s" % (QtWidgets.QApplication.applicationName(), 
-                             header),
-                '.')
-      global dir
-      dir = folder
-    
-    testfile = filename_template_batch%(0,0,self.grid[0].suffix)
-    global batch
-    batch = os.path.isfile(os.path.join(dir, testfile))
+    ### If no folder is given, ask the user to choose one
+    #if folder is None:
+    #  header = "Choose folder"
+    #  folder = QtWidgets.QFileDialog.getExistingDirectory(
+    #            self,
+    #            "%s - %s" % (QtWidgets.QApplication.applicationName(), 
+    #                         header),
+    #            '.')
+    #  global dir
+    #  dir = folder
 
     # If the user selected a file, autodiscover a fitting set
     if folder:
@@ -682,13 +721,27 @@ class MainWindow(QtWidgets.QMainWindow):
     """Load file set, given one specimen (fname)"""
     if not dir:
       return
+
+    ## Generate permutation sequence (trivial ordered list if permute
+    #  is disabled)
+    global permute
+    if permute:
+      permute = list(range(len(GenerateFilenames(self.grid[0].suffix))))
+      import random
+      random.seed(0)
+      random.shuffle(permute)
+    else:
+      permute = list(range(len(GenerateFilenames(self.grid[0].suffix))))
+
     for cell in self.grid:
+      if isinstance(cell, EmptyCell):
+        continue
       cell.clear()
       found_filenames = GenerateFilenames(cell.suffix)
       if not found_filenames:
         raise Exception('No filenames found. Did you provide a configuration?')
-      for i,f in enumerate(found_filenames):
-        cell.addImage(f)
+      for i in range(len(found_filenames)):
+        cell.addImage(found_filenames[permute[i]])
         if preload:
           self.updateStatus("Reading images... %d/%d." % (i+1, len(found_filenames)))
     else:
@@ -741,10 +794,14 @@ def main():
       elif arg.endswith('.cfg') and os.path.isfile(arg):
         readConfig(arg)
         print('Using config file >%s<'%(arg))
-      elif arg == '--no-preload':
+      elif arg == '--preload':
         global preload
-        preload = False
-        print('Will not preload data')
+        preload = True
+        print('Will preload data')
+      elif arg == '--no-permute':
+        global permute
+        permute = False
+        print('Will not permute data')
 
   ## If no explicit configuration file was given
   #  the data folder

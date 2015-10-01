@@ -56,13 +56,11 @@ class MillSolver(object):
         self.viz_per_logs = self.solver_param.viz_per_logs
         self.test_per_logs = self.solver_param.test_per_logs
 
-        self.logprint(" // DEBUG: read params from solver.prototxt: viz_per_logs = {} /// test_per_logs = {}".format(self.viz_per_logs, self.test_per_logs))
-
         # make solver param for net fail safe
         if not os.path.isabs(self.solver_param.net):
             self.solver_param.net = os.path.join(self.solver_dir, self.solver_param.net)
             if not os.path.isfile(self.solver_param.net):
-                raise NameError('could not find net definition from solver prototxt!')
+                raise Exception('could not find net definition from solver prototxt!')
         self.gpus = gpus
         if gpus:
             self.solver_param.device_id = gpus[0]
@@ -78,13 +76,13 @@ class MillSolver(object):
                 if not os.path.isfile(solver_state):
                     solver_state = os.path.join(self.solver_dir, solver_state)
                     if not os.path.isfile(solver_state):
-                        raise NameError('could not find solver state specified!')
+                        raise Exception('could not find solver state specified!')
             else:
                 solver_state = os.path.join('..', solver_state)
             self.solver.restore(solver_state)
 
             if weights:
-                raise NameError(
+                raise Exception(
                     'should not specify both solverstate and caffemodel! Preference will be given to solverstate.')
 
         if weights and not solver_state:
@@ -137,7 +135,7 @@ class MillSolver(object):
         try:
             lr_log = self.solver.getLearningRate()
         except:
-            raise NameError('solver does not support extracting learning rate!')
+            raise Exception('solver does not support extracting learning rate!')
 
         # write to DB
         self.write_out_log(iteration, lr_log, loss_log, blob_percentiles_log, weight_percentiles_log)
@@ -206,6 +204,8 @@ class MillSolver(object):
             cur.execute('begin')
             cmd = '''INSERT OR REPLACE INTO {} VALUES(?, ?, ?);'''.format(table_name)
             if test:
+                # housekeeping: delete keys with iteration number >= current iteration number
+                cur.execute('''DELETE FROM {} WHERE name = 'test-output-blobs' AND ID >= {};'''.format(table_name, iteration))
                 cur.execute(cmd,
                             [iteration, "test-output-blobs", lite.Binary(json.dumps(blobs, default=self.json_default))])
                 con.commit()
@@ -218,7 +218,7 @@ class MillSolver(object):
                                                                                  self.log_db_prefix, table_name))
 
         except lite.Error, e:
-            raise NameError('Error %s:' % e.args[0])
+            raise Exception('Error %s:' % e.args[0])
             # sys.exit(1)
 
         finally:
@@ -266,7 +266,7 @@ class MillSolver(object):
                                                                    self.log_db_prefix))
 
         except lite.Error, e:
-            raise NameError('Error %s:' % e.args[0])
+            raise Exception('Error %s:' % e.args[0])
             # sys.exit(1)
 
         finally:
@@ -293,7 +293,7 @@ class MillSolver(object):
                 print(tmp + "\n")
 
         except lite.Error, e:
-            raise NameError('Error %s:' % e.args[0])
+            raise Exception('Error %s:' % e.args[0])
             # sys.exit(1)
 
         finally:
@@ -315,7 +315,7 @@ class MillSolver(object):
             return con, con.cursor()
 
         except lite.Error, e:
-            raise NameError('Error %s:' % e.args[0])
+            raise Exception('Error %s:' % e.args[0])
 
     def set_test_input(self, input, start_layer):
         """

@@ -42,3 +42,7 @@ def ColorFlow2(raw_flow_data, scale=1.0):
   return output
 
 
+
+def Flow(style, raw_flow_data, scale):
+  return [ColorFlow, ColorFlow2][style](raw_flow_data, scale)
+

@@ -683,9 +683,9 @@ message BinaryDB {
   
   message Content {
     repeated EntryFormat entry_format = 1;
+    optional int32 num_boundary_entries = 2 [ default = 0 ];
   }
-  message File {
-    
+  message File {   
     required string filename = 1; // Filename of the .bin file in the same folder as the index (or relative path)
     required Content content = 2;
     
