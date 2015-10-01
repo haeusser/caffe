@@ -55,8 +55,14 @@ def parseConfig(lines):
       [int(v) for v in lines[0].split(' ')[:2]]
   cells = {}
   for line in lines[1:]:
-    xstr,ystr,suffix = line.split(' ')
-    cells['%s %s'%(xstr,ystr)] = suffix
+    ## Options
+    if line.startswith('option'):
+      parts = line.split(' ')[1:]
+      configuration[parts[0]] = parts[1:]
+    ## Grid cells
+    else:
+      xstr,ystr,suffix = line.split(' ')
+      cells['%s %s'%(xstr,ystr)] = suffix
   grid = []
   for x in range(configuration['X']):
     col = []
@@ -65,6 +71,7 @@ def parseConfig(lines):
       col.append({'suffix': cells[index_str]})
     grid.append(col)
   configuration['grid'] = grid
+  print(configuration)
 
 def readConfig(filename):
   '''Read a configuration file'''
@@ -73,7 +80,9 @@ def readConfig(filename):
     raise ValueError()
   with open(filename) as f:
     lines = f.readlines()
-  lines = [line.split('#')[0].strip() for line in lines]
+  ## Discard comments and blank lines
+  lines = [line.split('#')[0].strip() for line in lines 
+        if line.split('#')[0].strip()]
   parseConfig(lines)
 
 
@@ -427,12 +436,28 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # Sliders for float scaling if necessary
     if self.needFloatTools:
-      ## Min
+      ## Min, max
+      if 'floatlimits' in configuration:
+        limits = {'min': 100*float(configuration['floatlimits'][0]),
+                  'max': 100*float(configuration['floatlimits'][1])}
+      else:
+        limits = {'min': -25500,
+                  'max': 25500}
+      ## Preset values
+      if 'floatminmax' in configuration:
+        presets = {'min': 100*float(configuration['floatminmax'][0]),
+                   'max': 100*float(configuration['floatminmax'][1])}
+      else:
+        presets = {'min': 0, 
+                   'max': 100}
+      global floatMin, floatMax
+      floatMin, floatMax = presets['min']/100., presets['max']/100.
+
       self.floatMinSlider = QtWidgets.QSlider(orientation=QtCore.Qt.Horizontal)
-      self.floatMinSlider.setRange(-25500,25500)
+      self.floatMinSlider.setRange(limits['min'], limits['max'])
       self.floatMinSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
-      self.floatMinSlider.setValue(0)
-      self.floatMinSliderLabel = QtWidgets.QLabel("Float min: 0.0")
+      self.floatMinSlider.setValue(presets['min'])
+      self.floatMinSliderLabel = QtWidgets.QLabel("Float min: %.2f"%(presets['min']/100.))
       self.floatMinSliderLabel.setFixedSize(100,20)
       floatMinSliderLayout = QtWidgets.QHBoxLayout()
       floatMinSliderLayout.setContentsMargins(0,0,0,0)
@@ -444,10 +469,10 @@ class MainWindow(QtWidgets.QMainWindow):
       floatMinSliderContainer.setFixedHeight(40)
       ## Max
       self.floatMaxSlider = QtWidgets.QSlider(orientation=QtCore.Qt.Horizontal)
-      self.floatMaxSlider.setRange(-25500,25500)
+      self.floatMaxSlider.setRange(limits['min'], limits['max'])
       self.floatMaxSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
-      self.floatMaxSlider.setValue(100)
-      self.floatMaxSliderLabel = QtWidgets.QLabel("Float max: 1.0")
+      self.floatMaxSlider.setValue(presets['max'])
+      self.floatMaxSliderLabel = QtWidgets.QLabel("Float max: %.2f"%(presets['max']/100.))
       self.floatMaxSliderLabel.setFixedSize(100,20)
       floatMaxSliderLayout = QtWidgets.QHBoxLayout()
       floatMaxSliderLayout.setContentsMargins(0,0,0,0)
@@ -470,11 +495,13 @@ class MainWindow(QtWidgets.QMainWindow):
     
     # Slider for optical flow scaling if necessary
     if self.needFlowTools:
+      global flowScale
+      flowScale = 100*0.0005
       self.flowScaleSlider = QtWidgets.QSlider(orientation=QtCore.Qt.Horizontal)
       self.flowScaleSlider.setRange(1,3200)
       self.flowScaleSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
       self.flowScaleSlider.setValue(100)
-      self.flowScaleSliderLabel = QtWidgets.QLabel("OF scale: 1.0")
+      self.flowScaleSliderLabel = QtWidgets.QLabel("OF scale: 0.05")
       self.flowScaleSliderLabel.setFixedSize(100,20)
       flowScaleSliderLayout = QtWidgets.QHBoxLayout()
       flowScaleSliderLayout.setContentsMargins(0,0,0,0)
