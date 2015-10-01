@@ -527,7 +527,7 @@ class Environment:
             if f == 'jobs': continue
             if f.endswith('.pyc'): continue
             if os.path.isdir('%s/%s' % (source,f)) and f.startswith('test_'): continue
-            if os.path.isdir('%s/%s' % (source,f)) and f.startswith('output_'): continue
+            if os.path.isdir('%s/%s' % (source,f)) and f.startswith('output'): continue
 
             tb.system('cp -r %s %s/%s %s' % ('' if self._silent else '-v', source, f, target))
 

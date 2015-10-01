@@ -47,13 +47,12 @@ __global__ void InterpolationKernel(
         const float fx,
         const float fy,
         Dtype* out_ptr,
+        const int out_width,
+        const int out_height,
         int filter_type,
         int kernel_width,
         const bool antialias)
 {
-    int out_width = float(in_width)/fx;
-    int out_height = float(in_height)/fy;
-
     CUDA_KERNEL_LOOP(index, nthreads)
     {
         int c = index / out_channelsize;
@@ -105,11 +104,10 @@ __global__ void NearestNeighborKernel(
         const int in_height,
         const float fx,
         const float fy,
-        Dtype* out_ptr)
+        Dtype* out_ptr,
+        const int out_width,
+        const int out_height)
 {
-    int out_width = float(in_width)/fx;
-    int out_height = float(in_height)/fy;
-
     CUDA_KERNEL_LOOP(index, nthreads)
     {
         int c = index / out_channelsize;
@@ -164,7 +162,10 @@ void ResampleLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
           bottomheight,
           fx,
           fy,
-          (Dtype*)top_data);
+          (Dtype*)top_data,
+          topwidth,
+          topheight
+      );
   }
   else if(this->layer_param().resample_param().type() == ResampleParameter_ResampleType_CUBIC || this->layer_param().resample_param().type() == ResampleParameter_ResampleType_LINEAR)
   {
@@ -192,6 +193,8 @@ void ResampleLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
           fx,
           fy,
           (Dtype*)top_data,
+          topwidth,
+          topheight,
           filter_type,
           kernel_width,
           antialias);
