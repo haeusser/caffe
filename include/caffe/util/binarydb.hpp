@@ -37,7 +37,8 @@ public:
   void get_sample(
         int index, 
         vector<Blob<Dtype>*>* dst, 
-        int* compressed_size);
+        int* compressed_size,
+        bool wait_for_finish=true);
   
 //   void read_binstream(
 //         std::ifstream* binstream, 
@@ -47,6 +48,18 @@ public:
 //         int* n_read);
 
 private:
+  
+  static uint get_next_task_ID()
+  {
+    static uint running_ID(0);
+    static boost::mutex LOCK;
+    
+    LOCK.lock();
+      ++running_ID;
+    LOCK.unlock();
+    
+    return running_ID;
+  }
   
   struct Entry {
     int binfile_idx;
@@ -65,7 +78,8 @@ private:
       N(N),
       dst_ptr(dst_ptr),
       n_read(0),
-      entry_buffer(entry_buffer)
+      entry_buffer(entry_buffer),
+      ID(get_next_task_ID())
     {}
     
     Entry& entry_ref;
@@ -80,11 +94,14 @@ private:
     { sample=s; index=i; }
     int sample;
     int index;
+    uint ID;
     /// DEBUG
   };
   std::queue<ReadTask*> undone_tasks;
+  std::vector<uint> in_progress_task_ids;
   std::queue<ReadTask*> done_tasks;
   boost::mutex undone_tasks__LOCK;
+  boost::mutex in_progress_task_ids__LOCK;
   boost::mutex done_tasks__LOCK;
   std::vector<boost::thread*> worker_threads;
   std::vector<unsigned char*> entry_buffers_;

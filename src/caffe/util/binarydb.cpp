@@ -18,8 +18,7 @@ namespace bp = boost::python;
 namespace caffe { 
 namespace db {
   
-  
-  
+
 /**
  * @brief Constructor
  */
@@ -171,7 +170,10 @@ void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param)
   
   /// Create and start worker threads (one for each ENTRY)
   running = true;
-  worker_threads.resize(top_num_);
+  if (param.data_param().disk_reader_threads() > 0)
+    worker_threads.resize(param.data_param().disk_reader_threads());
+  else
+    worker_threads.resize(top_num_);
   LOG(INFO) << "Spawning " << worker_threads.size() << " worker threads.";
   for (unsigned int i=0; i < worker_threads.size(); ++i) {
     worker_threads[i] = new boost::thread(&BinaryDB<Dtype>::worker_thread_loop,
@@ -224,7 +226,8 @@ void BinaryDB<Dtype>::Close()
 template <typename Dtype>
 void BinaryDB<Dtype>::get_sample(int index, 
                                  vector<Blob<Dtype>*>* dst, 
-                                 int* compressed_size) 
+                                 int* compressed_size,
+                                 bool wait_for_finish) 
 {
   if (compressed_size) *compressed_size = 0;
   
@@ -312,19 +315,21 @@ void BinaryDB<Dtype>::get_sample(int index,
 //     if(compressed_size) *compressed_size+=n_read;
 //   }
   
-  /// Wait until all read tasks are complete
-  while (undone_tasks.size() > 0 or done_tasks.size() < top_num_) {
-    boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
+  if (wait_for_finish) {
+    /// Wait until all read tasks are complete
+    while (undone_tasks.size() > 0 or in_progress_task_ids.size() > 0) {
+      boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
+    }
+    /// Delete done tasks
+    done_tasks__LOCK.lock();
+    while (done_tasks.size() > 0) {
+      ReadTask* task_ptr = done_tasks.front();
+      if (compressed_size) *compressed_size += task_ptr->n_read;
+      delete task_ptr;
+      done_tasks.pop();
+    }
+    done_tasks__LOCK.unlock();
   }
-  /// Delete done tasks
-  done_tasks__LOCK.lock();
-  while (done_tasks.size() > 0) {
-    ReadTask* task_ptr = done_tasks.front();
-    if (compressed_size) *compressed_size += task_ptr->n_read;
-    delete task_ptr;
-    done_tasks.pop();
-  }
-  done_tasks__LOCK.unlock();
 }
 
 
@@ -566,10 +571,20 @@ void BinaryDB<Dtype>::worker_thread_loop()
 //                                  '/').back();
       undone_tasks.pop();
       undone_tasks__LOCK.unlock();
+      in_progress_task_ids__LOCK.lock();
+      in_progress_task_ids.push_back(task_ptr->ID);
+      in_progress_task_ids__LOCK.unlock();
       
       /// Process task
       process_readtask(task_ptr);
       
+      in_progress_task_ids__LOCK.lock();
+      /// http://stackoverflow.com/a/3385251
+      in_progress_task_ids.erase(std::remove(in_progress_task_ids.begin(),
+                                             in_progress_task_ids.end(),
+                                             task_ptr->ID),
+                                 in_progress_task_ids.end());
+      in_progress_task_ids__LOCK.unlock();
       /// Mark task as done
       done_tasks__LOCK.lock();
       done_tasks.push(task_ptr);
@@ -577,6 +592,7 @@ void BinaryDB<Dtype>::worker_thread_loop()
     }
     else
     {
+//       LOG(INFO) << boost::this_thread::get_id() << " is waiting";
       boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
     }
   }
