@@ -290,11 +290,11 @@ class FloatCell(Cell):
       raw_float_data = self.raw_data[idx]
     else:
       raw_float_data = readFloat(self.filenames[idx])
-    scale = floatMax-floatMin
+    scale = 255./(floatMax-floatMin)
     offset = -floatMin
     self.label.setPixmap(QtGui.QPixmap.fromImage(
                          ImageQt(Image.fromarray((raw_float_data+offset)*scale)\
-                                 .convert('P')))\
+                                 .convert('L')))\
                          .scaled(self.label.size(),
                                  QtCore.Qt.KeepAspectRatio))
 
@@ -429,7 +429,7 @@ class MainWindow(QtWidgets.QMainWindow):
     if self.needFloatTools:
       ## Min
       self.floatMinSlider = QtWidgets.QSlider(orientation=QtCore.Qt.Horizontal)
-      self.floatMinSlider.setRange(-3200,3200)
+      self.floatMinSlider.setRange(-25500,25500)
       self.floatMinSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
       self.floatMinSlider.setValue(0)
       self.floatMinSliderLabel = QtWidgets.QLabel("Float min: 0.0")
@@ -444,7 +444,7 @@ class MainWindow(QtWidgets.QMainWindow):
       floatMinSliderContainer.setFixedHeight(40)
       ## Max
       self.floatMaxSlider = QtWidgets.QSlider(orientation=QtCore.Qt.Horizontal)
-      self.floatMaxSlider.setRange(-3200,3200)
+      self.floatMaxSlider.setRange(-25500,25500)
       self.floatMaxSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
       self.floatMaxSlider.setValue(100)
       self.floatMaxSliderLabel = QtWidgets.QLabel("Float max: 1.0")
