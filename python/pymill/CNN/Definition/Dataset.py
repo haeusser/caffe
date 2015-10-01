@@ -127,3 +127,15 @@ def get(name=None, rendertype=None, phase=None):
     else:
         raise Exception('unknown dataset: %s' % name)
 
+def getDatasetNames(task):
+    if task == 'disp':
+        return ('sintel.train.clean',
+                'sintel.train.final',
+                'monkaa.test.clean',
+                'monkaa.test.final',
+                'FlyingStuff3D.test.clean',
+                'FlyingStuff3D.test.final',
+                'Kitti2012.train',
+                'Kitti2015.train')
+    else:
+        raise Exception('ukown task: %s' % task)

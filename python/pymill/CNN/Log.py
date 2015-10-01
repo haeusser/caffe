@@ -94,6 +94,19 @@ class Log:
             else:
                 break
 
+    def getAssignment(self, name):
+        for l in self._lines:
+            if not ']' in l[1]: continue
+
+            iter = l[0]
+            msg = l[1].split(']')[1].strip()
+
+            match = re.compile(name+' = (([0-9]|\.)+)').match(msg)
+            if match:
+                return float(match.group(1))
+
+
+
     def plot(self, networkName, select=''):
         def plotList(list, style):
             x = np.zeros((len(list), 1))
