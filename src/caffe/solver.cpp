@@ -318,7 +318,7 @@ void Solver<Dtype>::Step(int iters) {
       // If want to re-read at this iteration 
       if((param_.interaction_interval() <= 0 && display)
          || (param_.interaction_interval() > 0 && (iter_ % param_.interaction_interval() == 0))) {
-        ReadProtoFromTextFileOrDie(param_file, &param);
+        ReadProtoFromTextFileOrDie(param_.param_file(), &param);
         this->param_ = param;
       }
     }
