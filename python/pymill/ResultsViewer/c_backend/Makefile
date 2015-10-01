@@ -19,10 +19,11 @@ LDFLAGS ?=
 TARGET = FlowVisualization.so
 
 ## Every *.c/*.cc/*.cpp file is a source file
-SRCS = $(wildcard *.c *.cc *.cpp)
+SOURCES = $(wildcard *.c *.cc *.cpp)
+HEADERS = $(wildcard *.h *.hh *.hpp)
 
 ## Build a *.o object file for every source file
-OBJS = $(addsuffix .o, $(basename $(SRCS)))
+OBJS = $(addsuffix .o, $(basename $(SOURCES)))
 
 
 ## Tell make that e.g. 'make clean' is not supposed to create a file 'clean'
@@ -49,7 +50,7 @@ clean:
 	-rm *.o $(TARGET)
 
 ## The main executable depends on all object files of all source files
-%.so: $(OBJS)
+%.so: $(OBJS) $(HEADERS)
 	$(info ... compiling shared object $@ ...)
 	$(CXX) $^ -shared -o $(LDFLAGS) $@
 

@@ -54,6 +54,11 @@ static void sintelCartesianToRGB(float fx, float fy, float* pix)
   fx /= 100.f;
   fy /= 100.f;
 
+  if (isnan(fx) or isnan(fy)) {
+    fx = 0.f;
+    fy = 0.f;
+  }
+
   float rad = sqrt(fx * fx + fy * fy);
   float a = atan2(-fy, -fx) / M_PI;
   float fk = (a + 1.0) / 2.0 * (ncols-1);
