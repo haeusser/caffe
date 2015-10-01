@@ -273,6 +273,12 @@ BOOST_PYTHON_MODULE(_caffe) {
         bp::return_value_policy<bp::copy_const_reference>()))
     .add_property("_layer_names", bp::make_function(&Net<Dtype>::layer_names,
         bp::return_value_policy<bp::copy_const_reference>()))
+    .add_property("_params_lr", bp::make_function(&Net<Dtype>::params_lr,
+        bp::return_internal_reference<>()))
+    .add_property("_learnable_param_ids", bp::make_function(&Net<Dtype>::learnable_param_ids,
+        bp::return_value_policy<bp::copy_const_reference>()))
+    .add_property("_param_layer_indices", bp::make_function(&Net<Dtype>::param_layer_indices,
+        bp::return_value_policy<bp::copy_const_reference>()))
     .add_property("_inputs", bp::make_function(&Net<Dtype>::input_blob_indices,
         bp::return_value_policy<bp::copy_const_reference>()))
     .add_property("_outputs",
@@ -353,6 +359,10 @@ BOOST_PYTHON_MODULE(_caffe) {
 
   bp::def("get_solver_from_string", &GetSolverFromString,
       bp::return_value_policy<bp::manage_new_object>());
+  
+  bp::class_<pair<int, int> >("IntPair")
+    .def_readwrite("first", &pair<int, int>::first)
+    .def_readwrite("second", &pair<int, int>::second);
 
   // vector wrappers for all the vector types we use
   bp::class_<vector<shared_ptr<Blob<Dtype> > > >("BlobVec")
@@ -372,6 +382,8 @@ BOOST_PYTHON_MODULE(_caffe) {
     .def(bp::vector_indexing_suite<vector<shared_ptr<Net<Dtype> > >, true>());
   bp::class_<vector<bool> >("BoolVec")
     .def(bp::vector_indexing_suite<vector<bool> >());
+  bp::class_<vector<pair<int,int> > >("PairVec")
+    .def(bp::vector_indexing_suite<vector<pair<int,int> > >());
 
   // boost python expects a void (missing) return value, while import_array
   // returns NULL for python3. import_array1() forces a void return value.
