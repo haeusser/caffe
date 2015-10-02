@@ -136,7 +136,11 @@ void BinaryDataReader<Dtype>::Body::InternalThreadEntry() {
 }
 
 template <typename Dtype>
-void BinaryDataReader<Dtype>::Body::read_one(db::BinaryDB<Dtype>* db, int &index, BinaryQueuePair* qp) {
+void BinaryDataReader<Dtype>::Body::read_one(int &index, 
+                                             BinaryQueuePair* qp) 
+{
+  while(true){
+    
   std::queue<std::vector<Blob<Dtype>*>*> in_progress;
   
   const int max_parallel = param_.data_param().batch_size();
@@ -150,7 +154,7 @@ void BinaryDataReader<Dtype>::Body::read_one(db::BinaryDB<Dtype>* db, int &index
       t.Start();
     
     int compressed_size;
-    db->get_sample(index, sample, &compressed_size, i==max_parallel-1);
+    db_->get_sample(index, sample, &compressed_size, i==max_parallel-1);
     
     if (i == max_parallel-1) {
       t.Stop();
@@ -164,7 +168,7 @@ void BinaryDataReader<Dtype>::Body::read_one(db::BinaryDB<Dtype>* db, int &index
               << in_progress.size() << "/" << qp->full_.size();
 
     index++;
-    if(index >= db->get_num_samples()) {
+    if(index >= db_->get_num_samples()) {
       index = 0;
       DLOG(INFO) << "Restarting data prefetching from start.";
     }
@@ -173,6 +177,7 @@ void BinaryDataReader<Dtype>::Body::read_one(db::BinaryDB<Dtype>* db, int &index
   while (in_progress.size() > 0) {
     qp->full_.push(in_progress.front());
     in_progress.pop();
+  }
   }
 }
 

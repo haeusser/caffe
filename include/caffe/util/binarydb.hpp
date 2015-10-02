@@ -5,6 +5,7 @@
 #include <fstream>
 #include <map>
 #include <queue>
+#include <sstream>
 #include <string>
 #include <vector>
 /// Boost
@@ -146,12 +147,14 @@ private:
     return elems;
   }
 
-  std::vector<std::string> debug_m_split(const std::string& s, 
-                                char delim) 
+  std::string debug_m_split(const std::string& s,
+                            char delim)
   {
     std::vector<std::string> elems;
     debug_m_split(s, delim, elems);
-    return elems;
+    std::ostringstream oss;
+    oss << elems[elems.size()-2] << '/' << elems.back();
+    return oss.str();
   }
   
 };
