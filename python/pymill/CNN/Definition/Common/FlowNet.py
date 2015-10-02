@@ -90,8 +90,6 @@ def standardDeploy(NetworkBlock, generateNet=True):
         blobs.predict_flow_resize = net.resample(prediction, width=width, height=height, reference=None, type='LINEAR', antialias=True)
         blobs.predict_flow_final  = net.scale(blobs.predict_flow_resize, (rescale_coeff_x, rescale_coeff_y))
 
-        net.writeFlow(blobs.flow_gt)
-
         epe_loss = Layers.L1Loss(net, (blobs.flow_gt, blobs.predict_flow_final), nout=1, loss_weight=(1,), name='EPE', l2_per_location=False, normalize_by_num_entries=True, epsilon=0)
         epe_loss.setName('epe')
         epe_loss.enableOutput()
