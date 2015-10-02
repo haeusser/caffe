@@ -14,6 +14,8 @@ class BlockingQueue {
   explicit BlockingQueue();
 
   void push(const T& t);
+  
+  void push_front(const T& t);
 
   bool try_pop(T* t);
 
@@ -36,7 +38,7 @@ class BlockingQueue {
    */
   class sync;
 
-  std::queue<T> queue_;
+  std::deque<T> queue_;
   shared_ptr<sync> sync_;
 
 DISABLE_COPY_AND_ASSIGN(BlockingQueue);

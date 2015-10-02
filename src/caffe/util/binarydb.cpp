@@ -42,16 +42,15 @@ BinaryDB<Dtype>::~BinaryDB()
   }
   
   /// Destroy filestreams
-  for (unsigned int i = 0; i < top_num_; ++i)
-    for (unsigned file_idx = 0; file_idx < binfiles_.size(); ++file_idx)
-      if (binstreams_[file_idx][i])
-        delete binstreams_[file_idx][i];
+  for (unsigned file_idx = 0; file_idx < binfiles_.size(); ++file_idx)
+    if (binstream_yielders_[file_idx])
+      delete binstream_yielders_[file_idx];
   
-  /// Free buffer memory
-  for (unsigned int i = 0; i < entry_buffers_.size(); ++i) {
-    if (entry_buffers_[i])
-      delete[] entry_buffers_[i];
-  }
+//   /// Free buffer memory
+//   for (unsigned int i = 0; i < entry_buffers_.size(); ++i) {
+//     if (entry_buffers_[i])
+//       delete[] entry_buffers_[i];
+//   }
 }
 
 
@@ -113,11 +112,6 @@ void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param)
     }
     entry_buffer_size_ += 16;
     
-    entry_buffers_.resize(top_num_);
-    for(unsigned int i = 0; i < entry_buffers_.size(); ++i) {
-      /// Expected maximum read size + flag
-      entry_buffers_[i] = new unsigned char[entry_buffer_size_];
-    }
     
     // Store bin filenames:
     binfiles_.resize(bp::len(bin_filenames));
@@ -145,29 +139,29 @@ void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param)
   }
   
   // open binfiles
-//   binstreams_.resize(binfiles_.size());
+//   binstream_yielders_.resize(binfiles_.size());
 //   for (int i = 0; i < binfiles_.size(); ++i) {
-//     binstreams_.at(i).reset(new std::ifstream(binfiles_.at(i).c_str(), 
+//     binstream_yielders_.at(i).reset(new std::ifstream(binfiles_.at(i).c_str(), 
 //                                               std::ios::in | std::ios::binary));
-//     if(!binstreams_.at(i)->is_open() or !binstreams_.at(i)->good()) {
+//     if(!binstream_yielders_.at(i)->is_open() or !binstream_yielders_.at(i)->good()) {
 //       LOG(FATAL) << "Could not open bin file " << binfiles_.at(i);
 //     }
 //   }
 
   /// Open a file stream for every combination of (accessed file X offset)
-  for (unsigned int i = 0; i < top_num_; ++i) {
 //     int file_idx = samples_[0][i].binfile_idx;
+    binstream_yielders_.resize(binfiles_.size());
     for (unsigned file_idx = 0; file_idx < binfiles_.size(); ++file_idx) {
-      binstreams_[file_idx][i] = new std::ifstream();
+      binstream_yielders_[file_idx] = new Ifstream_yielder(3);
     }
-//     binstreams_.at(i).reset(new std::ifstream(binfiles_.at(file_idx).c_str(), 
+//     binstream_yielders_.at(i).reset(new std::ifstream(binfiles_.at(file_idx).c_str(), 
 //                                               std::ios::in | std::ios::binary));
-//     if(not binstreams_[file_idx][i]->is_open() or
-//        not binstreams_[file_idx][i]->good())
+//     if(not binstream_yielders_[file_idx][i]->is_open() or
+//        not binstream_yielders_[file_idx][i]->good())
 //     {
 //       LOG(FATAL) << "Could not open bin file " << binfiles_.at(file_idx);
 //     }
-  }
+//   }
   
 
   // permute the samples
@@ -190,6 +184,12 @@ void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param)
                                           this);
   }
   
+//   entry_buffers_.resize(worker_threads.size());
+//   for(unsigned int i = 0; i < entry_buffers_.size(); ++i) {
+//     /// Expected maximum read size + flag
+//     entry_buffers_[i] = new unsigned char[entry_buffer_size_];
+//   }
+  
   LOG(INFO) << "Opened BinaryDB " << source;
 }
 
@@ -205,11 +205,12 @@ void BinaryDB<Dtype>::Close()
   running = false;
   
   /// Close file handles
-//   for (unsigned int i = 0; i < binstreams_.size(); ++i)
-  for (unsigned int i = 0; i < top_num_; ++i)
-    for (unsigned file_idx = 0; file_idx < binfiles_.size(); ++file_idx)
-      if (binstreams_[file_idx][i] and binstreams_[file_idx][i]->is_open())
-        binstreams_[file_idx][i]->close();
+//   for (unsigned int i = 0; i < binstream_yielders_.size(); ++i)
+//   for (unsigned int i = 0; i < top_num_; ++i)
+//     for (unsigned file_idx = 0; file_idx < binfiles_.size(); ++file_idx)
+//       if (binstreams_[file_idx][i] /*and binstreams_[file_idx][i]->is_open()*/)
+//         delete binstream_yielders_[file_idx][i];
+        //binstream_yielders_[file_idx][i]->close();
   
   /// Stop worker threads
   for (unsigned int i = 0; i < worker_threads.size(); ++i) {
@@ -241,22 +242,25 @@ void BinaryDB<Dtype>::get_sample(int index,
                << ", should have size " << top_num_;
   
   /// Create a read task for every top blob
-  undone_tasks__LOCK.lock();
-  for (unsigned int t = 0; t < top_num_; ++t) {
-    dst->at(t)->Reshape(entry_dimensions_.at(t));
-    ReadTask* new_task_ptr = new ReadTask(
-                                samples_.at(index).at(t),
-                                binstreams_[samples_.at(index).at(t).binfile_idx][t],
-                                dst->at(t)->count(),
-                                dst->at(t)->mutable_cpu_data(),
-                                entry_buffers_.at(t));
-    new_task_ptr->debug(index, t);
-    undone_tasks.push(new_task_ptr);
+  {
+    boost::lock_guard<boost::mutex> LOCK(queues__LOCK);
+    for (unsigned int t = 0; t < top_num_; ++t) {
+      dst->at(t)->Reshape(entry_dimensions_.at(t));
+      if (not binstream_yielders_[samples_.at(index).at(t).binfile_idx])
+        LOG(FATAL) << "Ifstream_yielder " << samples_.at(index).at(t).binfile_idx 
+                    << " is invalid";
+      ReadTask* new_task_ptr = new ReadTask(
+                          samples_.at(index).at(t),
+                          binstream_yielders_[samples_.at(index).at(t).binfile_idx],
+                          dst->at(t)->count(),
+                          dst->at(t)->mutable_cpu_data());
+      new_task_ptr->debug(index, t);
+      undone_tasks.push(new_task_ptr);
+    }
   }
-  undone_tasks__LOCK.unlock();
     
 //     Entry entry = samples_.at(index).at(t);    
-//     std::ifstream* curr_binstream = binstreams_.at(entry.binfile_idx).get();
+//     std::ifstream* curr_binstream = binstream_yielders_.at(entry.binfile_idx).get();
 // 
 //     Timer timer;
 //     timer.Start();
@@ -274,8 +278,8 @@ void BinaryDB<Dtype>::get_sample(int index,
 //       LOG(INFO) << "     bad()=" << curr_binstream->bad();
 //       
 //       LOG(INFO) << "Attempting to re-open";
-//       binstreams_.at(entry.binfile_idx).get()->close();
-//       binstreams_.at(entry.binfile_idx).get()->open(
+//       binstream_yielders_.at(entry.binfile_idx).get()->close();
+//       binstream_yielders_.at(entry.binfile_idx).get()->open(
 //                               binfiles_.at(entry.binfile_idx).c_str(),
 //                               std::ios::in | std::ios::binary);
 //       
@@ -283,7 +287,7 @@ void BinaryDB<Dtype>::get_sample(int index,
 //         LOG(FATAL) << "Could not re-open bin file " 
 //                    << binfiles_.at(entry.binfile_idx);
 //       else {
-//         curr_binstream = binstreams_.at(entry.binfile_idx).get();
+//         curr_binstream = binstream_yielders_.at(entry.binfile_idx).get();
 //         curr_binstream->seekg(entry.byte_offset, ios::beg);
 //       }
 //     }
@@ -320,18 +324,24 @@ void BinaryDB<Dtype>::get_sample(int index,
   
   if (wait_for_finish) {
     /// Wait until all read tasks are complete
-    while (undone_tasks.size() > 0 or in_progress_task_ids.size() > 0) {
-      boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
+    bool all_done = false;
+    while (not all_done) {
+      boost::lock_guard<boost::mutex> LOCK(queues__LOCK);
+      
+      if (undone_tasks.size() > 0 or in_progress_task_ids.size() > 0) {
+        boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
+      } else {
+        all_done = true;
+      }
     }
     /// Delete done tasks
-    done_tasks__LOCK.lock();
     while (done_tasks.size() > 0) {
+      boost::lock_guard<boost::mutex> LOCK(queues__LOCK);
       ReadTask* task_ptr = done_tasks.front();
       if (compressed_size) *compressed_size += task_ptr->n_read;
       delete task_ptr;
       done_tasks.pop();
     }
-    done_tasks__LOCK.unlock();
   }
 }
 
@@ -388,8 +398,9 @@ void BinaryDB<Dtype>::check_flag(unsigned char* buffer)
  * @param task_ptr ReadTask instance to process
  */
 template <typename Dtype>
-void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr)
-{  
+void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr,
+                                       unsigned char* entry_buffer_)
+{
 //   read_binstream( task_ptr->entry_ref,
 //                   task_ptr->binstream_ptr.get(),
 //                   task_ptr->entry_ref.data_encoding,
@@ -400,7 +411,10 @@ void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr)
   task_ptr->n_read=0;
   
   Entry& entry = task_ptr->entry_ref; 
-  std::ifstream* binstream = task_ptr->binstream_ptr;
+  if (not task_ptr->binstream_yielder_ptr)
+    LOG(FATAL) << "Ifstream_yielder is invalid";  
+  Ifstream_wrapper binstream_wrapper(task_ptr->binstream_yielder_ptr);
+  std::ifstream* binstream = binstream_wrapper();
   
   if (not binstream->is_open())
     binstream->open(binfiles_.at(entry.binfile_idx).c_str(),
@@ -446,7 +460,7 @@ void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr)
       LOG(FATAL) << "Could not re-open bin file " 
                   << binfiles_.at(entry.binfile_idx);
     else {
-      //binstream = binstreams_.at(entry.binfile_idx).get();
+      //binstream = binstream_yielders_.at(entry.binfile_idx).get();
       binstream->clear();
       binstream->seekg(entry.byte_offset, ios::beg);
     }
@@ -463,7 +477,7 @@ void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr)
   
   uint N = task_ptr->N;
   
-  unsigned char* entry_buffer_ = task_ptr->entry_buffer;
+//   unsigned char* entry_buffer_ = task_ptr->entry_buffer;
 
   switch(entry.data_encoding)
   {
@@ -551,50 +565,54 @@ void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr)
 template <typename Dtype>
 void BinaryDB<Dtype>::worker_thread_loop()
 {
+  /// Thread-local buffer
+  unsigned char* this_thread_entry_buffer = new unsigned char[entry_buffer_size_];
+  
   while (running) 
   {
     if (undone_tasks.size() > 0)
     {
       /// Fetch task
-      undone_tasks__LOCK.lock();
-      if (undone_tasks.size() == 0) {
-        undone_tasks__LOCK.unlock();
-        continue;
+      ReadTask* task_ptr;
+      {
+        boost::lock_guard<boost::mutex> LOCK(queues__LOCK);
+        if (undone_tasks.size() == 0)
+          continue;
+        
+        ReadTask* task_ptr = undone_tasks.front();
+        LOG(INFO) << "Thread (" << boost::this_thread::get_id() << ") fetched: "
+                  << task_ptr->sample << "/" << samples_.size()-1
+                  << ", " << task_ptr->index << "/" << top_num_-1
+                  << ", file " 
+                  << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/')
+                  << ", offset " << task_ptr->entry_ref.byte_offset;
+        undone_tasks.pop();
+        in_progress_task_ids.push_back(task_ptr->ID);
       }
-      ReadTask* task_ptr = undone_tasks.front();
-      LOG(INFO) << "Thread (" << boost::this_thread::get_id() << ") fetched: "
-                << task_ptr->sample << "/" << samples_.size()-1
-                << ", " << task_ptr->index << "/" << top_num_-1
-                << ", file " 
-                << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/')
-                << ", offset " << task_ptr->entry_ref.byte_offset;
-      undone_tasks.pop();
-      undone_tasks__LOCK.unlock();
-      in_progress_task_ids__LOCK.lock();
-      in_progress_task_ids.push_back(task_ptr->ID);
-      in_progress_task_ids__LOCK.unlock();
       
       /// Process task
-      process_readtask(task_ptr);
+      process_readtask(task_ptr, this_thread_entry_buffer);
       
-      in_progress_task_ids__LOCK.lock();
-      /// http://stackoverflow.com/a/3385251
-      in_progress_task_ids.erase(std::remove(in_progress_task_ids.begin(),
-                                             in_progress_task_ids.end(),
-                                             task_ptr->ID),
-                                 in_progress_task_ids.end());
-      in_progress_task_ids__LOCK.unlock();
       /// Mark task as done
-      done_tasks__LOCK.lock();
-      done_tasks.push(task_ptr);
-      done_tasks__LOCK.unlock();
+      {
+        boost::lock_guard<boost::mutex> LOCK(queues__LOCK);
+        /// http://stackoverflow.com/a/3385251
+        in_progress_task_ids.erase(std::remove(in_progress_task_ids.begin(),
+                                              in_progress_task_ids.end(),
+                                              task_ptr->ID),
+                                  in_progress_task_ids.end());
+        done_tasks.push(task_ptr);
+      }
     }
     else
     {
-//       LOG(INFO) << boost::this_thread::get_id() << " is waiting";
+      //LOG(INFO) << boost::this_thread::get_id() << " is waiting";
       boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
     }
   }
+  
+  if (this_thread_entry_buffer)
+    delete[] this_thread_entry_buffer;
 }
 
 

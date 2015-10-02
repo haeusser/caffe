@@ -24,10 +24,19 @@ BlockingQueue<T>::BlockingQueue()
 template<typename T>
 void BlockingQueue<T>::push(const T& t) {
   boost::mutex::scoped_lock lock(sync_->mutex_);
-  queue_.push(t);
+  queue_.push_back(t);
   lock.unlock();
   sync_->condition_.notify_one();
 }
+
+template<typename T>
+void BlockingQueue<T>::push_front(const T& t) {
+  boost::mutex::scoped_lock lock(sync_->mutex_);
+  queue_.push_front(t);
+  lock.unlock();
+  sync_->condition_.notify_one();
+}
+
 
 template<typename T>
 bool BlockingQueue<T>::try_pop(T* t) {
@@ -38,7 +47,7 @@ bool BlockingQueue<T>::try_pop(T* t) {
   }
 
   *t = queue_.front();
-  queue_.pop();
+  queue_.pop_front();
   return true;
 }
 
@@ -54,7 +63,7 @@ T BlockingQueue<T>::pop(const string& log_on_wait) {
   }
 
   T t = queue_.front();
-  queue_.pop();
+  queue_.pop_front();
   return t;
 }
 
@@ -98,4 +107,5 @@ template class BlockingQueue<shared_ptr<BinaryDataReader<double>::BinaryQueuePai
 template class BlockingQueue<P2PSync<float>*>;
 template class BlockingQueue<P2PSync<double>*>;
 
+template class BlockingQueue<std::ifstream*>;
 }  // namespace caffe

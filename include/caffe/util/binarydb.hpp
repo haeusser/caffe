@@ -9,9 +9,11 @@
 #include <string>
 #include <vector>
 /// Boost
+#include <boost/chrono.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
 /// Caffe/local files
+#include "caffe/util/blocking_queue.hpp"
 #include "caffe/common.hpp"
 #include "caffe/proto/caffe.pb.h"
 #include "caffe/blob.hpp"
@@ -62,6 +64,102 @@ private:
     return running_ID;
   }
   
+  
+  
+  struct Ifstream_yielder
+  {
+    Ifstream_yielder(int max_streams)
+    : m_reserve(),
+      m_max_streams(max_streams)
+    {
+      for (unsigned int i = 0; i < m_max_streams; ++i) {
+        std::ifstream* tmp = new std::ifstream();
+        m_reserve.push(tmp);
+      }
+    }
+    
+    ~Ifstream_yielder() 
+    {
+      while (m_in_use.size() > 0) {
+        LOG_EVERY_N(INFO, 1000) << "Waiting for " << m_in_use.size()
+                                << " ifstreams to be returned";
+        boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
+      }
+        
+      for (unsigned int i = 0; i < m_reserve.size(); ++i) {
+        std::ifstream* next = m_reserve.pop();
+        if (next) {
+          if (next->is_open()) {
+            next->close();
+          }
+          delete next;
+        }
+      }
+    }
+    
+    std::ifstream* get()
+    {
+      std::ifstream* next_free = m_reserve.pop();
+      {
+        boost::lock_guard<boost::mutex> LOCK(m_in_use__LOCK);
+        m_in_use.push_back(next_free);
+      }
+      return next_free;
+    }
+    
+    void put_back(std::ifstream* stream_ptr)
+    {
+      {
+        boost::lock_guard<boost::mutex> LOCK(m_in_use__LOCK);
+        /// TEST
+        if (std::find(m_in_use.begin(), m_in_use.end(), stream_ptr) == m_in_use.end())
+          LOG(FATAL) << "I don't know that pointer";
+        /// TEST
+        /// http://stackoverflow.com/a/3385251
+        m_in_use.erase(std::remove(m_in_use.begin(), m_in_use.end(), stream_ptr),
+                       m_in_use.end());
+      }
+      m_reserve.push_front(stream_ptr);
+    }
+    
+    BlockingQueue<std::ifstream*> m_reserve;
+    std::vector<std::ifstream*> m_in_use;
+    boost::mutex m_in_use__LOCK;
+    int m_max_streams;
+  };
+  
+  struct Ifstream_wrapper
+  {
+    Ifstream_wrapper(Ifstream_yielder* yielder_ptr)
+    : m_yielder_ptr(yielder_ptr)
+    {
+      if (not m_yielder_ptr)
+        LOG(FATAL) << "Ifstream_yielder* is invalid";
+      m_stream_ptr = m_yielder_ptr->get();
+      if (not m_stream_ptr)
+        LOG(FATAL) << "std::ifstream* is invalid";
+    }
+    
+    ~Ifstream_wrapper() 
+    {
+      if (not m_yielder_ptr)
+        LOG(FATAL) << "Ifstream_yielder* is invalid";
+      m_yielder_ptr->put_back(m_stream_ptr);
+    }
+    
+    std::ifstream* operator()()
+    {
+      return m_stream_ptr;
+    }
+    
+    std::ifstream* m_stream_ptr;
+    Ifstream_yielder* m_yielder_ptr;
+  };
+  
+//   std::vector<boost::shared_ptr<std::ifstream> > binstreams_;
+  std::vector<Ifstream_yielder*> binstream_yielders_;
+  std::vector<int> permutation_;  
+  
   struct Entry {
     int binfile_idx;
     long int byte_offset;
@@ -70,25 +168,22 @@ private:
   
   struct ReadTask {
     ReadTask( Entry& entry_ref,
-              std::ifstream* binstream_ptr,
+              Ifstream_yielder* binstream_yielder_ptr,
               long int N,
-              Dtype* dst_ptr,
-              unsigned char* entry_buffer)
+              Dtype* dst_ptr)
     : entry_ref(entry_ref),
-      binstream_ptr(binstream_ptr),
+      binstream_yielder_ptr(binstream_yielder_ptr),
       N(N),
       dst_ptr(dst_ptr),
       n_read(0),
-      entry_buffer(entry_buffer),
       ID(get_next_task_ID())
     {}
     
     Entry& entry_ref;
-    std::ifstream* binstream_ptr;
+    Ifstream_yielder* binstream_yielder_ptr;
     long int N;
     Dtype* dst_ptr;
     int n_read;
-    unsigned char* entry_buffer;
     
     /// DEBUG
     void debug(int s, int i)
@@ -101,17 +196,15 @@ private:
   std::queue<ReadTask*> undone_tasks;
   std::vector<uint> in_progress_task_ids;
   std::queue<ReadTask*> done_tasks;
-  boost::mutex undone_tasks__LOCK;
-  boost::mutex in_progress_task_ids__LOCK;
-  boost::mutex done_tasks__LOCK;
+  boost::mutex queues__LOCK;
   std::vector<boost::thread*> worker_threads;
-  std::vector<unsigned char*> entry_buffers_;
   bool running;
   
   void check_flag(
         unsigned char* buffer);
   void process_readtask(
-        ReadTask* task_ptr);
+        ReadTask* task_ptr,
+        unsigned char* entry_buffer_);
   void worker_thread_loop();
   
   
@@ -127,9 +220,6 @@ private:
   std::vector<Sample> samples_;
   std::vector<std::vector<int> > entry_dimensions_;
   std::vector<std::string> binfiles_;
-//   std::vector<boost::shared_ptr<std::ifstream> > binstreams_;
-  std::map<int, std::map<int, std::ifstream*> > binstreams_;
-  std::vector<int> permutation_;  
   
   
   /**
