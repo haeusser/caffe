@@ -136,12 +136,9 @@ void BinaryDataReader<Dtype>::Body::InternalThreadEntry() {
 }
 
 template <typename Dtype>
-void BinaryDataReader<Dtype>::Body::read_one(int &index,
-                                             BinaryQueuePair* qp)
+void BinaryDataReader<Dtype>::Body::read_one(int &index, 
+                                             BinaryQueuePair* qp) 
 {
-  vector<Blob<Dtype>*>* sample = qp->free_.pop();
-  while(true){
-    
   std::queue<std::vector<Blob<Dtype>*>*> in_progress;
   
   const int max_parallel = param_.data_param().batch_size();
@@ -149,7 +146,7 @@ void BinaryDataReader<Dtype>::Body::read_one(int &index,
   Timer t;
   
   for (unsigned int i = 0; i < max_parallel; ++i) {
-//     vector<Blob<Dtype>*>* sample = qp->free_.pop();
+    vector<Blob<Dtype>*>* sample = qp->free_.pop();
     
     if (i == 0)
       t.Start();
@@ -164,7 +161,7 @@ void BinaryDataReader<Dtype>::Body::read_one(int &index,
       TimingMonitor::addMeasure("data_rate", compressed_size * 1000.0 / (t.MilliSeconds() * 1024.0 * 1024.0));
     }
 
-//     in_progress.push(sample);
+    in_progress.push(sample);
     LOG(INFO) << "PF free/busy/full: " << qp->free_.size() << "/"
               << in_progress.size() << "/" << qp->full_.size();
 
@@ -175,10 +172,9 @@ void BinaryDataReader<Dtype>::Body::read_one(int &index,
     }
   }
   
-//   while (in_progress.size() > 0) {
-//     qp->full_.push(in_progress.front());
-//     in_progress.pop();
-//   }
+  while (in_progress.size() > 0) {
+    qp->full_.push(in_progress.front());
+    in_progress.pop();
   }
 }
 

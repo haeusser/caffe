@@ -149,6 +149,8 @@ private:
     
     std::ifstream* operator()()
     {
+      if (not m_stream_ptr)
+        LOG(FATAL) << "std::ifstream* is invalid";
       return m_stream_ptr;
     }
     
@@ -158,7 +160,7 @@ private:
   
 //   std::vector<boost::shared_ptr<std::ifstream> > binstreams_;
   std::vector<Ifstream_yielder*> binstream_yielders_;
-  std::vector<int> permutation_;  
+  //std::vector<int> permutation_;  
   
   struct Entry {
     int binfile_idx;

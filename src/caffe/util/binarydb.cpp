@@ -150,10 +150,10 @@ void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param)
 
   /// Open a file stream for every combination of (accessed file X offset)
 //     int file_idx = samples_[0][i].binfile_idx;
-    binstream_yielders_.resize(binfiles_.size());
-    for (unsigned file_idx = 0; file_idx < binfiles_.size(); ++file_idx) {
-      binstream_yielders_[file_idx] = new Ifstream_yielder(3);
-    }
+  binstream_yielders_.resize(binfiles_.size());
+  for (unsigned i = 0; i < binfiles_.size(); ++i) {
+    binstream_yielders_[i] = new Ifstream_yielder(3);
+  }
 //     binstream_yielders_.at(i).reset(new std::ifstream(binfiles_.at(file_idx).c_str(), 
 //                                               std::ios::in | std::ios::binary));
 //     if(not binstream_yielders_[file_idx][i]->is_open() or
@@ -246,14 +246,19 @@ void BinaryDB<Dtype>::get_sample(int index,
     boost::lock_guard<boost::mutex> LOCK(queues__LOCK);
     for (unsigned int t = 0; t < top_num_; ++t) {
       dst->at(t)->Reshape(entry_dimensions_.at(t));
-      if (not binstream_yielders_[samples_.at(index).at(t).binfile_idx])
+      if (not binstream_yielders_.at(samples_.at(index).at(t).binfile_idx))
         LOG(FATAL) << "Ifstream_yielder " << samples_.at(index).at(t).binfile_idx 
                     << " is invalid";
+                    
+      LOG(INFO) << samples_.at(index).at(t).binfile_idx << '/'
+                << binstream_yielders_.size()-1;
+                    
+      LOG(INFO) << binstream_yielders_.at(samples_.at(index).at(t).binfile_idx);
       ReadTask* new_task_ptr = new ReadTask(
-                          samples_.at(index).at(t),
-                          binstream_yielders_[samples_.at(index).at(t).binfile_idx],
-                          dst->at(t)->count(),
-                          dst->at(t)->mutable_cpu_data());
+                        samples_.at(index).at(t),
+                        binstream_yielders_.at(samples_.at(index).at(t).binfile_idx),
+                        dst->at(t)->count(),
+                        dst->at(t)->mutable_cpu_data());
       new_task_ptr->debug(index, t);
       undone_tasks.push(new_task_ptr);
     }
@@ -413,6 +418,7 @@ void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr,
   Entry& entry = task_ptr->entry_ref; 
   if (not task_ptr->binstream_yielder_ptr)
     LOG(FATAL) << "Ifstream_yielder is invalid";  
+  LOG(INFO) << entry.binfile_idx << " " << task_ptr->binstream_yielder_ptr;
   Ifstream_wrapper binstream_wrapper(task_ptr->binstream_yielder_ptr);
   std::ifstream* binstream = binstream_wrapper();
   
@@ -488,7 +494,7 @@ void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr,
 
       LOG(INFO) << "PREREAD " << binstream->tellg() << " " 
                 << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/');
-      t1.Start(); binstream->read((char*)entry_buffer_, 4); t1.Stop();
+      t1.Start(); binstream->read((char*)entry_buffer_, N+4); t1.Stop();
       LOG(INFO) << "POSTREAD " << binstream->tellg() << " "
                 << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/');
       
@@ -518,7 +524,7 @@ void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr,
 
       LOG(INFO) << "PREREAD " << binstream->tellg() << " " 
                 << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/');
-      t1.Start(); binstream->read((char*)entry_buffer_, 4); t1.Stop();
+      t1.Start(); binstream->read((char*)entry_buffer_, 2*N+4); t1.Stop();
       LOG(INFO) << "POSTREAD " << binstream->tellg() << " " 
                 << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/');
       
@@ -579,7 +585,7 @@ void BinaryDB<Dtype>::worker_thread_loop()
         if (undone_tasks.size() == 0)
           continue;
         
-        ReadTask* task_ptr = undone_tasks.front();
+        task_ptr = undone_tasks.front();
         LOG(INFO) << "Thread (" << boost::this_thread::get_id() << ") fetched: "
                   << task_ptr->sample << "/" << samples_.size()-1
                   << ", " << task_ptr->index << "/" << top_num_-1
