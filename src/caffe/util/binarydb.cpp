@@ -232,7 +232,7 @@ void BinaryDB<Dtype>::get_sample(int index,
                                  int* compressed_size,
                                  bool wait_for_finish) 
 {
-  LOG(INFO) << index << "/" << samples_.size();
+//   LOG(INFO) << index << "/" << samples_.size();
   if (compressed_size) *compressed_size = 0;
   
   if (not dst)
@@ -250,10 +250,10 @@ void BinaryDB<Dtype>::get_sample(int index,
         LOG(FATAL) << "Ifstream_yielder " << samples_.at(index).at(t).binfile_idx 
                     << " is invalid";
                     
-      LOG(INFO) << samples_.at(index).at(t).binfile_idx << '/'
-                << binstream_yielders_.size()-1;
+//       LOG(INFO) << samples_.at(index).at(t).binfile_idx << '/'
+//                 << binstream_yielders_.size()-1;
                     
-      LOG(INFO) << binstream_yielders_.at(samples_.at(index).at(t).binfile_idx);
+//       LOG(INFO) << binstream_yielders_.at(samples_.at(index).at(t).binfile_idx);
       ReadTask* new_task_ptr = new ReadTask(
                         samples_.at(index).at(t),
                         binstream_yielders_.at(samples_.at(index).at(t).binfile_idx),
@@ -331,7 +331,7 @@ void BinaryDB<Dtype>::get_sample(int index,
     /// Wait until all read tasks are complete
     bool all_done = false;
     while (not all_done) {
-      boost::lock_guard<boost::mutex> LOCK(queues__LOCK);
+//       boost::lock_guard<boost::mutex> LOCK(queues__LOCK);
       
       if (undone_tasks.size() > 0 or in_progress_task_ids.size() > 0) {
         boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
@@ -418,7 +418,7 @@ void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr,
   Entry& entry = task_ptr->entry_ref; 
   if (not task_ptr->binstream_yielder_ptr)
     LOG(FATAL) << "Ifstream_yielder is invalid";  
-  LOG(INFO) << entry.binfile_idx << " " << task_ptr->binstream_yielder_ptr;
+//   LOG(INFO) << entry.binfile_idx << " " << task_ptr->binstream_yielder_ptr;
   Ifstream_wrapper binstream_wrapper(task_ptr->binstream_yielder_ptr);
   std::ifstream* binstream = binstream_wrapper();
   
@@ -438,13 +438,13 @@ void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr,
     LOG(INFO) << "Clearing EOFBIT for file " << binfiles_.at(entry.binfile_idx);
     binstream->clear();
   }
-  LOG(INFO) << "PRESEEK " << binstream->tellg() << " "
-            << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/');
+//   LOG(INFO) << "PRESEEK " << binstream->tellg() << " "
+//             << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/');
   if (binstream->eof())
     binstream->clear();
   binstream->seekg(entry.byte_offset, ios::beg);
-  LOG(INFO) << "POSTSEEK " << binstream->tellg() << " "
-            << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/');
+//   LOG(INFO) << "POSTSEEK " << binstream->tellg() << " "
+//             << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/');
   
   // check if the stream is ok, re-open if needed
   if (!binstream->is_open() or !binstream->good()) {
@@ -492,18 +492,17 @@ void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr,
         LOG(FATAL) << "UINT8: entry buffer too small, buffer size=" 
                    << entry_buffer_size_ << ", N+4=" << N+4;
 
-      LOG(INFO) << "PREREAD " << binstream->tellg() << " " 
-                << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/');
+//       LOG(INFO) << "PREREAD " << binstream->tellg() << " " 
+//                 << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/');
       t1.Start(); binstream->read((char*)entry_buffer_, N+4); t1.Stop();
-      LOG(INFO) << "POSTREAD " << binstream->tellg() << " "
-                << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/');
+//       LOG(INFO) << "POSTREAD " << binstream->tellg() << " "
+//                 << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/');
       
       if (!binstream->is_open() or !binstream->good()) {
         LOG(INFO) << "! EOF ! " << binfiles_.at(task_ptr->entry_ref.binfile_idx);
       }
       
       check_flag(entry_buffer_);
-      break;
       entry_buffer_ += 4;
       
       TimingMonitor::addMeasure("raw_data_rate", N * 1000.0 / 
@@ -522,11 +521,11 @@ void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr,
         LOG(FATAL) << "FIXED16DIV32: entry buffer too small, buffer size=" 
                    << entry_buffer_size_ << ", 2*N+4=" << 2*N+4;
 
-      LOG(INFO) << "PREREAD " << binstream->tellg() << " " 
-                << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/');
+//       LOG(INFO) << "PREREAD " << binstream->tellg() << " " 
+//                 << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/');
       t1.Start(); binstream->read((char*)entry_buffer_, 2*N+4); t1.Stop();
-      LOG(INFO) << "POSTREAD " << binstream->tellg() << " " 
-                << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/');
+//       LOG(INFO) << "POSTREAD " << binstream->tellg() << " " 
+//                 << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/');
       
       if (!binstream->is_open() or !binstream->good()) {
         LOG(INFO) << "! EOF ! " << binfiles_.at(task_ptr->entry_ref.binfile_idx);
@@ -534,7 +533,6 @@ void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr,
 
       
       check_flag(entry_buffer_);
-      break;
       entry_buffer_ += 4;
       
       TimingMonitor::addMeasure("raw_data_rate", 2*N * 1000.0 / 
