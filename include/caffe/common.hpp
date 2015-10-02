@@ -135,6 +135,7 @@ class Caffe {
 #endif
 
   static void set_logging(bool value);
+  static void setup_teeing(const char* filename);
 
   // Returns the mode: running on CPU or GPU.
   inline static Brew mode() { return Get().mode_; }

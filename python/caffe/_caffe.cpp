@@ -36,6 +36,7 @@ const int NPY_DTYPE = NPY_FLOAT32;
 void set_mode_cpu() { Caffe::set_mode(Caffe::CPU); }
 void set_mode_gpu() { Caffe::set_mode(Caffe::GPU); }
 void set_logging_disabled() { Caffe::set_logging(false); }
+void setup_teeing(const char* filename) { Caffe::setup_teeing(filename); } 
 
 // Set solver count
 void set_solver_count(int count) { Caffe::set_solver_count(count); }
@@ -249,6 +250,7 @@ BOOST_PYTHON_MODULE(_caffe) {
   bp::def("set_device", &Caffe::SetDevice);
   bp::def("set_solver_count", &set_solver_count);
   bp::def("set_logging_disabled", &set_logging_disabled);
+  bp::def("setup_teeing", &setup_teeing);
 
   bp::def("layer_type_list", &LayerRegistry<Dtype>::LayerTypeList);
 

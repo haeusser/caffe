@@ -87,20 +87,22 @@ class PythonBackend(BinaryBackend):
     def train(self, solverFilename, logFile, weights=None):
         # hackaround: this backend doesn't log to one file but to a db in a subdirectory
 
+        import caffe
+        caffe.setup_teeing(logFile)
+
         from pymill.CNN import MillSolver as ms
         self.solver = ms.MillSolver(solver_def=solverFilename, weights=weights, gpus=[int(x) for x in self._gpus.split(',')])
         self.solver.run_solver()
 
     def resume(self, solverFilename, solverstateFilename, logFile):
         # hackaround: this backend doesn't log to one file but to a db in a subdirectory
+
+        import caffe
+        caffe.setup_teeing(logFile)
+
         log_dir = os.path.abspath(logFile)
         from pymill.CNN import MillSolver as ms
         self.solver = ms.MillSolver(solver_def=solverFilename, solver_state=solverstateFilename, gpus=[int(x) for x in self._gpus.split(',')])
-        self.solver.run_solver()
-
-    def run(self, solverFilename):
-        from pymill.CNN import MillSolver as ms
-        self.solver = ms.MillSolver(solverFilename=solverFilename, gpus=[int(x) for x in self._gpus.split(',')])
         self.solver.run_solver()
 
     def get_log_dir_from_filename(self, logFile):

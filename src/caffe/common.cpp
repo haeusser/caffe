@@ -21,6 +21,22 @@ void Caffe::set_logging(bool value)
     else       FLAGS_minloglevel=0;
 }
 
+void Caffe::setup_teeing(const char *filename)
+{
+    ::google::InitGoogleLogging("caffe");
+
+    LOG(INFO) << "Setting up log teeing to " << filename;
+
+    fflush(stdout);
+    fflush(stderr);
+
+    string cmd = string("tee -a ") + filename;
+
+    int newout = fileno(popen(cmd.c_str(), "w"));
+    dup2(newout, fileno(stdout));
+    dup2(newout, fileno(stderr));
+}
+
 Caffe& Caffe::Get() {
   if (!thread_instance_.get()) {
     thread_instance_.reset(new Caffe());
