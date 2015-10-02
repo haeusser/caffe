@@ -140,20 +140,25 @@ void BinaryDataReader<Dtype>::Body::read_one(db::BinaryDB<Dtype>* db, int &index
   std::queue<std::vector<Blob<Dtype>*>*> in_progress;
   
   const int max_parallel = param_.data_param().batch_size();
+
+  Timer t;
   
   for (unsigned int i = 0; i < max_parallel; ++i) {
     vector<Blob<Dtype>*>* sample = qp->free_.pop();
-
-    Timer t;
-    t.Start();
+    
+    if (i == 0)
+      t.Start();
+    
     int compressed_size;
     db->get_sample(index, sample, &compressed_size, i==max_parallel-1);
-    t.Stop();
-    TimingMonitor::addMeasure("data_single_read", t.MilliSeconds());
     
-    TimingMonitor::addMeasure("data_rate", compressed_size * 1000.0 / (t.MilliSeconds() * 1024.0 * 1024.0));
+    if (i == max_parallel-1) {
+      t.Stop();
+      TimingMonitor::addMeasure("data_single_read", t.MilliSeconds());
+      
+      TimingMonitor::addMeasure("data_rate", compressed_size * 1000.0 / (t.MilliSeconds() * 1024.0 * 1024.0));
+    }
 
-//     qp->full_.push(sample);
     in_progress.push(sample);
     LOG(INFO) << "PF free/busy/full: " << qp->free_.size() << "/"
               << in_progress.size() << "/" << qp->full_.size();
