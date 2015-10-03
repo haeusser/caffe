@@ -39,5 +39,8 @@ class TestSolverLoop(unittest.TestCase):
         timing_step = timeit.timeit(wrapped_step, number=5)
         timing_loop = timeit.timeit(wrapped_loop, number=5)
 
+        print("5x50 steps took:\n\tsteps:\t{} sec\n\tloop:\t{} sec".format(timing_step, timing_loop))
+        self.assertAlmostEqual(timing_step, timing_loop, delta=min(timing_loop, timing_step)*0.007)
+
 if __name__ == '__main__':
     unittest.main()
