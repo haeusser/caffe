@@ -101,3 +101,6 @@ MANIFEST-*
 /Makefile.qt
 Makefile.config-haeusser
 Makefile.config-mayern
+
+# allow small testing db
+!python/pymill/test/mnist/*
