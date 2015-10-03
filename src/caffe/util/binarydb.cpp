@@ -19,18 +19,13 @@ namespace caffe {
 namespace db {
   
 
-/**
- * @brief Constructor
- */
 template <typename Dtype>
 BinaryDB<Dtype>::BinaryDB() {
   num_samples_ = 0;
 }
 
 
-/**
- * @brief Destructor
- */
+
 template <typename Dtype>
 BinaryDB<Dtype>::~BinaryDB() 
 { 
@@ -45,24 +40,9 @@ BinaryDB<Dtype>::~BinaryDB()
   for (unsigned file_idx = 0; file_idx < binfiles_.size(); ++file_idx)
     if (binstream_yielders_[file_idx])
       delete binstream_yielders_[file_idx];
-  
-//   /// Free buffer memory
-//   for (unsigned int i = 0; i < entry_buffers_.size(); ++i) {
-//     if (entry_buffers_[i])
-//       delete[] entry_buffers_[i];
-//   }
 }
 
 
-/**
- * @brief Read a configuration file, parse which data can be read and 
- * instantiate internal structures
- * 
- * @param source Configuration file (the file has already been processed
- *               by the Python backend; this parameter is here only used
- *               for debug prints)
- * @param param Caffe parameters
- */
 template <typename Dtype>
 void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param) 
 {
@@ -138,30 +118,12 @@ void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param)
     throw;
   }
   
-  // open binfiles
-//   binstream_yielders_.resize(binfiles_.size());
-//   for (int i = 0; i < binfiles_.size(); ++i) {
-//     binstream_yielders_.at(i).reset(new std::ifstream(binfiles_.at(i).c_str(), 
-//                                               std::ios::in | std::ios::binary));
-//     if(!binstream_yielders_.at(i)->is_open() or !binstream_yielders_.at(i)->good()) {
-//       LOG(FATAL) << "Could not open bin file " << binfiles_.at(i);
-//     }
-//   }
-
   /// Open a file stream for every combination of (accessed file X offset)
 //     int file_idx = samples_[0][i].binfile_idx;
   binstream_yielders_.resize(binfiles_.size());
   for (unsigned i = 0; i < binfiles_.size(); ++i) {
     binstream_yielders_[i] = new Ifstream_yielder(3);
   }
-//     binstream_yielders_.at(i).reset(new std::ifstream(binfiles_.at(file_idx).c_str(), 
-//                                               std::ios::in | std::ios::binary));
-//     if(not binstream_yielders_[file_idx][i]->is_open() or
-//        not binstream_yielders_[file_idx][i]->good())
-//     {
-//       LOG(FATAL) << "Could not open bin file " << binfiles_.at(file_idx);
-//     }
-//   }
   
 
   // permute the samples
@@ -184,33 +146,14 @@ void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param)
                                           this);
   }
   
-//   entry_buffers_.resize(worker_threads.size());
-//   for(unsigned int i = 0; i < entry_buffers_.size(); ++i) {
-//     /// Expected maximum read size + flag
-//     entry_buffers_[i] = new unsigned char[entry_buffer_size_];
-//   }
-  
   LOG(INFO) << "Opened BinaryDB " << source;
 }
 
 
-/**
- * @brief Tidy up and close std::ifstream instances
- * 
- * @note Called by destructor
- */
 template <typename Dtype>
 void BinaryDB<Dtype>::Close() 
 {
   running = false;
-  
-  /// Close file handles
-//   for (unsigned int i = 0; i < binstream_yielders_.size(); ++i)
-//   for (unsigned int i = 0; i < top_num_; ++i)
-//     for (unsigned file_idx = 0; file_idx < binfiles_.size(); ++file_idx)
-//       if (binstreams_[file_idx][i] /*and binstreams_[file_idx][i]->is_open()*/)
-//         delete binstream_yielders_[file_idx][i];
-        //binstream_yielders_[file_idx][i]->close();
   
   /// Stop worker threads
   for (unsigned int i = 0; i < worker_threads.size(); ++i) {
@@ -219,13 +162,6 @@ void BinaryDB<Dtype>::Close()
 }
 
 
-/**
- * @brief 
- * 
- * @param index 
- * @param dst 
- * @param compressed_size 
- */
 template <typename Dtype>
 void BinaryDB<Dtype>::get_sample(int index, 
                                  vector<Blob<Dtype>*>* dst, 
@@ -233,7 +169,7 @@ void BinaryDB<Dtype>::get_sample(int index,
                                  bool wait_for_finish) 
 {
 //   LOG(INFO) << index << "/" << samples_.size();
-  if (compressed_size) *compressed_size = 0;
+  //if (compressed_size) *compressed_size = 0;
   
   if (not dst)
     LOG(FATAL) << ">dst< target blob vector is NULL";
@@ -263,76 +199,12 @@ void BinaryDB<Dtype>::get_sample(int index,
       undone_tasks.push(new_task_ptr);
     }
   }
-    
-//     Entry entry = samples_.at(index).at(t);    
-//     std::ifstream* curr_binstream = binstream_yielders_.at(entry.binfile_idx).get();
-// 
-//     Timer timer;
-//     timer.Start();
-//     curr_binstream->seekg(entry.byte_offset, ios::beg);
-//     
-//     // check if the stream is ok, re-open if needed
-//     if (!curr_binstream->is_open() or !curr_binstream->good()) {
-//       LOG(INFO) << "Something is wrong with the stream of file " 
-//                 << binfiles_.at(entry.binfile_idx);
-//       
-//       LOG(INFO) << " is_open()=" << curr_binstream->is_open();
-//       LOG(INFO) << "    good()=" << curr_binstream->good();
-//       LOG(INFO) << "     eof()=" << curr_binstream->eof();
-//       LOG(INFO) << "    fail()=" << curr_binstream->fail();
-//       LOG(INFO) << "     bad()=" << curr_binstream->bad();
-//       
-//       LOG(INFO) << "Attempting to re-open";
-//       binstream_yielders_.at(entry.binfile_idx).get()->close();
-//       binstream_yielders_.at(entry.binfile_idx).get()->open(
-//                               binfiles_.at(entry.binfile_idx).c_str(),
-//                               std::ios::in | std::ios::binary);
-//       
-//       if(!curr_binstream->is_open() or !curr_binstream->good())
-//         LOG(FATAL) << "Could not re-open bin file " 
-//                    << binfiles_.at(entry.binfile_idx);
-//       else {
-//         curr_binstream = binstream_yielders_.at(entry.binfile_idx).get();
-//         curr_binstream->seekg(entry.byte_offset, ios::beg);
-//       }
-//     }
-//     
-//     // check the flag of the entry (4-byte thing)
-//     unsigned int flag;
-//     curr_binstream->read(reinterpret_cast<char *>(&flag), 4);
-//     if (flag == 0)
-//       LOG(FATAL) << "Flag of blob " << t << " of sample " << index 
-//                  << " is 0 " << " (File " << binfiles_.at(entry.binfile_idx)
-//                  << " offset " << entry.byte_offset << ")";
-//     else if (flag != 1)
-//       LOG(FATAL) << "Flag of blob " << t << " of sample " << index 
-//                  << " has invalid value " << flag << " (File " 
-//                  << binfiles_.at(entry.binfile_idx) << " offset " 
-//                  << entry.byte_offset << ")";
-//     
-//     timer.Stop();
-//     TimingMonitor::addMeasure("seek_time", timer.MilliSeconds());
-// 
-//     // reshape blob
-//     dst->at(t)->Reshape(entry_dimensions_[t]);
-//     
-//     // actually read the data
-// 
-//     int n_read;
-//     read_binstream(curr_binstream, 
-//                    entry.data_encoding, 
-//                    dst->at(t)->count(), 
-//                    dst->at(t)->mutable_cpu_data(), 
-//                    &n_read);
-//     if(compressed_size) *compressed_size+=n_read;
-//   }
   
   if (wait_for_finish) {
     /// Wait until all read tasks are complete
+    if (compressed_size) *compressed_size = 0;
     bool all_done = false;
     while (not all_done) {
-//       boost::lock_guard<boost::mutex> LOCK(queues__LOCK);
-      
       if (undone_tasks.size() > 0 or in_progress_task_ids.size() > 0) {
         boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
       } else {
@@ -351,30 +223,6 @@ void BinaryDB<Dtype>::get_sample(int index,
 }
 
 
-/**
- * @brief Given a ifstream (with file pointer set correctly), reads N values 
- * from the stream to out with the given data_encoding
- * 
- * @param binstream 
- * @param data_encoding 
- * @param N 
- * @param out 
- * @param n_read 
- */
-// template <typename Dtype>
-// void BinaryDB<Dtype>::read_binstream(std::ifstream* binstream, 
-//                                      BinaryDB_DataEncoding data_encoding, 
-//                                      long int N, 
-//                                      Dtype* out, 
-//                                      int* n_read)
-// {
-//   
-// }
-
-
-/**
- * @brief Check the first 4 bytes of "buffer"
- */
 template <typename Dtype>
 void BinaryDB<Dtype>::check_flag(unsigned char* buffer)
 {
@@ -397,22 +245,10 @@ void BinaryDB<Dtype>::check_flag(unsigned char* buffer)
 }
 
 
-/**
- * Process a ReadTask instance (used by worker threads)
- * 
- * @param task_ptr ReadTask instance to process
- */
 template <typename Dtype>
 void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr,
                                        unsigned char* entry_buffer_)
 {
-//   read_binstream( task_ptr->entry_ref,
-//                   task_ptr->binstream_ptr.get(),
-//                   task_ptr->entry_ref.data_encoding,
-//                   task_ptr->N,
-//                   task_ptr->dst_ptr,
-//                   &(task_ptr->n_read) );
-  
   task_ptr->n_read=0;
   
   Entry& entry = task_ptr->entry_ref; 
@@ -425,10 +261,6 @@ void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr,
   if (not binstream->is_open())
     binstream->open(binfiles_.at(entry.binfile_idx).c_str(),
                     std::ios::in | std::ios::binary);
-                    
-//   binstream->close();
-//   binstream->open(binfiles_.at(entry.binfile_idx).c_str(), 
-//                   std::ios::in | std::ios::binary);
   
   Dtype* out = task_ptr->dst_ptr;
 
@@ -439,12 +271,12 @@ void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr,
     binstream->clear();
   }
 //   LOG(INFO) << "PRESEEK " << binstream->tellg() << " "
-//             << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/');
+//             << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx));
   if (binstream->eof())
     binstream->clear();
   binstream->seekg(entry.byte_offset, ios::beg);
 //   LOG(INFO) << "POSTSEEK " << binstream->tellg() << " "
-//             << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/');
+//             << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx));
   
   // check if the stream is ok, re-open if needed
   if (!binstream->is_open() or !binstream->good()) {
@@ -466,7 +298,6 @@ void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr,
       LOG(FATAL) << "Could not re-open bin file " 
                   << binfiles_.at(entry.binfile_idx);
     else {
-      //binstream = binstream_yielders_.at(entry.binfile_idx).get();
       binstream->clear();
       binstream->seekg(entry.byte_offset, ios::beg);
     }
@@ -475,16 +306,11 @@ void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr,
   timer.Stop();
   TimingMonitor::addMeasure("seek_time", timer.MilliSeconds());
 
-  // reshape blob
-//   dst->at(t)->Reshape(entry_dimensions_[t]);
-
   Timer t1;
   Timer t2;
   
   uint N = task_ptr->N;
   
-//   unsigned char* entry_buffer_ = task_ptr->entry_buffer;
-
   switch(entry.data_encoding)
   {
     case BinaryDB_DataEncoding_UINT8:
@@ -493,10 +319,10 @@ void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr,
                    << entry_buffer_size_ << ", N+4=" << N+4;
 
 //       LOG(INFO) << "PREREAD " << binstream->tellg() << " " 
-//                 << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/');
+//                 << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx));
       t1.Start(); binstream->read((char*)entry_buffer_, N+4); t1.Stop();
 //       LOG(INFO) << "POSTREAD " << binstream->tellg() << " "
-//                 << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/');
+//                 << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx));
       
       if (!binstream->is_open() or !binstream->good()) {
         LOG(INFO) << "! EOF ! " << binfiles_.at(task_ptr->entry_ref.binfile_idx);
@@ -522,10 +348,10 @@ void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr,
                    << entry_buffer_size_ << ", 2*N+4=" << 2*N+4;
 
 //       LOG(INFO) << "PREREAD " << binstream->tellg() << " " 
-//                 << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/');
+//                 << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx));
       t1.Start(); binstream->read((char*)entry_buffer_, 2*N+4); t1.Stop();
 //       LOG(INFO) << "POSTREAD " << binstream->tellg() << " " 
-//                 << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/');
+//                 << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx));
       
       if (!binstream->is_open() or !binstream->good()) {
         LOG(INFO) << "! EOF ! " << binfiles_.at(task_ptr->entry_ref.binfile_idx);
@@ -563,9 +389,7 @@ void BinaryDB<Dtype>::process_readtask(ReadTask* task_ptr,
 }
 
 
-/**
- * Entry point for worker threads
- */
+
 template <typename Dtype>
 void BinaryDB<Dtype>::worker_thread_loop()
 {
@@ -588,10 +412,10 @@ void BinaryDB<Dtype>::worker_thread_loop()
                   << task_ptr->sample << "/" << samples_.size()-1
                   << ", " << task_ptr->index << "/" << top_num_-1
                   << ", file " 
-                  << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx),'/')
+                  << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx))
                   << ", offset " << task_ptr->entry_ref.byte_offset;
-        undone_tasks.pop();
         in_progress_task_ids.push_back(task_ptr->ID);
+        undone_tasks.pop();
       }
       
       /// Process task
@@ -600,12 +424,12 @@ void BinaryDB<Dtype>::worker_thread_loop()
       /// Mark task as done
       {
         boost::lock_guard<boost::mutex> LOCK(queues__LOCK);
+        done_tasks.push(task_ptr);
         /// http://stackoverflow.com/a/3385251
         in_progress_task_ids.erase(std::remove(in_progress_task_ids.begin(),
                                               in_progress_task_ids.end(),
                                               task_ptr->ID),
                                   in_progress_task_ids.end());
-        done_tasks.push(task_ptr);
       }
     }
     else

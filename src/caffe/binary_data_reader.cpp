@@ -147,13 +147,16 @@ void BinaryDataReader<Dtype>::Body::read_one(int &index,
   
   for (unsigned int i = 0; i < max_parallel; ++i) {
     vector<Blob<Dtype>*>* sample = qp->free_.pop();
-    
+
+    /// Start timer before starting the first (nonwaiting) read
     if (i == 0)
       t.Start();
     
     int compressed_size;
     db_->get_sample(index, sample, &compressed_size, i==max_parallel-1);
     
+    /// Stop timer after the last read (which waits for all previous non-
+    /// waiting reads to return)
     if (i == max_parallel-1) {
       t.Stop();
       TimingMonitor::addMeasure("data_single_read", t.MilliSeconds());

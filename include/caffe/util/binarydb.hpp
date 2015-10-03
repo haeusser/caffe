@@ -2,6 +2,7 @@
 #define CAFFE_UTIL_DB_BINARYDB_HPP
 
 /// System/STL
+#include <climits>
 #include <fstream>
 #include <map>
 #include <queue>
@@ -29,10 +30,22 @@ public:
   BinaryDB();
   ~BinaryDB();
   
+  /**
+   * @brief Read a configuration file, parse which data can be read and 
+   * instantiate internal structures
+   * 
+   * @param source Configuration file (the file has already been processed
+   *               by the Python backend; this parameter is here only used
+   *               for debug prints)
+   * @param param Caffe parameters
+   */
   void Open(
         const string& source, 
         const LayerParameter& param);
   
+  /**
+   * @brief Stop worker threads
+   */
   void Close();
   
   int get_num_samples() { return num_samples_; };
@@ -42,32 +55,43 @@ public:
         vector<Blob<Dtype>*>* dst, 
         int* compressed_size,
         bool wait_for_finish=true);
-  
-//   void read_binstream(
-//         std::ifstream* binstream, 
-//         BinaryDB_DataEncoding data_encoding, 
-//         long int N, 
-//         Dtype* out, 
-//         int* n_read);
 
 private:
   
+  /**
+   * @brief Generate a series of unique IDs. This method probably does not 
+   * need to be static, but it should not hurt either.
+   * 
+   * @returns A running ID, cycling from 0 to UINT_MAX-1
+   */
   static uint get_next_task_ID()
   {
     static uint running_ID(0);
     static boost::mutex LOCK;
     
     LOCK.lock();
-      ++running_ID;
+    running_ID = (running_ID+1) % UINT_MAX;
     LOCK.unlock();
     
     return running_ID;
   }
   
   
-  
+  /**
+   * @brief A generator for std::ifstream*. An Ifstream_yielder instance
+   * distributes up to max_stream streams via get(). Further streams can only 
+   * be retrieved once some streams have been given back to the instance 
+   * via put_back(..).
+   * 
+   * @param max_streams Maximum number of std::ifstream* that can be given out
+   */
   struct Ifstream_yielder
   {
+    /**
+     * @brief Constructor
+     * 
+     * @param max_streams Upper limit to how many std::ifstream instances this Ifstream_yielder
+     */
     Ifstream_yielder(int max_streams)
     : m_reserve(),
       m_max_streams(max_streams)
@@ -78,6 +102,9 @@ private:
       }
     }
     
+    /**
+     * @brief Destructor
+     */
     ~Ifstream_yielder() 
     {
       while (m_in_use.size() > 0) {
@@ -97,6 +124,12 @@ private:
       }
     }
     
+    /**
+     * @brief Get a std::ifstream*. This method blocks until a free stream
+     * is available
+     * 
+     * @returns A std::ifstream*
+     */
     std::ifstream* get()
     {
       std::ifstream* next_free = m_reserve.pop();
@@ -107,6 +140,11 @@ private:
       return next_free;
     }
     
+    /**
+     * @brief Called by users to return std::ifstream* retrieved by get().
+     * 
+     * @param stream_ptr A std::ifstream* originally given out by this instance
+     */
     void put_back(std::ifstream* stream_ptr)
     {
       {
@@ -128,8 +166,20 @@ private:
     int m_max_streams;
   };
   
+  /**
+   * @brief Use Ifstream_yielder to obtain a managed std::ifstream*.
+   * 
+   * @param yielder_ptr Ifstream_yielder instance from which the 
+   * Ifstream_wrapper will retrieve a std::ifstream*, and to which
+   * the stream is given back upon destruction of the Ifstream_wrapper.
+   */
   struct Ifstream_wrapper
   {
+    /**
+     * @brief Constructor
+     * 
+     * @param yielder_ptr Ifstream_yielder instance from which to get the std::ifstream* stored in m_stream_ptr
+     */
     Ifstream_wrapper(Ifstream_yielder* yielder_ptr)
     : m_yielder_ptr(yielder_ptr)
     {
@@ -140,6 +190,9 @@ private:
         LOG(FATAL) << "std::ifstream* is invalid";
     }
     
+    /**
+     * @brief Destructor
+     */
     ~Ifstream_wrapper() 
     {
       if (not m_yielder_ptr)
@@ -147,6 +200,11 @@ private:
       m_yielder_ptr->put_back(m_stream_ptr);
     }
     
+    /**
+     * @brief Get this instance's std::ifstream*
+     * 
+     * @returns m_stream_ptr
+     */
     std::ifstream* operator()()
     {
       if (not m_stream_ptr)
@@ -158,17 +216,32 @@ private:
     Ifstream_yielder* m_yielder_ptr;
   };
   
-//   std::vector<boost::shared_ptr<std::ifstream> > binstreams_;
   std::vector<Ifstream_yielder*> binstream_yielders_;
-  //std::vector<int> permutation_;  
   
+  /**
+   * @brief Model for one image in a binary file. This entry contains the index 
+   * of the binary file (to be used with "binfiles_"), the byte offset within 
+   * the file at which the relevant data starts (flag + image pixels), and 
+   * additionally the data type.
+   */
   struct Entry {
     int binfile_idx;
     long int byte_offset;
     BinaryDB_DataEncoding data_encoding;
   };
   
+  /**
+   * @brief Encapsulate all information and structures needed to read one entry
+   */
   struct ReadTask {
+    /**
+     * @brief Constructor
+     * 
+     * @param entry_ref Entry to which this read task corresponds
+     * @param binstream_yielder_ptr Ifstream_yielder from which to retrieve a std::ifstream
+     * @param N Number of bytes to read (4 additional flag bytes will be read)
+     * @param dst_ptr Location where the read (and converted) data will be stored
+     */
     ReadTask( Entry& entry_ref,
               Ifstream_yielder* binstream_yielder_ptr,
               long int N,
@@ -187,13 +260,13 @@ private:
     Dtype* dst_ptr;
     int n_read;
     
-    /// DEBUG
-    void debug(int s, int i)
-    { sample=s; index=i; }
+    /**
+     * Debugging stuff
+     */
+    void debug(int s, int i){ sample=s; index=i; }
     int sample;
     int index;
     uint ID;
-    /// DEBUG
   };
   std::queue<ReadTask*> undone_tasks;
   std::vector<uint> in_progress_task_ids;
@@ -201,12 +274,26 @@ private:
   boost::mutex queues__LOCK;
   std::vector<boost::thread*> worker_threads;
   bool running;
-  
+
+  /**
+   * @brief Interpread the first 4 bytes of "buffer" as a uint and panic if the result is not 1
+   * @param buffer Data (at least 4 bytes long)
+   */
   void check_flag(
         unsigned char* buffer);
+  
+  /**
+   * @brief Called by a worker threads for every ReadTask it processes
+   * @param task_ptr The ReadTask to be processed
+   * @param entry_buffer_ Thread-local data buffer
+   */
   void process_readtask(
         ReadTask* task_ptr,
         unsigned char* entry_buffer_);
+  
+  /**
+   * @brief Entry point for worker threads; Continuously monitor task queues and process entries until "running" is FALSE
+   */
   void worker_thread_loop();
   
   
@@ -238,12 +325,15 @@ private:
     }
     return elems;
   }
-
-  std::string debug_m_split(const std::string& s,
-                            char delim)
+  /**
+   * @brief Split a string at '/' and return the concatenation of the last two elements. Used to extract semi-detailed location from a file path, e.g. "/tmp/my/file/location/file.file" yields "location/file.file"
+   * 
+   * @param s String (e.g. file path) to be split
+   */
+  std::string debug_m_split(const std::string& s)
   {
     std::vector<std::string> elems;
-    debug_m_split(s, delim, elems);
+    debug_m_split(s, '/', elems);
     std::ostringstream oss;
     oss << elems[elems.size()-2] << '/' << elems.back();
     return oss.str();
