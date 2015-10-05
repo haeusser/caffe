@@ -230,12 +230,12 @@ class Net {
   inline void set_test_iter_count(int iter) { LOG(INFO) << "Setting test iteration count to " << iter; test_iter_count_=iter; }
   int test_iter_count() { return test_iter_count_; }
 
-  void update_sample_errors(vector<int> indices, vector<float> probabilities)
+  void update_sample_errors(vector<int> indices, vector<float> error)
   {
-      CHECK(indices.size() == probabilities.size());
+      CHECK(indices.size() == error.size());
 
       for(int i=0; i<indices.size(); i++)
-          LOG(INFO) << "setting probability for sample " << indices[i] << " to " << probabilities[i];
+          LOG(INFO) << "setting error for sample " << indices[i] << " to " << error[i];
   }
 
  protected:
