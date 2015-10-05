@@ -13,9 +13,9 @@ namespace caffe { namespace db {
 
 template <typename Dtype>
 void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param) {
-  top_num_ = param.top_size();
   sample_variants_num_ = param.data_param().sample_size();
-  
+  top_num_ = param.data_param().sample().Get(0).entry_size();
+
   LOG(INFO) << "Opening BinaryDB using boost::python";
   
   string param_str;
@@ -27,9 +27,11 @@ void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param) {
     bp::object module = bp::import("binarydb");
     bp::object dbclass = module.attr("BinaryDB")(param_str, top_num_);
     
+    LOG(INFO) << "calling getInfos()";
     // returns (all_samples, entry_dimensions, bin_filenames)
     bp::tuple infos = (bp::tuple)dbclass.attr("getInfos")();
-    
+    LOG(INFO) << "getInfos() done";
+
     if(bp::len(infos) != 3) LOG(FATAL) << "Python did not return 3-tuple";
     
     bp::list all_samples = (bp::list)infos[0];
@@ -37,7 +39,7 @@ void BinaryDB<Dtype>::Open(const string& source, const LayerParameter& param) {
     bp::list bin_filenames = (bp::list)infos[2];
     
     // Store dimensions:
-    if(bp::len(dimensions) != top_num_) LOG(FATAL) << "Number of entry dimensions passed from python not equal to top blob count";
+    //if(bp::len(dimensions) != top_num_) LOG(FATAL) << "Number of entry dimensions passed from python not equal to top blob count";
     
     entry_dimensions_.resize(top_num_);
     entry_buffer_size_ = 0;

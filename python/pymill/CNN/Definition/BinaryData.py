@@ -109,8 +109,13 @@ def BinaryData_OpticalFlow(net, **kwargs):
                           Entry('finalImageR', -1),
                           Entry('backwardFlowR', 0))))
 
+  nout = NumberOfEntries(samples)
+  if 'output_index' in kwargs:
+      nout += 1
+      del kwargs['output_index']
+
   return Layers.BinaryData(net,
-                           nout=NumberOfEntries(samples),
+                           nout=nout,
                            include=(Proto.NetStateRule(phase=kwargs['phase']),),
                            data_param=DataParams(samples, **kwargs))
 
@@ -131,8 +136,13 @@ def BinaryData_OpticalFlow_Single(net, **kwargs):
                           Entry('finalImageL', +1),
                           Entry('forwardFlowL',  0))),)
 
+  nout = NumberOfEntries(samples)
+  if 'output_index' in kwargs:
+      nout += 1
+      del kwargs['output_index']
+
   return Layers.BinaryData(net,
-                           nout=NumberOfEntries(samples),
+                           nout=nout,
                            include=(Proto.NetStateRule(phase=kwargs['phase']),),
                            data_param=DataParams(samples, **kwargs))
 
@@ -184,8 +194,13 @@ def BinaryData_SceneFlow(net, **kwargs):
                           Entry('dispL', -1),
                           Entry('backwardDispChangeL', 0))))
 
+  nout = NumberOfEntries(samples)
+  if 'output_index' in kwargs:
+      nout += 1
+      del kwargs['output_index']
+
   return Layers.BinaryData(net,
-                           nout=NumberOfEntries(samples),
+                           nout=nout,
                            include=(Proto.NetStateRule(phase=kwargs['phase']),),
                            data_param=DataParams(samples, **kwargs))
 
@@ -219,8 +234,13 @@ def BinaryData_SceneFlow_Single(net, **kwargs):
                           Entry('dispL', +1),
                           Entry('forwardDispChangeL', 0))),)
 
+  nout = NumberOfEntries(samples)
+  if 'output_index' in kwargs:
+      nout += 1
+      del kwargs['output_index']
+
   return Layers.BinaryData(net,
-                           nout=NumberOfEntries(samples),
+                           nout=nout,
                            include=(Proto.NetStateRule(phase=kwargs['phase']),),
                            data_param=DataParams(samples, **kwargs))
 
@@ -260,8 +280,13 @@ def BinaryData_Disparity(net, **kwargs):
                           Entry('finalImageL',  0),
                           Entry('dispR',  0))))
 
+  nout = NumberOfEntries(samples)
+  if 'output_index' in kwargs:
+      nout += 1
+      del kwargs['output_index']
+
   return Layers.BinaryData(net,
-                           nout=NumberOfEntries(samples),
+                           nout=nout,
                            include=(Proto.NetStateRule(phase=kwargs['phase']),),
                            data_param=DataParams(samples, **kwargs))
 
@@ -284,8 +309,13 @@ def BinaryData_Disparity_Single(net, **kwargs):
                           Entry('finalImageR',  0),
                           Entry('dispL',  0))),)
 
+  nout = NumberOfEntries(samples)
+  if 'output_index' in kwargs:
+      nout += 1
+      del kwargs['output_index']
+
   return Layers.BinaryData(net,
-                           nout=NumberOfEntries(samples),
+                           nout=nout,
                            include=(Proto.NetStateRule(phase=kwargs['phase']),),
                            data_param=DataParams(samples, **kwargs))
 

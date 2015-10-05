@@ -369,6 +369,7 @@ public:
   
 protected:
   Timer reentry_timer_;
+  bool output_index_;
 
   /// Entry point for internal prefetching thread
   virtual void InternalThreadEntry();

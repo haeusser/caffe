@@ -43,10 +43,19 @@ BinaryDataLayer<Dtype>::BinaryDataLayer(const LayerParameter& param)
 {
   prefetch_.resize(param.data_param().prefetch()*
                    param.data_param().batch_size());
-  
+
+  CHECK_GE(param.data_param().sample().size(), 0) << "No samples defined.";
+
+  output_index_ = false;
+  if(param.top_size() == param.data_param().sample().Get(0).entry_size() + 1)
+      output_index_ = true;
+
+  int out_size = param.top_size();
+  if(output_index_) out_size--;
+
   /// Populate prefetching queue with empty buckets
   for (int i = 0; i < prefetch_.size(); ++i) {
-    for (int j = 0; j < param.top_size(); ++j) {
+    for (int j = 0; j < out_size; ++j) {
       Blob<Dtype> *tmpblob = new Blob<Dtype>();
       prefetch_[i].push_back(tmpblob);
     }
@@ -89,8 +98,7 @@ BinaryDataLayer<Dtype>::~BinaryDataLayer<Dtype>() {
   /// Free raw Blob memory within the buckets
   for (unsigned int i = 0; i < prefetch_.size(); ++i) {
     Container& container = prefetch_[i];
-    for (unsigned int j = 0; j < container.size(); ++j) {
-      if (container[j])
+    for (unsigned int j = 0; j < container.size(); ++j) {      if (container[j])
         delete container[j];
     }
   }
@@ -111,12 +119,28 @@ void BinaryDataLayer<Dtype>::LayerSetUp(const Container& bottom,
   /// Look at a data sample and use it to initialize the top blobs
   const int batch_size = this->layer_param_.data_param().batch_size();
   Container& peek_data = *(reader_.full().peek());
-  assert(top.size() == peek_data.size());
-  for (unsigned int i = 0; i < top.size(); ++i)
+  if(!output_index_)
   {
-    vector<int> shape(peek_data[i]->shape());
-    shape[0] = batch_size;
-    top[i]->Reshape(shape);
+      // output only blobs
+      assert(top.size() == peek_data.size());
+      for (unsigned int i = 0; i < top.size(); ++i)
+      {
+        vector<int> shape(peek_data[i]->shape());
+        shape[0] = batch_size;
+        top[i]->Reshape(shape);
+      }
+  }
+  else
+  {
+      assert((top.size() + 1 == peek_data.size()));
+      // Output blobs and sample index
+      for (unsigned int i = 0; i < top.size()-1; ++i)
+      {
+        vector<int> shape(peek_data[i]->shape());
+        shape[0] = batch_size;
+        top[i]->Reshape(shape);
+      }
+      top.back()->Reshape(this->layer_param_.data_param().batch_size(), 1, 1, 1);
   }
   
   DLOG(INFO) << "Initializing prefetch";
@@ -254,15 +278,26 @@ void BinaryDataLayer<Dtype>::Forward_cpu(const Container& bottom,
   wait_timer.Stop();
   TimingMonitor::addMeasure("train_wait", wait_timer.MilliSeconds());
 
+  int out_size = top.size();
+  if(output_index_)
+      out_size--;
+
   /// Reshape tops and copy data
-  for (unsigned int i = 0; i < top.size(); ++i) {
+  for (unsigned int i = 0; i < out_size; ++i) {
     top[i]->ReshapeLike(*container[i]);
     caffe_copy(container[i]->count(), 
                container[i]->cpu_data(),  
                top[i]->mutable_cpu_data());
     
   }
-  
+
+  if(output_index_)
+  {
+      // Test for now: output random indices
+      for(int i=0; i<top.back()->num(); i++)
+        top.back()->mutable_cpu_data()[i] = rand() % 1000;
+  }
+
   /// Recycle spent data container for prefetching
   prefetch_free_.push(container_ptr);
 
