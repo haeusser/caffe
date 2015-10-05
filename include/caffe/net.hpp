@@ -169,6 +169,9 @@ class Net {
   inline const vector<Dtype>& blob_loss_weights() const {
     return blob_loss_weights_;
   }
+  inline const map<string,int>& blob_names_index() const {
+    return blob_names_index_;
+  }
   inline const vector<bool>& layer_need_backward() const {
     return layer_need_backward_;
   }
@@ -179,6 +182,15 @@ class Net {
   inline const vector<Blob<Dtype>*>& learnable_params() const {
     return learnable_params_;
   }
+  
+  inline const vector<int>& learnable_param_ids() const {
+    return learnable_param_ids_;
+  }
+  
+  inline const vector<pair<int,int> >& param_layer_indices() const {
+    return param_layer_indices_;
+  }
+  
   /// @brief returns the learnable parameter learning rate multipliers
   inline const vector<float>& params_lr() const { return params_lr_; }
   inline const vector<bool>& has_params_lr() const { return has_params_lr_; }

@@ -52,6 +52,10 @@ def assign_proto(proto, name, val):
         for k, v in six.iteritems(val):
             assign_proto(getattr(proto, name), k, v)
     else:
+        #try:
+            #getattr(proto, name)
+        #except:
+            #return
         setattr(proto, name, val)
 
 

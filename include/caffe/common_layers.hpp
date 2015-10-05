@@ -509,6 +509,38 @@ class ReductionLayer : public Layer<Dtype> {
 };
 
 /**
+ * @brief Scales the gradient and propagates it down
+ */
+template <typename Dtype>
+class ScaleGradientLayer : public Layer<Dtype> {
+ public:
+  explicit ScaleGradientLayer(const LayerParameter& param)
+      : Layer<Dtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual inline const char* type() const { return "ScaleGradient"; }
+  virtual inline int MinBottomBlobs() const { return 1; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
+
+ protected:
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+
+  CoeffScheduleParameter discount_coeff_schedule_;
+  int iter_;
+};
+
+
+/**
  * @brief Ignores bottom blobs while producing no top blobs. (This is useful
  *        to suppress outputs during testing.)
  */

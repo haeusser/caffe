@@ -143,25 +143,48 @@ void BinaryDataReader<Dtype>::Body::update_sample_errors(vector<int> indices, ve
 }
 
 template <typename Dtype>
-void BinaryDataReader<Dtype>::Body::read_one(int &index, BinaryQueuePair* qp) {
+void BinaryDataReader<Dtype>::Body::read_one(int &index, 
+                                             BinaryQueuePair* qp) 
+{
+  std::queue<std::vector<Blob<Dtype>*>*> in_progress;
   
-  vector<Blob<Dtype>*>* sample = qp->free_.pop();
+  const int max_parallel = param_.data_param().batch_size();
 
   Timer t;
-  t.Start();
-  int compressed_size;
-  db_->get_sample(index, sample, &compressed_size);
-  t.Stop();
-  TimingMonitor::addMeasure("data_single_read", t.MilliSeconds());
   
-  TimingMonitor::addMeasure("data_rate", compressed_size * 1000.0 / (t.MilliSeconds() * 1024.0 * 1024.0));
+  for (unsigned int i = 0; i < max_parallel; ++i) {
+    vector<Blob<Dtype>*>* sample = qp->free_.pop();
 
-  qp->full_.push(sample);
+    /// Start timer before starting the first (nonwaiting) read
+    if (i == 0)
+      t.Start();
+    
+    int compressed_size;
+    db_->get_sample(index, sample, &compressed_size, i==max_parallel-1);
+    
+    /// Stop timer after the last read (which waits for all previous non-
+    /// waiting reads to return)
+    if (i == max_parallel-1) {
+      t.Stop();
+      TimingMonitor::addMeasure("data_single_read", t.MilliSeconds());
+      
+      TimingMonitor::addMeasure("data_rate", compressed_size * 1000.0 / (t.MilliSeconds() * 1024.0 * 1024.0));
+    }
 
-  index++;
-  if(index >= db_->get_num_samples()) {
-    index = 0;
-    DLOG(INFO) << "Restarting data prefetching from start.";
+    in_progress.push(sample);
+//     LOG(INFO) << "PF free/busy/full: " << qp->free_.size() << "/"
+//               << in_progress.size() << "/" << qp->full_.size();
+
+    index++;
+    if(index >= db_->get_num_samples()) {
+      index = 0;
+      DLOG(INFO) << "Restarting data prefetching from start.";
+    }
+  }
+  
+  while (in_progress.size() > 0) {
+    qp->full_.push(in_progress.front());
+    in_progress.pop();
   }
 }
 
