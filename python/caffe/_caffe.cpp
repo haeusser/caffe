@@ -137,6 +137,23 @@ void Net_SetInputArrays(Net<Dtype>* net, bp::object data_obj,
       PyArray_DIMS(data_arr)[0]);
 }
 
+void Net_update_sample_probabilities(Net<Dtype>* net, bp::list indices, bp::list probabilities) {
+  vector<int> indices_vec;
+  vector<float> prob_vec;
+
+  int length = bp::len(indices);
+  indices_vec.resize(length);
+  prob_vec.resize(length);
+
+  for (int i = 0; i < length; i++) {
+    indices_vec[i] = bp::extract<int>(indices[i]);
+    prob_vec[i] = bp::extract<float>(probabilities[i]);
+  }
+  fprint("checkpoint");
+  net->update_sample_probabilities(indices_vec, prob_vec);
+}
+
+
 shared_ptr<P2PSync<Dtype> > P2PSync_Init(Solver<Dtype>* root_solver, string param_str) {
   SolverParameter param;
   param.ParseFromString(param_str);
@@ -292,7 +309,8 @@ BOOST_PYTHON_MODULE(_caffe) {
         bp::return_value_policy<bp::copy_const_reference>()))
     .def("_set_input_arrays", &Net_SetInputArrays,
         bp::with_custodian_and_ward<1, 2, bp::with_custodian_and_ward<1, 3> >())
-    .def("save", &Net_Save);
+    .def("save", &Net_Save)
+    .def("_update_sample_probabilities", &Net_update_sample_probabilities);
 
   bp::class_<Blob<Dtype>, shared_ptr<Blob<Dtype> >, boost::noncopyable>(
     "Blob", bp::no_init)

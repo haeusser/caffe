@@ -244,6 +244,13 @@ def _Net_set_input_arrays(self, data, labels):
     return self._set_input_arrays(data, labels)
 
 
+def _Net_update_sample_probabilities(self, indices, probabilities):
+    """
+    Send info about net performance to the net
+    """
+    self._update_sample_probabilities(indices, probabilities)
+
+
 def _Net_batch(self, blobs):
     """
     Batch blob lists according to net's batch size.
@@ -286,6 +293,7 @@ Net.backward = _Net_backward
 Net.forward_all = _Net_forward_all
 Net.forward_backward_all = _Net_forward_backward_all
 Net.set_input_arrays = _Net_set_input_arrays
+Net.update_sample_probabilities = _Net_update_sample_probabilities
 Net._batch = _Net_batch
 Net.inputs = _Net_inputs
 Net.outputs = _Net_outputs
