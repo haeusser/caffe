@@ -1,9 +1,10 @@
 #!/usr/bin/python
 
+import sys
 from CaffeAdapter import *
 import pymill.Toolbox as tb
 
-def sliceIn2(net, input_blob, slice_point, axis=1):
+def slice(net, input_blob, slice_point, axis=1):
     return Layers.Slice(net,
                         input_blob,
                         nout=len(slice_point)+1 if tb.isList(slice_point) else 2,
@@ -12,7 +13,10 @@ def sliceIn2(net, input_blob, slice_point, axis=1):
                           'axis': axis
                         })
 
-Network.slice = sliceIn2
+Network.slice = slice
+
+sliceIn2 = slice
+Network.sliceIn2 = sliceIn2
 
 def crop(net, input_blob, width, height):
     return Layers.PhilDataAugmentation(net,
@@ -192,16 +196,35 @@ def addMean(net, image_blob, color, input_scale=1.0, mean_scale=1.0, ouptut_scal
 
 Network.addMean = addMean
 
-def concat(net, *args):
+def blobFromScalar(net, scalar):
+    return Layers.BlobFromScalar(net,
+                         scalar,
+                         nout=1)
+
+Network.blobFromScalar = blobFromScalar
+
+def concat(net, *args, **kwargs):
     '''
     @brief Setup a ConcatLayer that takes all ARGS and throws them together along the first dimension
     @param net Current network
     @returns A new blob (concatenation of all blobs in ARGS)
     '''
+    axis = 1
+    if 'axis' in kwargs:
+        axis = int(kwargs['axis'])
+        del kwargs['axis']
+    if len(kwargs):
+        raise Exception('Cannot handle kwargs %s' % kwargs)
+
+    inputs = []
+    for arg in args:
+        if tb.isList(arg): inputs += arg
+        else: inputs.append(arg)
+
     return Layers.Concat(net,
-                         args,
+                         inputs,
                          nout=1,
-                         concat_param={'concat_dim': 1})
+                         concat_param={'axis': axis})
 
 Network.concat = concat
 
