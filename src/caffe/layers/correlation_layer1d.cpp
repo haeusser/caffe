@@ -9,7 +9,7 @@
 namespace caffe {
 
 template <typename Dtype>
-void CorrelationLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+void Correlation1DLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   // Configure the kernel size, padding, stride, and inputs.
   CorrelationParameter corr_param = this->layer_param_.correlation_param();
@@ -37,7 +37,7 @@ void CorrelationLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-void CorrelationLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
+void Correlation1DLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   
   num_ = bottom[0]->num();
@@ -66,7 +66,7 @@ void CorrelationLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   neighborhood_grid_width_ = neighborhood_grid_radius_ * 2 + 1;
 
   // Top Channels amount to displacement combinations in X and Y direction:
-  top_channels_ = neighborhood_grid_width_ * neighborhood_grid_width_;
+  top_channels_ = neighborhood_grid_width_;
   
   //Reshape top
   top[0]->Reshape(num_, top_channels_, top_height_, top_width_);
@@ -83,22 +83,22 @@ void CorrelationLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-void CorrelationLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+void Correlation1DLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   NOT_IMPLEMENTED;
 }
 
 template <typename Dtype>
-void CorrelationLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
+void Correlation1DLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
   NOT_IMPLEMENTED;
 }
 
 #ifdef CPU_ONLY
-STUB_GPU(CorrelationLayer);
+STUB_GPU(Correlation1DLayer);
 #endif
 
-INSTANTIATE_CLASS(CorrelationLayer);
-REGISTER_LAYER_CLASS(Correlation);
+INSTANTIATE_CLASS(Correlation1DLayer);
+REGISTER_LAYER_CLASS(Correlation1D);
 
 }  // namespace caffe

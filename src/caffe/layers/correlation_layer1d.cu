@@ -78,7 +78,7 @@ __global__ void CorrelateData(const int nthreads, int num, int topwidth, int top
     sum[ch_off] = 0;
   
     int s2o = (top_channel % neighborhood_grid_width - neighborhood_grid_radius) * stride2;
-    int s2p = (top_channel / neighborhood_grid_width - neighborhood_grid_radius) * stride2;
+    int s2p = 0; //(top_channel / neighborhood_grid_width - neighborhood_grid_radius) * stride2;
     
     for(int j = 0; j < kernel_size; j++) { // HEIGHT
       for(int i = 0; i < kernel_size; i++) { // WIDTH
@@ -148,17 +148,18 @@ __global__ void CorrelateDataBackward0(const int nthreads, int num, int item, in
         ymin = max(0,ymin);
         ymax = min(topheight-1,ymax);
 
-        for(int p = -neighborhood_grid_radius; p <= neighborhood_grid_radius; p++) {
+        { //for(int p = -neighborhood_grid_radius; p <= neighborhood_grid_radius; p++) {
+          // => int p = 0;
+          
           for(int o = -neighborhood_grid_radius; o <= neighborhood_grid_radius; o++) {
 
             // Get bottom1 data:
             int s2o = stride2 * o;
-            int s2p = stride2 * p;
-            int idxbot1 = ((item * pbottomheight + (m+s2p)) * pbottomwidth + (l+s2o)) * bottomchannels + n;
-            Dtype bot1tmp = bottom1[idxbot1]; // bottom1[l+s2o,m+s2p,n]
+            int idxbot1 = ((item * pbottomheight + m) * pbottomwidth + (l+s2o)) * bottomchannels + n;
+            Dtype bot1tmp = bottom1[idxbot1]; // bottom1[l+s2o,m,n]
 
             // Index offset for topdiff in following loops:
-            int op = (p+neighborhood_grid_radius) * neighborhood_grid_width + (o+neighborhood_grid_radius); // index [o,p]
+            int op = (o+neighborhood_grid_radius); // index [o,p]
             int idxopoffset = (item * topchannels + op);
 
             for(int y = ymin; y <= ymax; y++) {
@@ -200,20 +201,20 @@ __global__ void CorrelateDataBackward1(const int nthreads, int num, int item, in
     const int round_off_s1 = stride1 * round_off;
     
     Dtype sum = 0;
-    for(int p = -neighborhood_grid_radius; p <= neighborhood_grid_radius; p++) {
+    { //for(int p = -neighborhood_grid_radius; p <= neighborhood_grid_radius; p++) {
+      
       for(int o = -neighborhood_grid_radius; o <= neighborhood_grid_radius; o++) {
         
         int s2o = stride2 * o;
-        int s2p = stride2 * p;
         
         //Get X,Y ranges and clamp
         // We add round_off before_s1 the int division and subtract round_off after it, to ensure the formula matches ceil behavior:
         int xmin = (l - 2*kernel_radius - max_displacement - s2o + round_off_s1 - 1) / stride1 + 1 - round_off; // ceil (l - 2*kernel_radius - max_displacement - s2o) / stride1
-        int ymin = (m - 2*kernel_radius - max_displacement - s2p + round_off_s1 - 1) / stride1 + 1 - round_off; // ceil (l - 2*kernel_radius - max_displacement - s2o) / stride1
+        int ymin = (m - 2*kernel_radius - max_displacement - 0 + round_off_s1 - 1) / stride1 + 1 - round_off; // ceil (l - 2*kernel_radius - max_displacement - s2o) / stride1
         
         // Same here:
         int xmax = (l - max_displacement - s2o + round_off_s1) / stride1 - round_off; // floor (l - max_displacement - s2o) / stride1
-        int ymax = (m - max_displacement - s2p + round_off_s1) / stride1 - round_off; // floor (m - max_displacement - s2p) / stride1
+        int ymax = (m - max_displacement - 0 + round_off_s1) / stride1 - round_off; // floor (m - max_displacement - 0) / stride1
 
         if(xmax>=0 && ymax>=0 && (xmin<=topwidth-1) && (ymin<=topheight-1))
         {
@@ -224,11 +225,11 @@ __global__ void CorrelateDataBackward1(const int nthreads, int num, int item, in
             ymax = min(topheight-1,ymax);
 
             // Get bottom0 data:
-            int idxbot0 = ((item * pbottomheight + (m-s2p)) * pbottomwidth + (l-s2o)) * bottomchannels + n;
-            Dtype bot0tmp = bottom0[idxbot0]; // bottom1[l+s2o,m+s2p,n]
+            int idxbot0 = ((item * pbottomheight + m) * pbottomwidth + (l-s2o)) * bottomchannels + n;
+            Dtype bot0tmp = bottom0[idxbot0]; // bottom1[l+s2o,m,n]
 
             // Index offset for topdiff in following loops:
-            int op = (p+neighborhood_grid_radius) * neighborhood_grid_width + (o+neighborhood_grid_radius); // index [o,p]
+            int op = (o+neighborhood_grid_radius); // index [o,p]
             int idxOpOffset = (item * topchannels + op);
 
             for(int y = ymin; y <= ymax; y++) {
@@ -427,7 +428,7 @@ __global__ void CorrelateDataBackward1Subtract(const int nthreads, int num, int 
 // == Forward 
 
 template <typename Dtype>
-void CorrelationLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+void Correlation1DLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top)
 {
     CHECK_EQ(bottom.size(),2);
@@ -464,7 +465,7 @@ void CorrelationLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     const int shared_memory_per_block = (kernel_size_*kernel_size_)*bchannels;
 
     if(corr_type_ == CorrelationParameter_CorrelationType_MULTIPLY) {
-        // CorrelationLayer
+        // Correlation1DLayer
         int topThreadCount = topcount;
         
         dim3 totalBlocksCorr(top_width_, top_height_, num);
@@ -482,7 +483,7 @@ void CorrelationLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
         CUDA_POST_KERNEL_CHECK;
         
     } else if(corr_type_ == CorrelationParameter_CorrelationType_SUBTRACT) {
-        // CorrelationLayer
+        // Correlation1DLayer
         for(int n = 0; n < num; n++) {
             
             int topThreadCount = topcount;
@@ -504,7 +505,7 @@ void CorrelationLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 
 
 template <typename Dtype>
-void CorrelationLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
+void Correlation1DLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom)
 {
 
@@ -602,6 +603,6 @@ void CorrelationLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
 }
 
 
-INSTANTIATE_LAYER_GPU_FUNCS(CorrelationLayer);
+INSTANTIATE_LAYER_GPU_FUNCS(Correlation1DLayer);
 
 }  // namespace caffe

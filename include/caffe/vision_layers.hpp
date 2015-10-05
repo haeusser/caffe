@@ -343,17 +343,17 @@ class CorrelationLayer : public Layer<Dtype> {
  *        the second input image but only along x-axis
  */
 template <typename Dtype>
-class CorrelationLayer1D : public Layer<Dtype> {
+class Correlation1DLayer : public Layer<Dtype> {
  public:
 
-  explicit CorrelationLayer(const LayerParameter& param)
+  explicit Correlation1DLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
   virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
 
-  virtual inline const char* type() const { return "Correlation"; }
+  virtual inline const char* type() const { return "Correlation1D"; }
   virtual inline int ExactNumBottomBlobs() const { return 2; }
   virtual inline int ExactNumTopBlobs() const { return 1; }
 
