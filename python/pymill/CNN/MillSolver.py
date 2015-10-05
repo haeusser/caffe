@@ -28,10 +28,10 @@ class MillSolver(object):
         :param log_dir:         optional: will log into this directory under solver.prototxt
         :param log_db_prefix:   prefix for both SQLite db names and table names
 
-        The following parameters need to be set in the solver prototxt file:
-        log_per [def = 50]:     log per this number of iterations (simple log)
-        viz_per_logs [def = 20]:log visualization per this multiple of log_per
-        test_per_logs [def = 10]:log per this number of iterations (simple log)
+        The following parameters should to be set in the solver prototxt file:
+        log_interval            log per this number of iterations (simple log) [default = 20]
+        viz_interval            log visualization per this number of iterations (net blobs snapshot) [default = 100]
+        test_iter:              The number of iterations for each test net.
         """
         if not os.path.isabs(solver_def):
             if not os.path.isfile(os.path.join(os.getcwd(), solver_def)):
@@ -52,15 +52,16 @@ class MillSolver(object):
 
         # read params from solver definition
         self.iterations = self.solver_param.max_iter
-        self.log_per = self.solver_param.log_per
-        self.viz_per_logs = self.solver_param.viz_per_logs
-        self.test_per_logs = self.solver_param.test_per_logs
+        self.log_interval = self.solver_param.log_interval
+        self.viz_interval = self.solver_param.viz_interval
+        self.test_interval = self.solver_param.test_interval
 
         # make solver param for net fail safe
         if not os.path.isabs(self.solver_param.net):
             self.solver_param.net = os.path.join(self.solver_dir, self.solver_param.net)
             if not os.path.isfile(self.solver_param.net):
                 raise Exception('could not find net definition from solver prototxt!')
+
         self.gpus = gpus
         if gpus:
             self.solver_param.device_id = gpus[0]
@@ -89,12 +90,11 @@ class MillSolver(object):
             self.solver.net.copy_from(weights)
 
         self.sync = None
-        self.viz_counter = 0
-        self.test_counter = 0
         self.viz_thread = None
         self.test_input = None
         self.test_out_blobs = None
         self.test_start_layer = None
+        self.iteration = 0
 
     def run_solver(self):
         """
@@ -104,58 +104,66 @@ class MillSolver(object):
         if len(self.gpus) > 1:
             self.sync = caffe.P2PSync(self.solver, self.solver_param.SerializeToString())
             self.sync.set_pysolver(self)
-            self.sync.set_callback_iteration(self.log_per)
+            self.sync.set_callback_iteration(1)
             self.sync.run(self.gpus)
 
         else:  # fallback: classical single GPU training
-            for it in range(int(ceil(self.iterations / self.log_per))):
-                self.solver.step(self.log_per)  # run log_per forward/backward passes
+            for i in range(self.iterations):
+                self.solver.step(1)
+                self.iteration = self.solver.iter
                 self.stats_and_log()
 
     def stats_and_log(self):
-        iteration = self.solver.iter
-        # extract loss
-        loss_log = dict()
-        for output in self.solver.net.outputs:
-            loss_log[output] = float(self.solver.net.blobs[output].data)
+        iteration = self.iteration
 
-        # extract percentiles
-        blob_percentiles_log = dict()
-        for blob in self.solver.net.blobs:
-            if len(self.solver.net.blobs[blob].data.shape) > 1:
-                blob_percentiles_log[blob] = self.get_percentiles(self.solver.net.blobs[blob])
+        if iteration % self.log_interval == 0:
+            # extract loss
+            loss_log = dict()
+            for output in self.solver.net.outputs:
+                loss_log[output] = float(self.solver.net.blobs[output].data)
 
-        weight_percentiles_log = dict()
-        for blob in self.solver.net.params:
-            if len(self.solver.net.params[blob][0].data.shape) > 1:
-                weight_percentiles_log[blob + '-w'] = self.get_percentiles(self.solver.net.params[blob][0])
-                weight_percentiles_log[blob + '-b'] = self.get_percentiles(self.solver.net.params[blob][1])
+            # extract percentiles
+            blob_percentiles_log = dict()
+            for blob in self.solver.net.blobs:
+                if len(self.solver.net.blobs[blob].data.shape) > 1:
+                    blob_percentiles_log[blob] = self.get_percentiles(self.solver.net.blobs[blob])
 
-        # extract learning rate
-        try:
-            lr_log = self.solver.getLearningRate()
-        except:
-            raise Exception('solver does not support extracting learning rate!')
+            weight_percentiles_log = dict()
+            for blob in self.solver.net.params:
+                if len(self.solver.net.params[blob][0].data.shape) > 1:
+                    weight_percentiles_log[blob + '-w'] = self.get_percentiles(self.solver.net.params[blob][0])
+                    weight_percentiles_log[blob + '-b'] = self.get_percentiles(self.solver.net.params[blob][1])
 
-        # write to DB
-        self.write_out_log(iteration, lr_log, loss_log, blob_percentiles_log, weight_percentiles_log)
+            # extract learning rate
+            try:
+                lr_log = self.solver.getLearningRate()
+            except:
+                raise Exception('solver does not support extracting learning rate!')
+
+            # write to DB
+            self.write_out_log(iteration, lr_log, loss_log, blob_percentiles_log, weight_percentiles_log)
 
         # visualization log
-        if self.viz_per_logs and self.viz_counter % self.viz_per_logs == 0:
+        if self.viz_interval and iteration % self.viz_interval == 0:
             self.viz_thread = threading.Thread(target=self.write_out_viz, args=(iteration, self.solver.net.blobs,))
             self.viz_thread.setDaemon(True)
             self.viz_thread.start()
             # self.write_out_viz(iteration, self.solver.net.blobs)
 
-        # run test if necessary
-        if self.test_per_logs and self.test_counter % self.test_per_logs == 0:
+        # run test log if necessary
+        if self.test_interval and iteration % self.test_interval == 0:
             test_loss_log = dict()
+            # extract learning rate
+            try:
+                lr_log = self.solver.getLearningRate()
+            except:
+                raise Exception('solver does not support extracting learning rate!')
             for tn in range(len(self.solver.test_nets)):
                 # logprint("== Test net #{} (iteration {}):".format(tn, solver.iter-log_per))
                 for outp in self.solver.test_nets[tn].outputs:
                     test_loss_log["tn{}-{}".format(tn, outp)] = float(self.solver.test_nets[tn].blobs[outp].data)
                     # logprint("==   {} = {}".format(outp, float(solver.test_nets[tn].blobs[outp].data)))
-            self.write_out_log(iteration - self.log_per, lr_log, test_loss_log, lr_log, lr_log, phase="TEST")
+            self.write_out_log(iteration, lr_log, test_loss_log, lr_log, lr_log, phase="TEST")
 
             if self.test_input:
                 for input in self.test_input:
@@ -163,19 +171,16 @@ class MillSolver(object):
                 test_output = self.solver.net.forward(start=self.test_start_layer, blobs=self.test_out_blobs)
                 self.write_out_viz(iteration, test_output, test=True)
 
-        self.viz_counter += 1
-        self.test_counter += 1
-
     def callback_gradients(self):
-        if not self.solver.iter + self.log_per > self.iterations:
-            self.sync.set_callback_iteration(self.solver.iter + self.log_per)
+        if not self.solver.iter > self.iterations:
+            self.sync.set_callback_iteration(self.solver.iter + 1)
             self.stats_and_log()
 
     def step_debug(self):
         for i in range(1000):
-            self.solver.step(self.log_per)
+            self.solver.step(10)
             for tn in range(len(self.solver.test_nets)):
-                self.logprint("== Test net #{} (iteration {}):".format(tn, self.solver.iter - self.log_per))
+                self.logprint("== Test net #{} (iteration {}):".format(tn, self.solver.iter))
                 for outp in self.solver.test_nets[tn].outputs:
                     self.logprint("==   {} = {}".format(outp, float(self.solver.test_nets[tn].blobs[outp].data)))
 
@@ -205,7 +210,8 @@ class MillSolver(object):
             cmd = '''INSERT OR REPLACE INTO {} VALUES(?, ?, ?);'''.format(table_name)
             if test:
                 # housekeeping: delete keys with iteration number >= current iteration number
-                cur.execute('''DELETE FROM {} WHERE name = 'test-output-blobs' AND ID >= {};'''.format(table_name, iteration))
+                cur.execute(
+                    '''DELETE FROM {} WHERE name = 'test-output-blobs' AND ID >= {};'''.format(table_name, iteration))
                 cur.execute(cmd,
                             [iteration, "test-output-blobs", lite.Binary(json.dumps(blobs, default=self.json_default))])
                 con.commit()
@@ -329,7 +335,8 @@ class MillSolver(object):
             self.solver.net.blobs[self.solver.net.blobs.keys()[0]]), "Values must be of type caffe._caffe.Blob"
         self.test_input = input
 
-        assert type(start_layer) == str, "start_layer must be a string with the name of the layer to which the test blob is input"
+        assert type(
+            start_layer) == str, "start_layer must be a string with the name of the layer to which the test blob is input"
         assert start_layer in self.solver.net._layer_names, "Could not find the start layer in the net definition. Typo?"
         self.test_start_layer = start_layer
 

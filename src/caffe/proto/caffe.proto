@@ -263,9 +263,8 @@ message SolverParameter {
   
   optional string param_file = 3007 [default = ""]; // Don't need to set this. It's done automatically
   
-  optional int32 log_per = 2001 [default = 50];  // log per this number of iterations (simple log)
-  optional int32 viz_per_logs = 2002 [default = 20];  // log visualization per this multiple of log_per
-  optional int32 test_per_logs = 2003 [default = 10];  // log per this number of iterations (simple log)
+  optional int32 log_interval = 2001 [default = 10];  // log per this number of iterations (simple log)
+  optional int32 viz_interval = 2002 [default = 50];  // log visualization per this number of iterations (net blobs snapshot)
   
 }
 
