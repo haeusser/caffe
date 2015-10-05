@@ -832,6 +832,9 @@ message DataParameter {
   repeated DataSample sample = 3014;
   optional string collection_list = 3015;
   optional uint32 minimum_boundary_margin = 3016 [default = 0]; // Minimum distance to keep to clip boundaries when looking for samples
+
+  optional float error_decay = 3017 [ default = 1 ];
+  optional bool error_based_sampling = 3018 [ default = false ];
 }
 
 message DataEntry {

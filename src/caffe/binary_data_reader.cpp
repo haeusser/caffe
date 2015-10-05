@@ -136,6 +136,13 @@ void BinaryDataReader<Dtype>::Body::InternalThreadEntry() {
 }
 
 template <typename Dtype>
+void BinaryDataReader<Dtype>::Body::update_sample_errors(vector<int> indices, vector<float> error)
+{
+    for(int i=0; i<indices.size(); i++)
+        LOG(INFO) << "updating sample " << indices[i] << " error to " << error[i];
+}
+
+template <typename Dtype>
 void BinaryDataReader<Dtype>::Body::read_one(int &index, BinaryQueuePair* qp) {
   
   vector<Blob<Dtype>*>* sample = qp->free_.pop();

@@ -38,6 +38,8 @@ class BinaryDataReader : public InternalThread {
 
   int get_num_samples() { return body_.get()->get_num_samples(); }
 
+  void update_sample_errors(vector<int> indices, vector<float> errors) { body_->update_sample_errors(indices,errors); }
+
  protected:
   // Queue pairs are shared between a body and its readers
   class BinaryQueuePair {
@@ -59,6 +61,8 @@ class BinaryDataReader : public InternalThread {
 
     int get_num_samples() { return db_->get_num_samples(); }
 
+    void update_sample_errors(vector<int> indices, vector<float> error);
+
    protected:
     void InternalThreadEntry();
     void read_one(int &index, BinaryQueuePair* qp);
@@ -69,8 +73,11 @@ class BinaryDataReader : public InternalThread {
     db::BinaryDB<Dtype>* db_;
     friend class BinaryDataReader;
 
+
   DISABLE_COPY_AND_ASSIGN(Body);
   };
+
+ protected:
 
   // A source is uniquely identified by its layer name + path, in case
   // the same database is read from two different locations in the net.

@@ -20,7 +20,7 @@
 #include "caffe/util/math_functions.hpp"
 #include "caffe/util/rng.hpp"
 #include "caffe/vision_layers.hpp"
-
+#include <boost/function.hpp>
 
 namespace caffe {
 
@@ -44,7 +44,7 @@ BinaryDataLayer<Dtype>::BinaryDataLayer(const LayerParameter& param)
   prefetch_.resize(param.data_param().prefetch()*
                    param.data_param().batch_size());
 
-  CHECK_GE(param.data_param().sample().size(), 0) << "No samples defined.";
+  CHECK_GE(param.data_param().sample().size(), 0) << "No samples defined.";  
 
   output_index_ = false;
   if(param.top_size() == param.data_param().sample().Get(0).entry_size() + 1)
@@ -149,6 +149,15 @@ void BinaryDataLayer<Dtype>::LayerSetUp(const Container& bottom,
 
   if(this->phase_ == TEST)
       this->GetNet()->set_test_iter_count(reader_.get_num_samples());
+
+  if(this->layer_param().data_param().error_based_sampling())
+  {
+      typename Net<Dtype>::UpdateSampleCallback cb;
+
+      cb = boost::bind(&BinaryDataReader<Dtype>::update_sample_errors, &reader_, _1, _2);
+
+      this->GetNet()->register_update_sample_callback(cb);
+  }
 }
 
 /**

@@ -12,6 +12,8 @@
 #include "caffe/layer.hpp"
 #include "caffe/proto/caffe.pb.h"
 
+#include <boost/function.hpp>
+
 namespace caffe {
 
 template <typename Dtype> class Solver;
@@ -230,15 +232,26 @@ class Net {
   inline void set_test_iter_count(int iter) { LOG(INFO) << "Setting test iteration count to " << iter; test_iter_count_=iter; }
   int test_iter_count() { return test_iter_count_; }
 
+
+  typedef boost::function<void(vector<int>, vector<float>)> UpdateSampleCallback;
+
+  void register_update_sample_callback(UpdateSampleCallback cb) { update_sample_callbacks_.push_back(cb); }
+
   void update_sample_errors(vector<int> indices, vector<float> error)
   {
       CHECK(indices.size() == error.size());
 
       for(int i=0; i<indices.size(); i++)
           LOG(INFO) << "setting error for sample " << indices[i] << " to " << error[i];
+
+      LOG(INFO) << "calling " << update_sample_callbacks_.size() << " callbacks. ";
+      for(int i=0; i<update_sample_callbacks_.size();  i++)
+          update_sample_callbacks_[i](indices, error);
   }
 
  protected:
+  vector<UpdateSampleCallback> update_sample_callbacks_;
+
   // Helpers for Init.
   /// @brief Append a new input or top blob to the net.
   void AppendTop(const NetParameter& param, const int layer_id,
