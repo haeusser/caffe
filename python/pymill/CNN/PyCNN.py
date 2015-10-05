@@ -14,6 +14,11 @@
 
 import os
 import sys
+## (mayern) remove my .local folder from the PYTHONPATH -->
+EVILPATH = '/home/mayern/.local/lib/python2.7/site-packages'
+if EVILPATH in sys.path:
+  sys.path.remove(EVILPATH)
+## <-- (mayern) remove my .local folder from the PYTHONPATH
 from string import Template
 from termcolor import colored
 import argparse
@@ -28,6 +33,9 @@ from Environment import PythonBackend
 from Environment import BinaryBackend
 import time
 import signal
+
+
+
 
 def sigusr1(signum, stack):
     print 'pycnn: got signal SIGUSR1'
