@@ -165,8 +165,8 @@ void BinaryDataReader<Dtype>::Body::read_one(int &index,
     }
 
     in_progress.push(sample);
-    LOG(INFO) << "PF free/busy/full: " << qp->free_.size() << "/"
-              << in_progress.size() << "/" << qp->full_.size();
+//     LOG(INFO) << "PF free/busy/full: " << qp->free_.size() << "/"
+//               << in_progress.size() << "/" << qp->full_.size();
 
     index++;
     if(index >= db_->get_num_samples()) {

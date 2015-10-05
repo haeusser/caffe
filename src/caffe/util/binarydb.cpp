@@ -408,12 +408,12 @@ void BinaryDB<Dtype>::worker_thread_loop()
           continue;
         
         task_ptr = undone_tasks.front();
-        LOG(INFO) << "Thread (" << boost::this_thread::get_id() << ") fetched: "
-                  << task_ptr->sample << "/" << samples_.size()-1
-                  << ", " << task_ptr->index << "/" << top_num_-1
-                  << ", file " 
-                  << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx))
-                  << ", offset " << task_ptr->entry_ref.byte_offset;
+//         LOG(INFO) << "Thread (" << boost::this_thread::get_id() << ") fetched: "
+//                   << task_ptr->sample << "/" << samples_.size()-1
+//                   << ", " << task_ptr->index << "/" << top_num_-1
+//                   << ", file " 
+//                   << debug_m_split(binfiles_.at(task_ptr->entry_ref.binfile_idx))
+//                   << ", offset " << task_ptr->entry_ref.byte_offset;
         in_progress_task_ids.push_back(task_ptr->ID);
         undone_tasks.pop();
       }
