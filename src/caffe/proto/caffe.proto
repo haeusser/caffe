@@ -394,6 +394,7 @@ message LayerParameter {
   optional ContrastiveLossParameter contrastive_loss_param = 105;
   optional ConvolutionParameter convolution_param = 106;
   optional CorrelationParameter correlation_param = 3004;
+  optional CropParameter crop_param = 5003;
   optional DataParameter data_param = 107;
   optional DownsampleParameter downsample_param = 3006;
   optional DropoutParameter dropout_param = 108;
@@ -764,6 +765,11 @@ message CorrelationParameter {
     SUBTRACT = 1;
   }
   optional CorrelationType correlation_type = 15 [default = MULTIPLY]; // Multiplicative is normal correlation
+}
+
+message CropParameter {
+  optional uint32 crop_width = 1 [default = 0 ];
+  optional uint32 crop_height = 2 [default = 0 ];
 }
 
 message DataParameter {

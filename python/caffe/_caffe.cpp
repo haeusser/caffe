@@ -7,6 +7,7 @@
 #include <boost/python.hpp>
 #include <boost/python/raw_function.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
+#include <boost/python/suite/indexing/map_indexing_suite.hpp>
 #include <numpy/arrayobject.h>
 
 // these need to be included after boost on OS X
@@ -263,6 +264,7 @@ BOOST_PYTHON_MODULE(_caffe) {
     .def("copy_from", static_cast<void (Net<Dtype>::*)(const string)>(
         &Net<Dtype>::CopyTrainedLayersFrom))
     .def("share_with", &Net<Dtype>::ShareTrainedLayersWith)
+    .def("clear_param_diffs", &Net<Dtype>::ClearParamDiffs)
     .add_property("_blob_loss_weights", bp::make_function(
         &Net<Dtype>::blob_loss_weights, bp::return_internal_reference<>()))
     .add_property("_blobs", bp::make_function(&Net<Dtype>::blobs,
@@ -278,6 +280,8 @@ BOOST_PYTHON_MODULE(_caffe) {
     .add_property("_learnable_param_ids", bp::make_function(&Net<Dtype>::learnable_param_ids,
         bp::return_value_policy<bp::copy_const_reference>()))
     .add_property("_param_layer_indices", bp::make_function(&Net<Dtype>::param_layer_indices,
+        bp::return_value_policy<bp::copy_const_reference>()))
+    .add_property("_blob_names_index", bp::make_function(&Net<Dtype>::blob_names_index,
         bp::return_value_policy<bp::copy_const_reference>()))
     .add_property("_inputs", bp::make_function(&Net<Dtype>::input_blob_indices,
         bp::return_value_policy<bp::copy_const_reference>()))
@@ -337,7 +341,8 @@ BOOST_PYTHON_MODULE(_caffe) {
     .def("solve", static_cast<void (Solver<Dtype>::*)(const char*)>(
           &Solver<Dtype>::Solve), SolveOverloads())
     .def("step", &Solver<Dtype>::Step)
-    .def("restore", &Solver<Dtype>::Restore);
+    .def("restore", &Solver<Dtype>::Restore)
+    .def("apply_update", &Solver<Dtype>::ApplyUpdate);
 
   bp::class_<SGDSolver<Dtype>, bp::bases<Solver<Dtype> >,
     shared_ptr<SGDSolver<Dtype> >, boost::noncopyable>(
@@ -360,9 +365,12 @@ BOOST_PYTHON_MODULE(_caffe) {
   bp::def("get_solver_from_string", &GetSolverFromString,
       bp::return_value_policy<bp::manage_new_object>());
   
-  bp::class_<pair<int, int> >("IntPair")
-    .def_readwrite("first", &pair<int, int>::first)
-    .def_readwrite("second", &pair<int, int>::second);
+  bp::class_<std::pair<int, int> >("IntPair")
+    .def_readwrite("first", &std::pair<int, int>::first)
+    .def_readwrite("second", &std::pair<int, int>::second);
+    
+  bp::class_<std::map<string, int> >("MapStringInt")
+        .def(bp::map_indexing_suite<std::map<string, int> >() );
 
   // vector wrappers for all the vector types we use
   bp::class_<vector<shared_ptr<Blob<Dtype> > > >("BlobVec")

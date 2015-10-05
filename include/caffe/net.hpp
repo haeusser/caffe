@@ -167,6 +167,9 @@ class Net {
   inline const vector<Dtype>& blob_loss_weights() const {
     return blob_loss_weights_;
   }
+  inline const map<string,int>& blob_names_index() const {
+    return blob_names_index_;
+  }
   inline const vector<bool>& layer_need_backward() const {
     return layer_need_backward_;
   }
