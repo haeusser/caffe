@@ -91,6 +91,7 @@ class MillSolver(object):
 
         self.sync = None
         self.viz_thread = None
+        self.log_thread = None
         self.test_input = None
         self.test_out_blobs = None
         self.test_start_layer = None
@@ -118,16 +119,19 @@ class MillSolver(object):
 
         if iteration % self.log_interval == 0:
             # extract loss
+            self.logprint("#### DEBUG: start logging")
             loss_log = dict()
             for output in self.solver.net.outputs:
                 loss_log[output] = float(self.solver.net.blobs[output].data)
 
             # extract percentiles
+            self.logprint("#### DEBUG: start calculating blob percentiles")
             blob_percentiles_log = dict()
             for blob in self.solver.net.blobs:
                 if len(self.solver.net.blobs[blob].data.shape) > 1:
                     blob_percentiles_log[blob] = self.get_percentiles(self.solver.net.blobs[blob])
 
+            self.logprint("#### DEBUG: start calculating weight percentiles")
             weight_percentiles_log = dict()
             for blob in self.solver.net.params:
                 if len(self.solver.net.params[blob][0].data.shape) > 1:
@@ -141,14 +145,16 @@ class MillSolver(object):
                 raise Exception('solver does not support extracting learning rate!')
 
             # write to DB
-            self.write_out_log(iteration, lr_log, loss_log, blob_percentiles_log, weight_percentiles_log)
+            self.logprint("#### DEBUG: start logging thread --> DB")
+            self.log_thread = threading.Thread(target=self.write_out_log, args=(iteration, lr_log, loss_log, blob_percentiles_log, weight_percentiles_log,))
+            self.log_thread.setDaemon(True)
+            self.log_thread.start()
 
         # visualization log
         if self.viz_interval and iteration % self.viz_interval == 0:
             self.viz_thread = threading.Thread(target=self.write_out_viz, args=(iteration, self.solver.net.blobs,))
             self.viz_thread.setDaemon(True)
             self.viz_thread.start()
-            # self.write_out_viz(iteration, self.solver.net.blobs)
 
         # run test log if necessary
         if self.test_interval and iteration % self.test_interval == 0:
