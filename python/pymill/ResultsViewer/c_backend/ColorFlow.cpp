@@ -23,6 +23,10 @@ void ColorFlow(const float* input, unsigned char* output, int size, float scale)
 
 void cartesianToRGB (float x, float y, float* R, float* G, float* B)
 {
+  if (isnan(x) or isnan(y)) {
+    x = 0.f;
+    y = 0.f;
+  }
   const float Pi = 3.1415926536f;
   float radius = sqrt (x * x + y * y);
   if (radius > 1) radius = 1;

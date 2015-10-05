@@ -242,6 +242,8 @@ class Net {
   inline void set_test_iter_count(int iter) { LOG(INFO) << "Setting test iteration count to " << iter; test_iter_count_=iter; }
   int test_iter_count() { return test_iter_count_; }
 
+  void update_sample_probabilities(vector<int> indices, vector<float> probabilities) {}
+
  protected:
   // Helpers for Init.
   /// @brief Append a new input or top blob to the net.

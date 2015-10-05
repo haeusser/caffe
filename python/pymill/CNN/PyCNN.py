@@ -14,6 +14,11 @@
 
 import os
 import sys
+## (mayern) remove my .local folder from the PYTHONPATH -->
+EVILPATH = '/home/mayern/.local/lib/python2.7/site-packages'
+if EVILPATH in sys.path:
+  sys.path.remove(EVILPATH)
+## <-- (mayern) remove my .local folder from the PYTHONPATH
 from string import Template
 from termcolor import colored
 import argparse
@@ -28,6 +33,9 @@ from Environment import PythonBackend
 from Environment import BinaryBackend
 import time
 import signal
+
+
+
 
 def sigusr1(signum, stack):
     print 'pycnn: got signal SIGUSR1'
@@ -136,7 +144,7 @@ parser.add_argument('--verbose',       help='verbose', action='store_true')
 parser.add_argument('--path',          help='model path (default=.)', default='.')
 parser.add_argument('--unattended',    help='always assume Y as answer (dangerous)', action='store_true')
 parser.add_argument('--yes',           help='same as unattended', action='store_true')
-parser.add_argument('--backend',       help='backend to use (default=binary)', choices=('binary','python'))
+parser.add_argument('--backend',       help='backend to use (default=python)', choices=('binary','python'))
 parser.add_argument('--local',         help='run on local machine', action='store_true')
 parser.add_argument('--background',    help='run on cluster in background', action='store_true')
 parser.add_argument('--node',          help='run on a specific node', default=None)
@@ -180,6 +188,13 @@ subparser.add_argument('--iter',       help='number of iterations to run', defau
 # clean
 subparser = subparsers.add_parser('clean', help='delete .caffemodel, .solverstate and log files')
 subparser.add_argument('--iter', help='delete only everything after ITER', default=-1, type=int)
+
+# clean
+subparser = subparsers.add_parser('clean', help='delete .caffemodel, .solverstate and log files')
+subparser.add_argument('--iter', help='delete only everything after ITER', default=-1, type=int)
+
+# sweep
+subparser = subparsers.add_parser('sweep', help='delete output folders')
 
 # sanitize
 subparser = subparsers.add_parser('sanitize', help='delete everything that was created by pycnn')
@@ -231,8 +246,8 @@ gpuIds = ''
 for i in range(0, args.gpus):
     gpuIds += ',%d' % i
 gpuIds = gpuIds[1:]
-if args.backend == 'python': backend = PythonBackend(gpuIds, args.quiet, args.silent)
-else:                        backend = BinaryBackend(gpuIds, args.quiet, args.silent)
+if args.backend == 'binary': backend = BinaryBackend(gpuIds, args.quiet, args.silent)
+else:                        backend = PythonBackend(gpuIds, args.quiet, args.silent)
 
 env = Environment(args.path, backend, args.unattended, args.silent)
 if args.command != 'copy': env.init()
@@ -256,6 +271,9 @@ if   args.command == 'clean':
 if   args.command == 'sanitize':
     checkNoJob()
     env.sanitize()
+    sys.exit(0)
+if   args.command == 'sweep':
+    env.sweep()
     sys.exit(0)
 elif args.command == 'plot':
     env.plot(args.select)

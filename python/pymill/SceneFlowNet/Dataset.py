@@ -591,25 +591,41 @@ class Entry:
             flow = tb.readFlow(self._path)
             flow = flow[:, :, 0:2]
             if downsample != 1: flow = OpticalFlow.downsampleMedian(flow, downsample)
-            return (flow.transpose((2, 0, 1)) * 32.0).astype(np.int16)
+            flow = flow.transpose((2, 0, 1))
+            nanMask = np.isnan(flow)
+            data = (flow * 32.0).astype(np.int16)
+            data[nanMask] = np.iinfo(np.int16).max
+            return data
         elif self._type == "leftdisparity":
             disparity = tb.readDisparity(self._path)
+            nanMask = np.isnan(disparity)
             disparity *= -1
             if downsample != 1: raise Exception("no downsampling implemented for disparity")
-            return (disparity * 32.0).astype(np.int16)
+            data = (disparity * 32.0).astype(np.int16)
+            data[nanMask] = np.iinfo(np.int16).max
+            return data
         elif self._type == "rightdisparity":
             disparity = tb.readDisparity(self._path)
+            nanMask = np.isnan(disparity)
             if downsample != 1: raise Exception("no downsampling implemented for disparity")
-            return (disparity * 32.0).astype(np.int16)
+            data = (disparity * 32.0).astype(np.int16)
+            data[nanMask] = np.iinfo(np.int16).max
+            return data
         elif self._type == "leftdisparitychange":
             disparityChange = tb.readDisparity(self._path)
+            nanMask = np.isnan(disparityChange)
             disparityChange *= -1
             if downsample != 1: raise Exception("no downsampling implemented for disparity")
-            return (disparityChange * 32.0).astype(np.int16)
+            data = (disparityChange * 32.0).astype(np.int16)
+            data[nanMask] = np.iinfo(np.int16).max
+            return data
         elif self._type == "rightdisparitychange":
             disparityChange = tb.readDisparity(self._path)
+            nanMask = np.isnan(disparityChange)
             if downsample != 1: raise Exception("no downsampling implemented for disparity")
-            return (disparityChange * 32.0).astype(np.int16)
+            data = (disparityChange * 32.0).astype(np.int16)
+            data[nanMask] = np.iinfo(np.int16).max
+            return data
         else:
             raise Exception('unhandled data type')
 

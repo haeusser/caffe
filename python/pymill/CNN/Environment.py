@@ -87,20 +87,22 @@ class PythonBackend(BinaryBackend):
     def train(self, solverFilename, logFile, weights=None):
         # hackaround: this backend doesn't log to one file but to a db in a subdirectory
 
+        import caffe
+        caffe.setup_teeing(logFile)
+
         from pymill.CNN import MillSolver as ms
         self.solver = ms.MillSolver(solver_def=solverFilename, weights=weights, gpus=[int(x) for x in self._gpus.split(',')])
         self.solver.run_solver()
 
     def resume(self, solverFilename, solverstateFilename, logFile):
         # hackaround: this backend doesn't log to one file but to a db in a subdirectory
+
+        import caffe
+        caffe.setup_teeing(logFile)
+
         log_dir = os.path.abspath(logFile)
         from pymill.CNN import MillSolver as ms
         self.solver = ms.MillSolver(solver_def=solverFilename, solver_state=solverstateFilename, gpus=[int(x) for x in self._gpus.split(',')])
-        self.solver.run_solver()
-
-    def run(self, solverFilename):
-        from pymill.CNN import MillSolver as ms
-        self.solver = ms.MillSolver(solverFilename=solverFilename, gpus=[int(x) for x in self._gpus.split(',')])
         self.solver.run_solver()
 
     def get_log_dir_from_filename(self, logFile):
@@ -368,6 +370,9 @@ class Environment:
             self.notice('removing jobs', 'del')
             os.system('rm -rf %s' % self._jobDir)
 
+        self.sweep()
+
+    def sweep(self):
         for file in os.listdir(self._path):
             if os.path.isdir(file) and file.startswith('output'):
                 self.notice('removing %s' % file, 'del')
@@ -431,6 +436,13 @@ class Environment:
 
         finalProto = self.makeScratchPrototxt(proto, vars)
         solverProto = self.makeScratchPrototxt(self._solverProto, vars)
+
+        if output and 'dataset' in vars:
+            outPath = '%s/output_%d_%s' % (self._path, iter, vars['dataset'])
+            if os.path.isdir(outPath):
+                if self._unattended or tb.queryYesNo('Output folder %s exists, do you want to delete it first?' % os.path.basename(outPath)):
+                    os.system('rm -rf %s' % outPath)
+
 
         self.notice('testing snapshot iteration %d for %d iterations...' % (iter, num_iter), 'notice')
         os.chdir(self._path)
@@ -527,7 +539,7 @@ class Environment:
             if f == 'jobs': continue
             if f.endswith('.pyc'): continue
             if os.path.isdir('%s/%s' % (source,f)) and f.startswith('test_'): continue
-            if os.path.isdir('%s/%s' % (source,f)) and f.startswith('output_'): continue
+            if os.path.isdir('%s/%s' % (source,f)) and f.startswith('output'): continue
 
             tb.system('cp -r %s %s/%s %s' % ('' if self._silent else '-v', source, f, target))
 

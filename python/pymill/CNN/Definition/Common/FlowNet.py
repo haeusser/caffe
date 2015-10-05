@@ -79,7 +79,7 @@ def standardDeploy(NetworkBlock, generateNet=True):
 
         blobs.img0_nomean_resize = net.resample(blobs.img0_nomean, width=temp_width, height=temp_height, type='LINEAR', antialias=True)
         blobs.img1_nomean_resize = net.resample(blobs.img1_nomean, width=temp_width, height=temp_height, type='LINEAR', antialias=True)
-        blobs.flow_gt_resize     = net.resample(blobs.flow_gt,     width=temp_width, height=temp_height, type='LINEAR', antialias=True)
+        blobs.flow_gt_resize     = net.resample(blobs.flow_gt,     width=temp_width, height=temp_height, type='NEAREST', antialias=True) # Use NEAREST here, since kitti gt is sparse
 
         from net import Block as Network
         prediction = NetworkBlock(net,
