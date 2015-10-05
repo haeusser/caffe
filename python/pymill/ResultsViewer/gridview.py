@@ -6,10 +6,10 @@
 ## Image grid viewer                                                 ##
 #######################################################################
 
-from __future__ import print_function
 from PIL import Image
 from PIL.ImageQt import ImageQt
 from functools import partial
+import logging
 import numpy as np
 import os
 import sys
@@ -71,7 +71,7 @@ def parseConfig(lines):
       col.append({'suffix': cells[index_str]})
     grid.append(col)
   configuration['grid'] = grid
-  print(configuration)
+  logging.debug(configuration)
 
 def readConfig(filename):
   '''Read a configuration file'''
@@ -198,10 +198,10 @@ def readFloat(name):
     """elif dim == 3:
       if dims[2] == 1:
         data = data[:,:,0]
-        print(data.shape)
+        logging.debug(data.shape)
         #data = np.transpose(data, (2, 1, 0))
         #data = np.transpose(data, (1, 0, 2))
-        #print(data.shape)
+        #logging.debug(data.shape)
         #data = np.transpose(data, (1, 0))
         #data = np.transpose(data, (0, 1))
       else:
@@ -784,37 +784,43 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
 def main():
+  if len(sys.argv) > 1 and '--debug' in sys.argv[1:]:
+    logging.basicConfig(level=logging.DEBUG)
+  else:
+    logging.basicConfig(level=logging.INFO)
+
   ## Try to use all command line arguments
   if len(sys.argv) > 1:
     for arg in sys.argv[1:]:
       if os.path.isdir(arg):
         global dir
         dir = arg
-        print('Reading from folder >%s<'%(arg))
+        logging.debug('Reading from folder >%s<'%(arg))
       elif arg.endswith('.cfg') and os.path.isfile(arg):
         readConfig(arg)
-        print('Using config file >%s<'%(arg))
+        logging.debug('Using config file >%s<'%(arg))
       elif arg == '--preload':
         global preload
         preload = True
-        print('Will preload data')
+        logging.debug('Will preload data')
       elif arg == '--no-permute':
         global permute
         permute = False
-        print('Will not permute data')
+        logging.debug('Will not permute data')
 
-  ## If no explicit configuration file was given
-  #  the data folder
+  ## If no explicit configuration file was given, check if the data
+  #  folder contains a 'viewer.cfg' and use it, else use a safe
+  #  default.
   if configuration is None:
     if dir is not None:
       cfg = os.path.join(dir, 'viewer.cfg')
       if os.path.isfile(cfg):
         readConfig(cfg)
-        print('Using config file >viewer.cfg< in data folder')
+        logging.debug('Using config file >viewer.cfg< in data folder')
   if configuration is None:
     ## Default configuration
     parseConfig(['1 1', '0 0 img0.ppm'])
-    print('Using default configuration (probably not a good idea)')
+    logging.debug('Using default configuration (probably not a good idea)')
 
   app = QtWidgets.QApplication(sys.argv)
   app.setApplicationName("Gridview")
