@@ -137,22 +137,21 @@ void Net_SetInputArrays(Net<Dtype>* net, bp::object data_obj,
       PyArray_DIMS(data_arr)[0]);
 }
 
-void Net_update_sample_probabilities(Net<Dtype>* net, bp::list indices, bp::list probabilities) {
+void Net_update_sample_errors(Net<Dtype>* net, bp::list indices, bp::list errors) {
   vector<int> indices_vec;
-  vector<float> prob_vec;
+  vector<float> err_vec;
 
   int length = bp::len(indices);
   indices_vec.resize(length);
-  prob_vec.resize(length);
+  err_vec.resize(length);
 
   for (int i = 0; i < length; i++) {
     indices_vec[i] = bp::extract<int>(indices[i]);
-    prob_vec[i] = bp::extract<float>(probabilities[i]);
+    err_vec[i] = bp::extract<float>(errors[i]);
   }
-  //fprint("checkpoint");
-  net->update_sample_probabilities(indices_vec, prob_vec);
-}
 
+  net->update_sample_errors(indices_vec, err_vec);
+}
 
 shared_ptr<P2PSync<Dtype> > P2PSync_Init(Solver<Dtype>* root_solver, string param_str) {
   SolverParameter param;
