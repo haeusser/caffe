@@ -395,13 +395,15 @@ endif
 ##############################
 .PHONY: all lib test clean docs linecount lint lintclean tools examples $(DIST_ALIASES) \
 	py mat py$(PROJECT) mat$(PROJECT) proto runtest \
-	superclean supercleanlist supercleanfiles warn everything clean-bin 
+	superclean supercleanlist supercleanfiles warn everything clean-bin all-targets
 
 clean-bin: 
 	rm -vf build/tools/caffe.bin build/lib/libcaffe.a build/lib/libcaffe.so
 
+.NOTPARALLEL: all 
+all: clean-bin all-targets
 
-all: clean-bin lib tools examples
+all-targets: lib tools examples
 
 lib: $(STATIC_NAME) $(DYNAMIC_NAME)
 
@@ -448,7 +450,8 @@ tools: $(TOOL_BINS) $(TOOL_BIN_LINKS)
 
 examples: $(EXAMPLE_BINS)
 
-py$(PROJECT): py
+.NOTPARALLEL: py$(PROJECT) 
+py$(PROJECT): clean-bin py
 
 py: $(PY$(PROJECT)_SO) $(PROTO_GEN_PY)
 
