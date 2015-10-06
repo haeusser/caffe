@@ -18,13 +18,16 @@ import sys
 EVILPATH = '/home/mayern/.local/lib/python2.7/site-packages'
 if EVILPATH in sys.path:
   sys.path.remove(EVILPATH)
+  import matplotlib.pyplot as plt
+  sys.path.append(EVILPATH)
+else:
+  import matplotlib.pyplot as plt
 ## <-- (mayern) remove my .local folder from the PYTHONPATH
 from string import Template
 from termcolor import colored
 import argparse
 import argcomplete
 import numpy as np
-import matplotlib.pyplot as plt
 from pymill import Toolbox as tb
 from pymill import CNN as CNN
 import re
