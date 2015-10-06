@@ -165,7 +165,7 @@ void Correlation1DLayerTest<TypeParam>::ReferenceCorrelationForward(
   top_numCols = ceil( (numCols - 2*offset_) / (float) stride1 ) ;
   top_numRows = ceil( (numRows - 2*offset_) / (float) stride1 ) ;
   int grid_radius = maxdisplacement / stride2;
-  top_numChannels = (2* grid_radius+1) * (2* grid_radius+1);
+  top_numChannels = (2* grid_radius+1);
   
   LOG(INFO) << "Top Blob XSize: " << top_numCols;
   LOG(INFO) << "Top Blob YSize: " << top_numRows;
@@ -193,7 +193,7 @@ void Correlation1DLayerTest<TypeParam>::ReferenceCorrelationForward(
         top_c = 0;
         // For each displacement
         // multiply the two blobs and sum the value to the blob_top
-        for(int y2 = y - maxdisplacement + (maxdisplacement % stride2); y2 <= y +  maxdisplacement - (maxdisplacement % stride2);  y2 = y2 + stride2){
+        { int y2 = y; //for(int y2 = y - maxdisplacement + (maxdisplacement % stride2); y2 <= y +  maxdisplacement - (maxdisplacement % stride2);  y2 = y2 + stride2){
           for(int x2 = x - maxdisplacement+ (maxdisplacement % stride2); x2 <= x + maxdisplacement - (maxdisplacement % stride2);  x2 = x2 + stride2)
           {
              // Element-wise multiplication of patches (pathc is determined by kernel)
@@ -260,7 +260,7 @@ void Correlation1DLayerTest<TypeParam>::runFwdTest(const char name[], int n, int
     corr_param->set_stride_1(s1);
     corr_param->set_stride_2(s2);
     
-    CorrelationLayer<Dtype> layer(layer_param);
+    Correlation1DLayer<Dtype> layer(layer_param);
     layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
     layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
     Blob<Dtype> top_reference;
@@ -375,7 +375,7 @@ void Correlation1DLayerTest<TypeParam>::runGradTest(const char name[], int n, in
     corr_param->set_stride_1(s1);
     corr_param->set_stride_2(s2);
     
-    CorrelationLayer<Dtype> layer(layer_param);
+    Correlation1DLayer<Dtype> layer(layer_param);
     GradientChecker<Dtype> checker(1e-2, 1e-2);
 
     layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
@@ -421,7 +421,7 @@ TYPED_TEST(Correlation1DLayerTest, TestGradient) {
         this->runGradTest("ChannelsA", 1, 3, 3, 3,  1, 1, 1, 2, 1, ctype);
         this->runGradTest("ChannelsB", 1, 3, 1, 1,  1, 1, 1, 1, 1, ctype);
 
-        //this->runGradTest("BigA", 1, 1, 9, 16,  3, 1, 4, 1, 1);
+        this->runGradTest("BigA", 1, 1, 9, 16,  3, 1, 4, 1, 1, ctype);
     }
     {
         CorrelationParameter_CorrelationType ctype = CorrelationParameter_CorrelationType_SUBTRACT;
@@ -447,7 +447,7 @@ TYPED_TEST(Correlation1DLayerTest, TestGradient) {
         this->runGradTest("ChannelsA", 1, 3, 3, 3,  1, 1, 1, 2, 1, ctype);
         this->runGradTest("ChannelsB", 1, 3, 1, 1,  1, 1, 1, 1, 1, ctype);
 
-        //this->runGradTest("BigA", 1, 1, 9, 16,  3, 1, 4, 1, 1);
+        this->runGradTest("BigA", 1, 1, 9, 16,  3, 1, 4, 1, 1, ctype);
     }
 
 }
