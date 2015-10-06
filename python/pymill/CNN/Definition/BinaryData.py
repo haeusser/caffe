@@ -7,9 +7,9 @@ import os
 
 
 BIN_DB_DIR   = '/misc/lmbraid17/sceneflownet/common/data/4_bin-db'
-SSD_BIN_DB_DIR   = '/scratch/global/hackathon/data/4_bin-db'
+SSD_BIN_DB_DIR   = '/misc/scratch0/hackathon/data/4_bin-db'
 
-COLLECTIONLIST_DIR = '/misc/lmbraid17/sceneflownet/common/data/4_bin-db/collection_lists'
+COLLECTIONLIST_DIR = '/misc/scratch0/hackathon/data/4_bin-db/collection_lists'
 
 
 ## Assemble samples to be read from BinaryDB
