@@ -262,7 +262,7 @@ __global__ void CorrelateDataSubtract(const int nthreads, int num, int item, int
         
     // Offset of patch in image 2
     int s2o = (c % neighborhood_grid_width - neighborhood_grid_radius) * stride2;
-    int s2p = (c / neighborhood_grid_width - neighborhood_grid_radius) * stride2;
+    //int s2p = (c / neighborhood_grid_width - neighborhood_grid_radius) * stride2;
         
     // First (upper left) position of kernel center in current neighborhood in image 1
     int x1 = x*stride1 + kernel_radius + max_displacement;
@@ -275,7 +275,7 @@ __global__ void CorrelateDataSubtract(const int nthreads, int num, int item, int
         for(int l = 0; l < bottomchannels; l++) { // CHANNELS
           // Calculate position in image 2
           int x2 = x1 + s2o;
-          int y2 = y1 + s2p;
+          int y2 = y1;
 
           // Indices in bottom data: (CH=l,W=x2,H=y2,N)
           int idx1 = ((item * bottomheight + y1+j) * bottomwidth + x1+i) * bottomchannels + l;
@@ -329,19 +329,18 @@ __global__ void CorrelateDataBackward0Subtract(const int nthreads, int num, int 
         ymin = max(0,ymin);
         ymax = min(topheight-1,ymax);
 
-        for(int p = -neighborhood_grid_radius; p <= neighborhood_grid_radius; p++) {
+        { //for(int p = -neighborhood_grid_radius; p <= neighborhood_grid_radius; p++) {
           for(int o = -neighborhood_grid_radius; o <= neighborhood_grid_radius; o++) {
 
             // Get bottom1 data:
             int s2o = stride2 * o;
-            int s2p = stride2 * p;
-            int idxbot = ((item * pbottomheight + (m+s2p)) * pbottomwidth + (l+s2o)) * bottomchannels + n;
-            Dtype bot0tmp = bottom0[idxbot]; // bottom0[l+s2o,m+s2p,n]
-            Dtype bot1tmp = bottom1[idxbot]; // bottom1[l+s2o,m+s2p,n]
+            int idxbot = ((item * pbottomheight + (m)) * pbottomwidth + (l+s2o)) * bottomchannels + n;
+            Dtype bot0tmp = bottom0[idxbot]; // bottom0[l+s2o,m,n]
+            Dtype bot1tmp = bottom1[idxbot]; // bottom1[l+s2o,m,n]
             Dtype sign = (bot0tmp >= bot1tmp) ? 1.0 : -1.0;
 
             // Index offset for topdiff in following loops:
-            int op = (p+neighborhood_grid_radius) * neighborhood_grid_width + (o+neighborhood_grid_radius); // index [o,p]
+            int op = (o+neighborhood_grid_radius); // index [o,p]
             int idxopoffset = (item * topchannels + op);
 
             for(int y = ymin; y <= ymax; y++) {
@@ -378,20 +377,19 @@ __global__ void CorrelateDataBackward1Subtract(const int nthreads, int num, int 
     const int round_off_s1 = stride1 * round_off;
     
     Dtype sum = 0;
-    for(int p = -neighborhood_grid_radius; p <= neighborhood_grid_radius; p++) {
+    { //for(int p = -neighborhood_grid_radius; p <= neighborhood_grid_radius; p++) {
       for(int o = -neighborhood_grid_radius; o <= neighborhood_grid_radius; o++) {
         
         int s2o = stride2 * o;
-        int s2p = stride2 * p;
         
         //Get X,Y ranges and clamp
         // We add round_off before_s1 the int division and subtract round_off after it, to ensure the formula matches ceil behavior:
         int xmin = (l - 2*kernel_radius - max_displacement - s2o + round_off_s1 - 1) / stride1 + 1 - round_off; // ceil (l - 2*kernel_radius - max_displacement - s2o) / stride1
-        int ymin = (m - 2*kernel_radius - max_displacement - s2p + round_off_s1 - 1) / stride1 + 1 - round_off; // ceil (l - 2*kernel_radius - max_displacement - s2o) / stride1
+        int ymin = (m - 2*kernel_radius - max_displacement - 0 + round_off_s1 - 1) / stride1 + 1 - round_off; // ceil (l - 2*kernel_radius - max_displacement - s2o) / stride1
         
         // Same here:
         int xmax = (l - max_displacement - s2o + round_off_s1) / stride1 - round_off; // floor (l - max_displacement - s2o) / stride1
-        int ymax = (m - max_displacement - s2p + round_off_s1) / stride1 - round_off; // floor (m - max_displacement - s2p) / stride1
+        int ymax = (m - max_displacement - 0 + round_off_s1) / stride1 - round_off; // floor (m - max_displacement - s2p) / stride1
 
         if(xmax>=0 && ymax>=0 && (xmin<=topwidth-1) && (ymin<=topheight-1))
         {
@@ -402,13 +400,13 @@ __global__ void CorrelateDataBackward1Subtract(const int nthreads, int num, int 
             ymax = min(topheight-1,ymax);
 
             // Get bottom0 data:
-            int idxbot = ((item * pbottomheight + (m-s2p)) * pbottomwidth + (l-s2o)) * bottomchannels + n;
-            Dtype bot0tmp = bottom0[idxbot]; // bottom0[l+s2o,m+s2p,n]
-            Dtype bot1tmp = bottom1[idxbot]; // bottom1[l+s2o,m+s2p,n]
+            int idxbot = ((item * pbottomheight + (m)) * pbottomwidth + (l-s2o)) * bottomchannels + n;
+            Dtype bot0tmp = bottom0[idxbot]; // bottom0[l+s2o,m,n]
+            Dtype bot1tmp = bottom1[idxbot]; // bottom1[l+s2o,m,n]
             Dtype sign = (bot0tmp >= bot1tmp) ? -1.0 : 1.0;
 
             // Index offset for topdiff in following loops:
-            int op = (p+neighborhood_grid_radius) * neighborhood_grid_width + (o+neighborhood_grid_radius); // index [o,p]
+            int op = (o+neighborhood_grid_radius); // index [o,p]
             int idxOpOffset = (item * topchannels + op);
 
             for(int y = ymin; y <= ymax; y++) {

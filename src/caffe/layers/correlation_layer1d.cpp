@@ -65,8 +65,8 @@ void Correlation1DLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   neighborhood_grid_radius_ = max_displacement_ / stride2_;
   neighborhood_grid_width_ = neighborhood_grid_radius_ * 2 + 1;
 
-  // Top Channels amount to displacement combinations in X and Y direction:
-  top_channels_ = neighborhood_grid_width_;
+  // Top Channels amount to displacement combinations in X direction only!!
+  top_channels_ = neighborhood_grid_width_; // Same, because 1D X-correlation
   
   //Reshape top
   top[0]->Reshape(num_, top_channels_, top_height_, top_width_);
