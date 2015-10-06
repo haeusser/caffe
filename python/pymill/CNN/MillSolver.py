@@ -55,6 +55,11 @@ class MillSolver(object):
         self.log_interval = self.solver_param.log_interval
         self.viz_interval = self.solver_param.viz_interval
         self.test_interval = self.solver_param.test_interval
+        self.se_index_blob = self.solver_param.se_index_blob
+        self.se_error_blob = self.solver_param.se_error_blob
+        self.se_interval = self.solver_param.se_interval
+        self.se_indices = []
+        self.se_errors = []
 
         # make solver param for net fail safe
         if not os.path.isabs(self.solver_param.net):
@@ -97,6 +102,15 @@ class MillSolver(object):
         self.test_start_layer = None
         self.iteration = 0
 
+        # check if blobs update_sample_errors exist
+        if self.se_interval and not self.se_index_blob in self.solver.net.blobs:
+            self.logprint("WARNING: index_blob not found in net! Won't send errors to Net.")
+            self.se_interval = 0
+
+        if self.se_interval and not self.se_error_blob in self.solver.net.blobs:
+            self.logprint("WARNING: error_blob not found in net! Won't send errors to Net.")
+            self.se_interval = 0
+
     def run_solver(self):
         """
         Kicks off (multi-)GPU training
@@ -119,19 +133,19 @@ class MillSolver(object):
 
         if iteration % self.log_interval == 0:
             # extract loss
-            self.logprint("#### DEBUG: start logging")
+            self.logprint("#### DEBUG: start logging for iteration {}".format(iteration))
             loss_log = dict()
             for output in self.solver.net.outputs:
                 loss_log[output] = float(self.solver.net.blobs[output].data)
 
             # extract percentiles
-            self.logprint("#### DEBUG: start calculating blob percentiles")
+            self.logprint("#### DEBUG: start calculating blob percentiles for iteration {}".format(iteration))
             blob_percentiles_log = dict()
             for blob in self.solver.net.blobs:
                 if len(self.solver.net.blobs[blob].data.shape) > 1:
                     blob_percentiles_log[blob] = self.get_percentiles(self.solver.net.blobs[blob])
 
-            self.logprint("#### DEBUG: start calculating weight percentiles")
+            self.logprint("#### DEBUG: start calculating weight percentiles for iteration {}".format(iteration))
             weight_percentiles_log = dict()
             for blob in self.solver.net.params:
                 if len(self.solver.net.params[blob][0].data.shape) > 1:
@@ -145,7 +159,7 @@ class MillSolver(object):
                 raise Exception('solver does not support extracting learning rate!')
 
             # write to DB
-            self.logprint("#### DEBUG: start logging thread --> DB")
+            self.logprint("#### DEBUG: start logging thread --> DB for iteration {}".format(iteration))
             self.log_thread = threading.Thread(target=self.write_out_log, args=(iteration, lr_log, loss_log, blob_percentiles_log, weight_percentiles_log,))
             self.log_thread.setDaemon(True)
             self.log_thread.start()
@@ -176,6 +190,21 @@ class MillSolver(object):
                     self.solver.net.blobs[input] = self.test_input[input]
                 test_output = self.solver.net.forward(start=self.test_start_layer, blobs=self.test_out_blobs)
                 self.write_out_viz(iteration, test_output, test=True)
+
+        # record error data for data layer
+        if self.se_interval:
+            sample_indices = self.solver.net.blobs[self.se_index_blob].data.squeeze()
+            sample_errors = self.solver.net.blobs[self.se_error_blob].data.squeeze()
+            self.se_indices = np.append(self.se_indices, sample_indices)
+            self.se_errors = np.append(self.se_errors, sample_errors)
+
+            # send error data for data layer if necessary and reset cache
+            if iteration % self.se_interval == 0:
+                self.logprint("##### Now sending error info to data layer")
+                self.solver.net.update_sample_errors(list(self.se_indices.astype(int)), list(self.se_errors))
+                self.se_indices = np.array([])
+                self.se_errors = np.array([])
+
 
     def callback_gradients(self):
         if not self.solver.iter > self.iterations:
