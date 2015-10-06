@@ -116,7 +116,15 @@ class TestMS(unittest.TestCase):
         solver.set_test_outputs(test_outputs)
         solver.run_solver()
 
-
+    def test_error_update(self):
+        if not os.getcwd().endswith('test'):
+            os.chdir('pymill/test')
+        solver = ms.MillSolver(solver_def='mnist/solver.prototxt')
+        solver.se_interval = 2
+        solver.se_index_blob = 'label'
+        solver.se_error_blob = 'label'
+        solver.iterations = 3
+        solver.run_solver()
 
 if __name__ == '__main__':
     unittest.main()
