@@ -44,7 +44,7 @@ void Correlation1DLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   
   CHECK_EQ(bottom[0]->width(), bottom[1]->width()) << "Both bottom blobs must have same width";
   CHECK_EQ(bottom[0]->height(), bottom[1]->height()) << "Both bottom blobs must have same height";
-  CHECK_EQ(bottom[0]->channels(), bottom[1]->channels()) << "Both bottom blobs must have same height";
+  CHECK_EQ(bottom[0]->channels(), bottom[1]->channels()) << "Both bottom blobs must have same number of channels";
 
   int bottomchannels = bottom[0]->channels();
   
@@ -56,7 +56,7 @@ void Correlation1DLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   border_size_ = max_displacement_ + kernel_radius_; //size of unreachable border region (on each side)
   
   top_width_ = ceil((float)(paddedbottomwidth - border_size_*2) / (float)stride1_);
-  top_height_ = ceil((float)(paddedbottomheight - border_size_*2) / (float)stride1_);
+  top_height_ = ceil((float)(paddedbottomheight - kernel_radius_*2) / (float)stride1_);
 
   CHECK_GE(top_width_, 1) << "Correlation cannot be done with current settings. Neighborhood and kernel don't fit in blob";
   CHECK_GE(top_height_, 1) << "Correlation cannot be done with current settings. Neighborhood and kernel don't fit in blob";

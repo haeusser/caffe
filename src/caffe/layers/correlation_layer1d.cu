@@ -53,7 +53,7 @@ __global__ void CorrelateData(const int nthreads, int num, int topwidth, int top
   
     // First (upper left) position of kernel upper-left corner in current center position of neighborhood in image 1
   int x1 = blockIdx.x*stride1 + max_displacement;
-  int y1 = blockIdx.y*stride1 + max_displacement;
+  int y1 = blockIdx.y*stride1;
   int item = blockIdx.z;
   int ch_off = threadIdx.x;
   
@@ -78,17 +78,15 @@ __global__ void CorrelateData(const int nthreads, int num, int topwidth, int top
     sum[ch_off] = 0;
   
     int s2o = (top_channel % neighborhood_grid_width - neighborhood_grid_radius) * stride2;
-    int s2p = 0; //(top_channel / neighborhood_grid_width - neighborhood_grid_radius) * stride2;
     
     for(int j = 0; j < kernel_size; j++) { // HEIGHT
       for(int i = 0; i < kernel_size; i++) { // WIDTH
         int ji_off = ((j * kernel_size) + i) * bottomchannels;
         for(int ch = ch_off; ch < bottomchannels; ch += (WARPS_PER_BLOCK*THREADS_PER_WARP)) { // CHANNELS
           int x2 = x1 + s2o;
-          int y2 = y1 + s2p;
           
           int idxPatchData = ji_off + ch;
-          int idx2 = ((item * bottomheight + y2+j) * bottomwidth + x2+i) * bottomchannels + ch;
+          int idx2 = ((item * bottomheight + y1+j) * bottomwidth + x2+i) * bottomchannels + ch;
           
           sum[ch_off] += patch_data[idxPatchData] * bottom1[idx2];
         }
@@ -132,11 +130,11 @@ __global__ void CorrelateDataBackward0(const int nthreads, int num, int item, in
     
     // We add round_off before_s1 the int division and subtract round_off after it, to ensure the formula matches ceil behavior:
     int xmin = (l - 2*kernel_radius - max_displacement + round_off_s1 - 1) / stride1 + 1 - round_off; // ceil (l - 2*kernel_radius - max_displacement) / stride1
-    int ymin = (m - 2*kernel_radius - max_displacement + round_off_s1 - 1) / stride1 + 1 - round_off; // ceil (l - 2*kernel_radius - max_displacement) / stride1
+    int ymin = (m - 2*kernel_radius - 0 + round_off_s1 - 1) / stride1 + 1 - round_off; // ceil (l - 2*kernel_radius - max_displacement) / stride1
     
     // Same here:
     int xmax = (l - max_displacement + round_off_s1) / stride1 - round_off; // floor (l - max_displacement) / stride1
-    int ymax = (m - max_displacement + round_off_s1) / stride1 - round_off; // floor (m - max_displacement) / stride1
+    int ymax = (m - 0 + round_off_s1) / stride1 - round_off; // floor (m - max_displacement) / stride1
     
 
     Dtype sum = 0;
@@ -210,11 +208,11 @@ __global__ void CorrelateDataBackward1(const int nthreads, int num, int item, in
         //Get X,Y ranges and clamp
         // We add round_off before_s1 the int division and subtract round_off after it, to ensure the formula matches ceil behavior:
         int xmin = (l - 2*kernel_radius - max_displacement - s2o + round_off_s1 - 1) / stride1 + 1 - round_off; // ceil (l - 2*kernel_radius - max_displacement - s2o) / stride1
-        int ymin = (m - 2*kernel_radius - max_displacement - 0 + round_off_s1 - 1) / stride1 + 1 - round_off; // ceil (l - 2*kernel_radius - max_displacement - s2o) / stride1
+        int ymin = (m - 2*kernel_radius - 0 - 0 + round_off_s1 - 1) / stride1 + 1 - round_off; // ceil (l - 2*kernel_radius - max_displacement - s2o) / stride1
         
         // Same here:
         int xmax = (l - max_displacement - s2o + round_off_s1) / stride1 - round_off; // floor (l - max_displacement - s2o) / stride1
-        int ymax = (m - max_displacement - 0 + round_off_s1) / stride1 - round_off; // floor (m - max_displacement - 0) / stride1
+        int ymax = (m - 0 - 0 + round_off_s1) / stride1 - round_off; // floor (m - max_displacement - 0) / stride1
 
         if(xmax>=0 && ymax>=0 && (xmin<=topwidth-1) && (ymin<=topheight-1))
         {
@@ -266,7 +264,7 @@ __global__ void CorrelateDataSubtract(const int nthreads, int num, int item, int
         
     // First (upper left) position of kernel center in current neighborhood in image 1
     int x1 = x*stride1 + kernel_radius + max_displacement;
-    int y1 = y*stride1 + kernel_radius + max_displacement;
+    int y1 = y*stride1 + kernel_radius + 0;
     
     // Iterate through 3D patch
     Dtype sum = 0;
@@ -313,11 +311,11 @@ __global__ void CorrelateDataBackward0Subtract(const int nthreads, int num, int 
     
     // We add round_off before_s1 the int division and subtract round_off after it, to ensure the formula matches ceil behavior:
     int xmin = (l - 2*kernel_radius - max_displacement + round_off_s1 - 1) / stride1 + 1 - round_off; // ceil (l - 2*kernel_radius - max_displacement) / stride1
-    int ymin = (m - 2*kernel_radius - max_displacement + round_off_s1 - 1) / stride1 + 1 - round_off; // ceil (l - 2*kernel_radius - max_displacement) / stride1
+    int ymin = (m - 2*kernel_radius - 0 + round_off_s1 - 1) / stride1 + 1 - round_off; // ceil (l - 2*kernel_radius - max_displacement) / stride1
     
     // Same here:
     int xmax = (l - max_displacement + round_off_s1) / stride1 - round_off; // floor (l - max_displacement) / stride1
-    int ymax = (m - max_displacement + round_off_s1) / stride1 - round_off; // floor (m - max_displacement) / stride1
+    int ymax = (m - 0 + round_off_s1) / stride1 - round_off; // floor (m - max_displacement) / stride1
     
 
     Dtype sum = 0;
@@ -385,11 +383,11 @@ __global__ void CorrelateDataBackward1Subtract(const int nthreads, int num, int 
         //Get X,Y ranges and clamp
         // We add round_off before_s1 the int division and subtract round_off after it, to ensure the formula matches ceil behavior:
         int xmin = (l - 2*kernel_radius - max_displacement - s2o + round_off_s1 - 1) / stride1 + 1 - round_off; // ceil (l - 2*kernel_radius - max_displacement - s2o) / stride1
-        int ymin = (m - 2*kernel_radius - max_displacement - 0 + round_off_s1 - 1) / stride1 + 1 - round_off; // ceil (l - 2*kernel_radius - max_displacement - s2o) / stride1
+        int ymin = (m - 2*kernel_radius - 0 - 0 + round_off_s1 - 1) / stride1 + 1 - round_off; // ceil (l - 2*kernel_radius - max_displacement - s2o) / stride1
         
         // Same here:
         int xmax = (l - max_displacement - s2o + round_off_s1) / stride1 - round_off; // floor (l - max_displacement - s2o) / stride1
-        int ymax = (m - max_displacement - 0 + round_off_s1) / stride1 - round_off; // floor (m - max_displacement - s2p) / stride1
+        int ymax = (m - 0 - 0 + round_off_s1) / stride1 - round_off; // floor (m - max_displacement - s2p) / stride1
 
         if(xmax>=0 && ymax>=0 && (xmin<=topwidth-1) && (ymin<=topheight-1))
         {
@@ -532,6 +530,7 @@ void Correlation1DLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     
     bottom0_diff = bottom[0]->mutable_gpu_diff();
     bottom1_diff = bottom[1]->mutable_gpu_diff();
+    
 
     if(corr_type_ == CorrelationParameter_CorrelationType_MULTIPLY) {
         

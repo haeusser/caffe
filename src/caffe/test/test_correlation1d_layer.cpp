@@ -160,10 +160,11 @@ void Correlation1DLayerTest<TypeParam>::ReferenceCorrelationForward(
 
   // Offset -> where to start to compute the correlation
   int offset_ = floor( kernel_size / 2.0 ) + maxdisplacement;
+  int offset_y_ = floor( kernel_size / 2.0 );
   
   // Find the area in the second blob and divide it by the stride of the first blob
   top_numCols = ceil( (numCols - 2*offset_) / (float) stride1 ) ;
-  top_numRows = ceil( (numRows - 2*offset_) / (float) stride1 ) ;
+  top_numRows = ceil( (numRows - 2*offset_y_) / (float) stride1 ) ;
   int grid_radius = maxdisplacement / stride2;
   top_numChannels = (2* grid_radius+1);
   
@@ -183,7 +184,7 @@ void Correlation1DLayerTest<TypeParam>::ReferenceCorrelationForward(
  
   // For each pixel in the 'do-able' area on the second blob
   // Indices increased by the the stride of first blob
-  for(int y= offset_ ; y < numRows - offset_ ; y += stride1, top_y++ ){
+  for(int y= offset_y_ ; y < numRows - offset_y_ ; y += stride1, top_y++ ){
     top_x = 0;
     for(int x= offset_ ; x < numCols - offset_ ; x += stride1, top_x++ ){
 
@@ -266,7 +267,39 @@ void Correlation1DLayerTest<TypeParam>::runFwdTest(const char name[], int n, int
     Blob<Dtype> top_reference;
     this->ReferenceCorrelationForward(*(this->blob_bottom_1_),*(this->blob_bottom_2_), layer_param,
         &top_reference);
+    LOG(INFO) << "W (impl vs. reference) = " << this->blob_top_->width() << " vs. " << top_reference.width();
+    LOG(INFO) << "H (impl vs. reference) = " << this->blob_top_->height() << " vs. " << top_reference.height();
+    LOG(INFO) << "C (impl vs. reference) = " << this->blob_top_->channels() << " vs. " << top_reference.channels();
+    
+    CHECK_EQ(this->blob_top_->width(), top_reference.width());
+    CHECK_EQ(this->blob_top_->height(), top_reference.height());
+    CHECK_EQ(this->blob_top_->channels(), top_reference.channels());
+    
+    /*printf("IMPL:\n");
+    for (int c = 0; c < this->blob_top_->channels(); ++c) {
+      for (int h = 0; h < this->blob_top_->height(); ++h) {
+        for (int w = 0; w < this->blob_top_->width(); ++w) {
+          printf(" %f", this->blob_top_->cpu_data()[top_reference.offset(0, c, h, w)]);
+        }
+        printf("\n");
+      }
+      printf("---\n");
+    }
+    printf("REF:\n");
+    for (int c = 0; c < this->blob_top_->channels(); ++c) {
+      for (int h = 0; h < this->blob_top_->height(); ++h) {
+        for (int w = 0; w < this->blob_top_->width(); ++w) {
+          printf(" %f", top_reference.cpu_data()[top_reference.offset(0, c, h, w)]);
+        }
+        printf("\n");
+      }
+      printf("---\n");
+    }
+    std::cout.flush();*/
+    
     for (int i = 0; i < this->blob_top_->count(); ++i) {
+        printf("[%d]", i);
+        std::cout.flush();
         EXPECT_NEAR(this->blob_top_->cpu_data()[i], top_reference.cpu_data()[i], this->epsilon_);
     }
         
@@ -278,7 +311,8 @@ TYPED_TEST(Correlation1DLayerTest, TestForward) {
         LOG(INFO) << "Skipping CPU test";
         return;
     }
-
+    //this->runFwdTest("ChannelsA", 1, 3, 3, 3,  1, 1, 1, 2, 1, CorrelationParameter_CorrelationType_MULTIPLY);
+    
     {
         CorrelationParameter_CorrelationType ctype = CorrelationParameter_CorrelationType_MULTIPLY;
         
@@ -421,7 +455,8 @@ TYPED_TEST(Correlation1DLayerTest, TestGradient) {
         this->runGradTest("ChannelsA", 1, 3, 3, 3,  1, 1, 1, 2, 1, ctype);
         this->runGradTest("ChannelsB", 1, 3, 1, 1,  1, 1, 1, 1, 1, ctype);
 
-        this->runGradTest("BigA", 1, 1, 9, 16,  3, 1, 4, 1, 1, ctype);
+        this->runGradTest("MediumA", 1, 1, 7, 11,  3, 1, 4, 1, 1, ctype);
+        //this->runGradTest("BigA", 1, 1, 9, 16,  3, 1, 4, 1, 1, ctype);
     }
     {
         CorrelationParameter_CorrelationType ctype = CorrelationParameter_CorrelationType_SUBTRACT;
@@ -447,7 +482,8 @@ TYPED_TEST(Correlation1DLayerTest, TestGradient) {
         this->runGradTest("ChannelsA", 1, 3, 3, 3,  1, 1, 1, 2, 1, ctype);
         this->runGradTest("ChannelsB", 1, 3, 1, 1,  1, 1, 1, 1, 1, ctype);
 
-        this->runGradTest("BigA", 1, 1, 9, 16,  3, 1, 4, 1, 1, ctype);
+        this->runGradTest("MediumA", 1, 1, 7, 11,  3, 1, 4, 1, 1, ctype);
+        //this->runGradTest("BigA", 1, 1, 9, 16,  3, 1, 4, 1, 1, ctype);
     }
 
 }
