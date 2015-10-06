@@ -37,7 +37,7 @@ const int NPY_DTYPE = NPY_FLOAT32;
 void set_mode_cpu() { Caffe::set_mode(Caffe::CPU); }
 void set_mode_gpu() { Caffe::set_mode(Caffe::GPU); }
 void set_logging_disabled() { Caffe::set_logging(false); }
-void setup_teeing(const char* filename) { Caffe::setup_teeing(filename); } 
+void setup_teeing(const char* filename) { Caffe::setup_teeing(filename); }
 
 // Set solver count
 void set_solver_count(int count) { Caffe::set_solver_count(count); }
@@ -152,6 +152,7 @@ void Net_update_sample_errors(Net<Dtype>* net, bp::list indices, bp::list errors
 
   net->update_sample_errors(indices_vec, err_vec);
 }
+
 
 shared_ptr<P2PSync<Dtype> > P2PSync_Init(Solver<Dtype>* root_solver, string param_str) {
   SolverParameter param;
@@ -309,7 +310,7 @@ BOOST_PYTHON_MODULE(_caffe) {
     .def("_set_input_arrays", &Net_SetInputArrays,
         bp::with_custodian_and_ward<1, 2, bp::with_custodian_and_ward<1, 3> >())
     .def("save", &Net_Save)
-    .def("_update_sample_probabilities", &Net_update_sample_probabilities);
+    .def("_update_sample_errors", &Net_update_sample_errors);
 
   bp::class_<Blob<Dtype>, shared_ptr<Blob<Dtype> >, boost::noncopyable>(
     "Blob", bp::no_init)
@@ -383,11 +384,11 @@ BOOST_PYTHON_MODULE(_caffe) {
 
   bp::def("get_solver_from_string", &GetSolverFromString,
       bp::return_value_policy<bp::manage_new_object>());
-  
+
   bp::class_<std::pair<int, int> >("IntPair")
     .def_readwrite("first", &std::pair<int, int>::first)
     .def_readwrite("second", &std::pair<int, int>::second);
-    
+
   bp::class_<std::map<string, int> >("MapStringInt")
         .def(bp::map_indexing_suite<std::map<string, int> >() );
 
