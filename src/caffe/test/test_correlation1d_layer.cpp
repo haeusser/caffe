@@ -241,13 +241,13 @@ void Correlation1DLayerTest<TypeParam>::runFwdTest(const char name[], int n, int
     filler.Fill(this->blob_bottom_2_);
 
     // Fixed Data:
-    /*Dtype* ptr1=blob_bottom_1_->mutable_cpu_data();
+    Dtype* ptr1=blob_bottom_1_->mutable_cpu_data();
     for(int i=0; i<blob_bottom_1_->count(); i++)
         ptr1[i]=1;
 
     Dtype* ptr2=blob_bottom_2_->mutable_cpu_data();
     for(int i=0; i<blob_bottom_1_->count(); i++)
-        ptr2[i]=2;*/
+        ptr2[i]=2;
         
     LayerParameter layer_param;
 
@@ -275,7 +275,27 @@ void Correlation1DLayerTest<TypeParam>::runFwdTest(const char name[], int n, int
     CHECK_EQ(this->blob_top_->height(), top_reference.height());
     CHECK_EQ(this->blob_top_->channels(), top_reference.channels());
     
-    /*printf("IMPL:\n");
+    printf("BOT0:\n");
+    for (int c = 0; c < this->blob_bottom_1_->channels(); ++c) {
+      for (int h = 0; h < this->blob_bottom_1_->height(); ++h) {
+        for (int w = 0; w < this->blob_bottom_1_->width(); ++w) {
+          printf(" %f", this->blob_bottom_1_->cpu_data()[blob_bottom_1_->offset(0, c, h, w)]);
+        }
+        printf("\n");
+      }
+      printf("---\n");
+    }
+    printf("BOT1:\n");
+    for (int c = 0; c < this->blob_bottom_2_->channels(); ++c) {
+      for (int h = 0; h < this->blob_bottom_2_->height(); ++h) {
+        for (int w = 0; w < this->blob_bottom_2_->width(); ++w) {
+          printf(" %f", this->blob_bottom_2_->cpu_data()[blob_bottom_2_->offset(0, c, h, w)]);
+        }
+        printf("\n");
+      }
+      printf("---\n");
+    }
+    printf("IMPL:\n");
     for (int c = 0; c < this->blob_top_->channels(); ++c) {
       for (int h = 0; h < this->blob_top_->height(); ++h) {
         for (int w = 0; w < this->blob_top_->width(); ++w) {
@@ -295,7 +315,7 @@ void Correlation1DLayerTest<TypeParam>::runFwdTest(const char name[], int n, int
       }
       printf("---\n");
     }
-    std::cout.flush();*/
+    std::cout.flush();
     
     for (int i = 0; i < this->blob_top_->count(); ++i) {
         printf("[%d]", i);
