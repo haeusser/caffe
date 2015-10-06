@@ -397,13 +397,13 @@ endif
 	py mat py$(PROJECT) mat$(PROJECT) proto runtest \
 	superclean supercleanlist supercleanfiles warn everything clean-bin all-targets
 
+#.NOTPARALLEL: clean-bin 
 clean-bin: 
 	rm -vf build/tools/caffe.bin build/lib/libcaffe.a build/lib/libcaffe.so
 
-.NOTPARALLEL: all 
 all: clean-bin all-targets
 
-all-targets: lib tools examples
+all-targets: clean-bin lib tools examples
 
 lib: $(STATIC_NAME) $(DYNAMIC_NAME)
 
@@ -450,10 +450,9 @@ tools: $(TOOL_BINS) $(TOOL_BIN_LINKS)
 
 examples: $(EXAMPLE_BINS)
 
-.NOTPARALLEL: py$(PROJECT) 
 py$(PROJECT): clean-bin py
 
-py: $(PY$(PROJECT)_SO) $(PROTO_GEN_PY)
+py: clean-bin $(PY$(PROJECT)_SO) $(PROTO_GEN_PY)
 
 $(PY$(PROJECT)_SO): $(PY$(PROJECT)_SRC) $(PY$(PROJECT)_HXX) | $(DYNAMIC_NAME)
 	@ echo CXX/LD -o $@ $<
