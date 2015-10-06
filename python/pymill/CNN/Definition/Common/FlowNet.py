@@ -53,6 +53,49 @@ def standardTest(DeployBlock, generateNet=True):
 
     return Block
 
+def standardExtract(generateNet=True):
+    def Block(net, datasetName, output_path='data'):
+        blobs = net.namedBlobs()
+
+        dataset = Dataset.get(name=datasetName, phase='TEST')
+
+        img0, img1, flow_gt = dataset.flowLayer(net)
+
+        os.system('mkdir -p %s' % out_path)
+
+        f = open('%s/viewer.cfg' % out_path, 'w')
+        f.write('2 2\n')
+        f.write('0 0 -img0.ppm\n')
+        f.write('1 0 -img1.ppm\n')
+        f.write('0 1 -flow.flo\n')
+        f.write('1 1 -gt.flo\n')
+        f.close()
+
+        net.writeImage(img0, folder=out_path, prefix='', suffix='-img0')
+        net.writeImage(img1, folder=out_path, prefix='', suffix='-img1')
+        net.writeFlow(flow_gt, folder=out_path, prefix='', suffix='-gt')
+
+    if generateNet:
+        net = Network()
+
+        dataset = str(param('dataset'))
+        if dataset is None:
+            raise Exception('please specify dataset=...')
+
+        use_augmentation_mean = bool(param('use_augmentation_mean', default=True))
+        output = bool(param('output', default=False))
+        prefix = str(param('prefix', default=None))
+
+        Block(net,
+              dataset,
+              output,
+              prefix,
+              use_augmentation_mean)
+
+        print net.toProto()
+
+    return Block
+
 def standardDeploy(NetworkBlock, generateNet=True):
     def Block(net, img0, img1, flow_gt, width, height, mean_color, augmentation_mean=True):
         blobs = net.namedBlobs()

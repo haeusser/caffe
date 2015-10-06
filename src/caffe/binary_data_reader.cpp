@@ -87,9 +87,19 @@ BinaryDataReader<Dtype>::Body::Body(const LayerParameter& param)
   db_ = new db::BinaryDB<Dtype>;
   db_->Open(param.data_param().source(), param);
 
-  if(db_->get_num_samples() < 1) {
+  if(db_->get_num_samples() < 1)
     LOG(FATAL) << "No samples in DB";
-  }
+
+  epoch_ = 0;
+
+  sampling_alpha_ = param.data_param().sampling_alpha();
+  sampling_beta_ = param.data_param().sampling_beta();
+  sampling_gamma_ = param.data_param().sampling_gamma();
+  error_based_sampling_ = param.data_param().error_based_sampling();
+  error_sum_ = 0;
+
+  if(error_based_sampling_)
+      sample_errors_.resize(db_->get_num_samples(), 0);
 
   StartInternalThread();
 }
@@ -136,10 +146,62 @@ void BinaryDataReader<Dtype>::Body::InternalThreadEntry() {
 }
 
 template <typename Dtype>
-void BinaryDataReader<Dtype>::Body::update_sample_errors(vector<int> indices, vector<float> error)
+void BinaryDataReader<Dtype>::Body::update_sample_errors(vector<int> indices, vector<float> errors)
 {
-    for(int i=0; i<indices.size(); i++)
-        LOG(INFO) << "updating sample " << indices[i] << " error to " << error[i];
+    if(error_based_sampling_)
+    {
+        for(int i=0; i<indices.size(); i++)
+        {
+            int index = indices[i]; assert(index<sample_errors_.size());
+            float error = errors[i];
+
+            error_sum_ -= sample_errors_[index];
+            error_sum_ += error;
+
+            sample_errors_[index] = pow(error, sampling_alpha_) + sampling_beta_;
+
+            LOG(INFO) << "updating sample " << index << " error to " << error << " (error sum = " << error_sum_ << ")";
+        }
+    }
+    else
+        LOG(WARNING) << "update_sample_errors() called, but error_based_samling is disabled";
+}
+
+template <typename Dtype>
+void BinaryDataReader<Dtype>::Body::sample_next_index(int &index)
+{
+    if(error_based_sampling_ && epoch_ == 1)
+    {
+        double scaled_index = random()*(double(error_sum_)/double(RAND_MAX));
+        double accum = sample_errors_[0];
+
+        for(int i=1; i<sample_errors_.size(); i++)
+        {
+            if(accum >= scaled_index)
+            {
+                index = i;
+                LOG(INFO) << "Drawing from error based distribution, index = " << index << " (error = " << sample_errors_[i] << ")";
+                return;
+            }
+
+            accum += sample_errors_[i];
+
+            if(sampling_gamma_!=0)
+                sample_errors_[i] += sampling_gamma_;
+        }
+        LOG(WARNING) << "Left sampling loop, this should never happen!";
+    }
+    else
+    {
+        index++;
+        if(index >= db_->get_num_samples())
+        {
+            index = 0;
+            epoch_ ++;
+            LOG(INFO) << "Restarting data prefetching from start.";
+            LOG(INFO) << "Now at epoch " << epoch_;
+        }
+    }
 }
 
 template <typename Dtype>
@@ -175,11 +237,7 @@ void BinaryDataReader<Dtype>::Body::read_one(int &index,
 //     LOG(INFO) << "PF free/busy/full: " << qp->free_.size() << "/"
 //               << in_progress.size() << "/" << qp->full_.size();
 
-    index++;
-    if(index >= db_->get_num_samples()) {
-      index = 0;
-      DLOG(INFO) << "Restarting data prefetching from start.";
-    }
+    sample_next_index(index);
   }
   
   while (in_progress.size() > 0) {

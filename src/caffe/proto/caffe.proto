@@ -842,8 +842,13 @@ message DataParameter {
   optional string collection_list = 3015;
   optional uint32 minimum_boundary_margin = 3016 [default = 0]; // Minimum distance to keep to clip boundaries when looking for samples
 
-  optional float error_decay = 3017 [ default = 1 ];
-  optional bool error_based_sampling = 3018 [ default = false ];
+
+  // Error based sampling
+  optional bool  error_based_sampling = 3018 [ default = false ];
+
+  optional float sampling_alpha = 3019 [ default = -0.5 ];
+  optional float sampling_beta = 3020 [ default = 1.0 ];
+  optional float sampling_gamma = 3021 [ default = 0 ];
 }
 
 message DataEntry {
