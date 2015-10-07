@@ -136,7 +136,8 @@ class MillSolver(object):
             self.logprint("#### DEBUG: start logging for iteration {}".format(iteration))
             loss_log = dict()
             for output in self.solver.net.outputs:
-                loss_log[output] = float(self.solver.net.blobs[output].data)
+                if len(self.solver.net.blobs[output].data.shape) == 1:
+                    loss_log[output] = float(self.solver.net.blobs[output].data)
 
             # extract percentiles
             self.logprint("#### DEBUG: start calculating blob percentiles for iteration {}".format(iteration))
@@ -181,7 +182,8 @@ class MillSolver(object):
             for tn in range(len(self.solver.test_nets)):
                 # logprint("== Test net #{} (iteration {}):".format(tn, solver.iter-log_per))
                 for outp in self.solver.test_nets[tn].outputs:
-                    test_loss_log["tn{}-{}".format(tn, outp)] = float(self.solver.test_nets[tn].blobs[outp].data)
+                    if len(self.solver.test_nets[tn].blobs[outp].data.shape) == 1:
+                        test_loss_log["tn{}-{}".format(tn, outp)] = float(self.solver.test_nets[tn].blobs[outp].data)
                     # logprint("==   {} = {}".format(outp, float(solver.test_nets[tn].blobs[outp].data)))
             self.write_out_log(iteration, lr_log, test_loss_log, lr_log, lr_log, phase="TEST")
 
@@ -200,7 +202,7 @@ class MillSolver(object):
 
             # send error data for data layer if necessary and reset cache
             if iteration % self.se_interval == 0:
-                self.logprint("##### Now sending error info to data layer")
+                #self.logprint("##### Now sending error info to data layer")
                 self.solver.net.update_sample_errors(list(self.se_indices.astype(int)), list(self.se_errors))
                 self.se_indices = np.array([])
                 self.se_errors = np.array([])
