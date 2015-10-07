@@ -43,6 +43,8 @@ flowStyle = 1
 floatMin = 0.0
 floatMax = 1.0
 
+## Will be set to updateStatus(message) function handle
+updateStatus = None
 
 
 ## Configuration
@@ -299,6 +301,11 @@ class FloatCell(Cell):
       raw_float_data = self.raw_data[idx]
     else:
       raw_float_data = readFloat(self.filenames[idx])
+
+    if (floatMax-floatMin)<0.01:
+      updateStatus('Float scale minimum too close to maximum!')
+      return
+
     scale = 255./(floatMax-floatMin)
     offset = -floatMin
     self.label.setPixmap(QtGui.QPixmap.fromImage(
@@ -349,6 +356,9 @@ class FlowCell(Cell):
 class MainWindow(QtWidgets.QMainWindow):
   def __init__(self, parent=None):
     super(MainWindow, self).__init__(parent)
+
+    global updateStatus
+    updateStatus = self.updateStatus
 
     self.currentIndex = 0
     self.grid = []
@@ -593,6 +603,8 @@ class MainWindow(QtWidgets.QMainWindow):
     flowStyle = newStyle
     self.changeFrame(self.currentIndex)
     self.flowScaleSliderChange(self.flowScaleSlider.value())
+    self.updateStatus('Flow display style set to %s' \
+                      %(['Sintel', 'Middlebury'][flowStyle]))
 
 
   def resizeEvent(self, resizeEvent):
@@ -605,6 +617,7 @@ class MainWindow(QtWidgets.QMainWindow):
     if newValue == self.currentIndex:
       return
     self.changeFrame(newValue)
+    self.updateStatus('Frame %d'%(newValue))
 
 
   def floatMinSliderChange(self, newValue):
@@ -617,6 +630,7 @@ class MainWindow(QtWidgets.QMainWindow):
     self.floatMinSliderLabel.setText("Float min: %.2f" % (floatMin))
     if self.needFloatTools:
       self.floatMinSlider.setValue(newValue)
+    self.updateStatus('Float minimum set to %f'%(floatMin))
 
     
   def floatMaxSliderChange(self, newValue):
@@ -629,6 +643,7 @@ class MainWindow(QtWidgets.QMainWindow):
     self.floatMaxSliderLabel.setText("Float max: %.2f" % (floatMax))
     if self.needFloatTools:
       self.floatMaxSlider.setValue(newValue)
+    self.updateStatus('Float maximum set to %f'%(floatMax))
 
 
   def flowScaleSliderChange(self, newValue):
@@ -645,6 +660,7 @@ class MainWindow(QtWidgets.QMainWindow):
     self.flowScaleSliderLabel.setText("OF scale: %.3f" % (flowScale))
     if self.needFlowTools:
       self.flowScaleSlider.setValue(newValue)
+    self.updateStatus('Flow scale set to %f'%(flowScale))
 
 
   def helpAbout(self):
