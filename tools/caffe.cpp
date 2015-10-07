@@ -223,7 +223,6 @@ RegisterBrewFunction(train);
 // Test: score a model.
 int test() {
   CHECK_GT(FLAGS_model.size(), 0) << "Need a model definition to score.";
-  CHECK_GT(FLAGS_weights.size(), 0) << "Need model weights to score.";
 
   // Set device id and mode
   vector<int> gpus;
@@ -238,7 +237,10 @@ int test() {
   }
   // Instantiate the caffe net.
   Net<float> caffe_net(FLAGS_model, caffe::TEST);
-  caffe_net.CopyTrainedLayersFrom(FLAGS_weights);
+  if(FLAGS_weights != "")
+    caffe_net.CopyTrainedLayersFrom(FLAGS_weights);
+  else
+    LOG(WARNING) << "Weights uninitialized.";
 
   if(FLAGS_iterations<=0)
   {

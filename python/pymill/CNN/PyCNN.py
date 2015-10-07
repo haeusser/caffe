@@ -205,7 +205,7 @@ subparser.add_argument('--select', help='selection of measures, e.g. test_*,trai
 # plotlr
 subparser = subparsers.add_parser('plotlr', help='plot learning rate')
 
-# plotlr
+# plot-test
 subparser = subparsers.add_parser('plot-test', help='plot test losses')
 
 # view

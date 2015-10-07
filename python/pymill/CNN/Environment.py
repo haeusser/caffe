@@ -36,13 +36,36 @@ class BinaryBackend:
             tb.notice('running "%s"' % cmd, 'run')
         tb.system(cmd)
 
+    def _callCopiedBin(self, cmd):
+        bin = './' + os.path.basename(caffeBin())
+        tb.notice('making a local copy of %s' % caffeBin())
+        os.system('cp %s .' % caffeBin())
+
+        ldd = tb.run('ldd %s' % caffeBin())
+        caffeLib = None
+        for line in ldd.split('\n'):
+            match = re.match('\\s*libcaffe.so => (.*\.so)', line)
+            if match:
+                caffeLib = match.group(1)
+                break
+        if caffeLib is None:
+            raise Exception('cannot find libcaffe.so dependency')
+
+        tb.notice('making a local copy of %s' % caffeLib)
+        os.system('cp %s .' % caffeLib)
+
+        cmd = 'GLOG_logtostderr=%d LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH %s %s' % (not self._quiet, bin, cmd)
+        if not self._silent:
+            tb.notice('running "%s"' % cmd, 'run')
+        tb.system(cmd)
+
     def train(self, solverFilename, logFile, weights=None):
         if weights is not None:
             weightOption = '-weights %s' % weights
         else:
             weightOption = ''
 
-        self._callBin(Template('train -sighup_effect snapshot -solver $solverFilename $weightOption -gpu $gpu 2>&1 | tee -a $logFile').substitute({
+        self._callCopiedBin(Template('train -sighup_effect snapshot -solver $solverFilename $weightOption -gpu $gpu 2>&1 | tee -a $logFile').substitute({
             'solverFilename': solverFilename,
             'weightOption': weightOption,
             'gpu': self._gpus,
@@ -50,7 +73,7 @@ class BinaryBackend:
         }))
 
     def resume(self, solverFilename, solverstateFilename, logFile):
-        self._callBin(Template(
+        self._callCopiedBin(Template(
             'train -sighup_effect snapshot -solver $solverFilename -snapshot $solverstateFilename -gpu $gpu 2>&1 | tee -a $logFile').substitute(
             {
                 'solverFilename': solverFilename,
@@ -59,9 +82,10 @@ class BinaryBackend:
                 'logFile': logFile
             }))
 
-    def run(self, solverFilename):
-        self._callBin(Template('train -solver $solverFilename 2>&1').substitute({
-            'solverFilename': solverFilename,
+    def run(self, caffemodelFilename,iterations):
+        self._callBin(Template('test -model $caffemodelFilename --iterations $iterations 2>&1').substitute({
+            'caffemodelFilename': caffemodelFilename,
+            'iterations': iterations,
             'gpu': self._gpus
         }))
 
@@ -547,24 +571,9 @@ class Environment:
         self.makeScratchDir()
         finalProto = self.makeScratchPrototxt(file)
 
-        if iter == -1: iter = 1
-
-        # test requires weighs to be given,
-        # therefore we have to use a sovler
-
-        tmpsolver = self._scratchDir + '/run_solver.prototxt'
-
-        f = open(tmpsolver, 'w')
-        f.write('train_net: "%s"\n' % finalProto)
-        f.write('max_iter: %d\n' % iter)
-        f.write('lr_policy: "fixed"\n')
-        f.write('snapshot: 0\n')
-        f.write('snapshot_after_train: false\n')
-        f.close()
-
         self.notice('running %s for %d iterations ...' % (file, iter), 'notice')
         os.chdir(self._path)
-        self._backend.run(tmpsolver)
+        self._backend.run(finalProto, iter)
 
     def draw(self, prototmp):
         from google.protobuf import text_format

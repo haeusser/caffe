@@ -252,10 +252,6 @@ class Net {
   {
       CHECK(indices.size() == error.size());
 
-      for(int i=0; i<indices.size(); i++)
-          LOG(INFO) << "setting error for sample " << indices[i] << " to " << error[i];
-
-      LOG(INFO) << "calling " << update_sample_callbacks_.size() << " callbacks. ";
       for(int i=0; i<update_sample_callbacks_.size();  i++)
           update_sample_callbacks_[i](indices, error);
   }

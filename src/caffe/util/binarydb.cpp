@@ -173,9 +173,9 @@ void BinaryDB<Dtype>::get_sample(int index,
   
   if (not dst)
     LOG(FATAL) << ">dst< target blob vector is NULL";
-  if (dst->size() != top_num_)
-    LOG(FATAL) << ">dst< target blob vector has size " << dst->size()
-               << ", should have size " << top_num_;
+  //if (dst->size() != top_num_)
+//    LOG(FATAL) << ">dst< target blob vector has size " << dst->size()
+//               << ", should have size " << top_num_;
   
   /// Create a read task for every top blob
   {
@@ -197,6 +197,11 @@ void BinaryDB<Dtype>::get_sample(int index,
                         dst->at(t)->mutable_cpu_data());
       new_task_ptr->debug(index, t);
       undone_tasks.push(new_task_ptr);
+    }
+    if(dst->size()>top_num_)
+    {
+        dst->back()->Reshape(1,1,1,1);
+        dst->back()->mutable_cpu_data()[0] = index;
     }
   }
   
