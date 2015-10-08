@@ -77,6 +77,8 @@ class BinaryDataReader : public InternalThread {
 
    protected:
     int epoch_;
+    int counter_;
+    long int total_counter_;
     bool error_based_sampling_;
     float sampling_alpha_;
     float sampling_beta_;

@@ -63,13 +63,73 @@ def smooth(x,window_len=11,window='hanning'):
     return y
 
 
+class Plot:
+    def __init__(self, title):
+        # This makes the figure squeezeable
+        plt.figure(figsize=(1,1))
+        fig = matplotlib.pyplot.gcf()
+        fig.set_size_inches(8, 6, forward=True)
+
+        plt.grid(color='0.65')
+        plt.title(title)
+
+        self._legend = []
+
+    def plotList(self, label, list, style):
+        x = np.zeros((len(list), 1))
+        y = np.zeros((len(list), 1))
+
+        i = 0
+        for pair in list:
+            x[i] = pair[0]
+            y[i] = pair[1]
+            i += 1
+
+        plt.plot(x, y, color=style.color(), linestyle=style.lineStyle(), linewidth=style.lineWidth())
+        self._legend.append(label)
+
+    def plotSmoothedList(self, label, list, style):
+        x = np.zeros((len(list), 1))
+        y = np.zeros((len(list), 1))
+
+        i = 0
+        for pair in list:
+            x[i] = pair[0]
+            y[i] = pair[1]
+            i += 1
+
+        r = 40
+        y = smooth(y.squeeze(),window='hanning', window_len=2 * r + 1)
+        y = y[r:len(y) - r]
+        x = x.squeeze()
+        print x.shape
+        print y.shape
+        plt.plot(x, y, style)
+        self._legend.append(label)
+
+    def finish(self):
+        fontP = FontProperties()
+        fontP.set_size('small')
+        plt.legend(self._legend, prop=fontP, bbox_to_anchor=(1.12,1.0))
+        plt.show()
+
 class Log:
-    def __init__(self,filename):
+    def __init__(self, networkName, filename):
         lines = open(filename,'r').readlines()
 
         iter = -1
 
+        self._networkName = networkName
         self._lines = []
+        self._measures = {}
+        self._measureList = []
+
+        def appendMeasure(name, iter, value):
+            if name not in self._measures:
+                 self._measures[name]=[]
+                 self._measureList.append(name)
+            self._measures[name].append((iter,float(value)))
+
         for l in lines:
             if ']' not in l:
                 self._lines.append((iter, l))
@@ -82,75 +142,6 @@ class Log:
                 if match:
                     iter = int(match.group(1))
 
-            self._lines.append((iter, l))
-
-    def writeUpTo(self,filename,iteration):
-        f = open(filename, 'w')
-
-        for l in self._lines:
-            if l[0] <= iteration:
-                f.write(l[1])
-            else:
-                break
-
-    def getAssignment(self, name):
-        for l in self._lines:
-            if not ']' in l[1]: continue
-
-            iter = l[0]
-            msg = l[1].split(']')[1].strip()
-
-            match = re.compile(name+' = (([0-9]|\.)+)').match(msg)
-            if match:
-                return float(match.group(1))
-
-    def plot(self, networkName, select=''):
-        def plotList(list, style):
-            x = np.zeros((len(list), 1))
-            y = np.zeros((len(list), 1))
-
-            i = 0
-            for pair in list:
-                x[i] = pair[0]
-                y[i] = pair[1]
-                i += 1
-
-            plt.plot(x, y, color=style.color(), linestyle=style.lineStyle(), linewidth=style.lineWidth())
-
-        def plotSmoothedList(list, style):
-            x = np.zeros((len(list), 1))
-            y = np.zeros((len(list), 1))
-
-            i = 0
-            for pair in list:
-                x[i] = pair[0]
-                y[i] = pair[1]
-                i += 1
-
-            r = 40
-            y = smooth(y.squeeze(),window='hanning', window_len=2 * r + 1)
-            y = y[r:len(y) - r]
-            x = x.squeeze()
-            print x.shape
-            print y.shape
-            plt.plot(x, y, style)
-
-        measures = {}
-        measureList = []
-
-        def appendMeasure(name,iter,value):
-            if name not in measures:
-                measures[name]=[]
-                measureList.append(name)
-            measures[name].append((iter,float(value)))
-
-        for l in self._lines:
-            iter = l[0]
-
-            if not ']' in l[1]: continue
-            msg = l[1].split(']')[1].strip()
-
-            if msg.startswith('Iteration'):
                 match = re.compile('Iteration [0-9]+, loss = (([0-9]|\.)+)').match(msg)
                 if match:
                     appendMeasure('train_loss', iter, match.group(1))
@@ -173,32 +164,48 @@ class Log:
                     value = match.group(2)
                     appendMeasure('test_'+name, iter, value)
 
-        tmpMeasureList = measureList
-        measureList = []
+            self._lines.append((iter, l))
 
+        self._measureList = tb.unique(self._measureList)
+
+    def networkName(self): return self._networkName
+    def measures(self): return self._measures
+    def measureNames(self): return self._measureList
+
+    def writeUpTo(self,filename,iteration):
+        f = open(filename, 'w')
+
+        for l in self._lines:
+            if l[0] <= iteration:
+                f.write(l[1])
+            else:
+                break
+
+    def getAssignment(self, name):
+        for l in self._lines:
+            if not ']' in l[1]: continue
+
+            iter = l[0]
+            msg = l[1].split(']')[1].strip()
+
+            match = re.compile(name+' = (([0-9]|\.)+)').match(msg)
+            if match:
+                return float(match.group(1))
+
+    def plot(self, select=''):
+        measureList = []
         if select == '':
-            measureList = tmpMeasureList
+            measureList = self._measureList
         else:
             selections = select.split(',')
             for selection in selections:
-                measureList += tb.wildcardMatch(tmpMeasureList, selection)
-
+                measureList += tb.wildcardMatch(self._measureList, selection)
         measureList = tb.unique(measureList)
 
-
-        # This makes the figure squeezeable
-        plt.figure(figsize=(1,1))
-        fig = matplotlib.pyplot.gcf()
-        fig.set_size_inches(8, 6, forward=True)
-
-        plt.grid(color='0.65')
-        plt.title("Losses and accuracy over iterations for %s" % networkName)
-
-        legend = []
+        plot = Plot("loss/accuracy for %s" % self._networkName)
 
         def plotMeasure(name,label,color):
-            plotList(measures[name],color)
-            legend.append(label)
+            plot.plotList(label, self._measures[name], color)
             measureList.remove(name)
 
         for name, (label, style) in Config.plotMeasureStyles.iteritems():
@@ -213,25 +220,10 @@ class Log:
         for name in measureList[:]:
             plotMeasure(name, name, styles.pop(0))
 
-        fontP = FontProperties()
-        fontP.set_size('small')
-
-        plt.legend(legend, prop=fontP, bbox_to_anchor=(1.12,1.0))
+        plot.finish()
 
 
-    def plotlr(self,name):
-        def plotList(list, style):
-            x = np.zeros((len(list), 1))
-            y = np.zeros((len(list), 1))
-
-            i = 0
-            for pair in list:
-                x[i] = pair[0]
-                y[i] = pair[1]
-                i += 1
-
-            plt.plot(x, y, style)
-
+    def plotlr(self):
         lrs = []
         maxLr = 0
         for l in self._lines:
@@ -239,7 +231,6 @@ class Log:
 
             if not ']' in l[1]: continue
             msg = l[1].split(']')[1].strip()
-
             if msg.startswith('Iteration'):
                 match = re.compile('Iteration [0-9]+, lr = (([0-9]|\.|-|e)+)').match(msg)
                 if match:
@@ -248,21 +239,24 @@ class Log:
                         maxLr = lr
                     lrs.append((iter, lr))
 
-
-        plt.figure()
-        plt.grid(color='0.65')
-        plt.title("Learning rate over iterations for %s" % name)
-
-        legend = []
+        plot = Plot("learning rate for %s" % self._networkName)
 
         if len(lrs):
-            plotList(lrs,'r-')
-            legend.append('LR')
-
+            plot.plotList('LR', lrs, tb.PlotStyle('r-'))
             plt.ylim((0, maxLr * 1.1))
 
+        plot.finish()
 
-        fontP = FontProperties()
-        fontP.set_size('small')
-        plt.legend(legend, prop=fontP, bbox_to_anchor=(1.12,1.0))
+    @staticmethod
+    def plotComparison(names, logs):
+        plot = Plot("loss/accuracy comparison")
 
+        styles = tb.styleList()
+        for log in logs:
+            style = styles.pop()
+            for name in names:
+                label = '%s for %s' %(name,log.networkName())
+                if name in log.measures():
+                    plot.plotList(label, log.measures()[name], style)
+
+        plot.finish()

@@ -511,17 +511,40 @@ class Environment:
         if not self.haveLogFile():
             raise Exception('logfile doesn\'t exist')
 
-        log = Log(self._logFile)
-        log.plot(self._name, select)
-        plt.show()
+        log = Log(self._name, self._logFile)
+        log.plot(select)
 
     def plotLR(self):
         if not self.haveLogFile():
             raise Exception('logfile doesn\'t exist')
 
-        log = Log(self._logFile)
-        log.plotlr(self._name)
-        plt.show()
+        log = Log(self._name, self._logFile)
+        log.plotlr()
+
+    def compare(self, networks, losses):
+        folders = [dir for dir in os.listdir('.') if os.path.isdir(dir) and not dir.startswith('.')]
+        networks = tb.wildcardMatch(folders, networks)
+
+        logs = []
+        measureNames = []
+        for net in networks:
+            logfile = '%s/training/log.txt' % net
+            print 'reading %s' % logfile
+            logs.append(Log(net, logfile))
+            for name in logs[-1].measureNames():
+                if name not in measureNames: measureNames.append(name)
+
+        if losses is not None:
+            selectedNames = tb.unique(tb.wildcardMatch(measureNames, losses))
+        else:
+            selectedNames = tb.unique(measureNames)
+
+        print 'comparing networks:'
+        for net in networks: print "   ", net
+        print 'comparing losses: '
+        for name in selectedNames: print "   ", name
+
+        Log.plotComparison(selectedNames, logs)
 
     def view(self, iter):
         raise Exception('under construction')
