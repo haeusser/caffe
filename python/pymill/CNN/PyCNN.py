@@ -254,7 +254,7 @@ if args.backend == 'python': backend = PythonBackend(gpuIds, args.quiet, args.si
 else:                        backend = BinaryBackend(gpuIds, args.quiet, args.silent)
 
 env = Environment(args.path, backend, args.unattended, args.silent)
-if args.command != 'copy': env.init()
+if args.command != 'copy' and args.command != 'compare': env.init()
 
 def checkJob():
     currentId = '%s/current_id' % env.jobDir()

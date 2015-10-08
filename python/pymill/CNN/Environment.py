@@ -11,6 +11,7 @@ from Log import Log
 from pymill import Config
 from string import Template
 import uuid
+from Results import Results
 
 def caffeBin():
     bin = os.environ['CAFFE_BIN']
@@ -479,6 +480,14 @@ class Environment:
                 print 'saving log to %s', logFile
                 os.system('cp %s %s' % (self._scratchLogFile, logFile))
 
+        if 'dataset' in vars:
+            log = Log(self._name, self._scratchLogFile)
+            measure = self.params().measure()
+            task = self.params().measure()
+            task_measure = '%s_%s' %(task, measure)
+            value = log.getAssignment(measure)
+            Results(self._path).update(iter, vars['dataset'], task_measure, value)
+
         print 'Iteration was %d' %iter
 
     def runTests(self, iter, datasets, output=False, definition=None, vars={}):
@@ -495,9 +504,13 @@ class Environment:
                 vars['dataset'] = dataset
                 self.test(iter, output, definition, vars)
 
-                log = Log(self._scratchLogFile)
-                value = log.getAssignment(self.params().measure())
-                results.append((dataset, value))
+                log = Log(self._name, self._scratchLogFile)
+                measure = self.params().measure()
+                task = self.params().measure()
+                task_measure = '%s_%s' %(task, measure)
+                value = log.getAssignment(measure)
+                results.append((dataset, float(value)))
+                Results(self._path).update(iter, dataset, task_measure, value)
         finally:
             print
             print 'Results(%s) for iteration %d:' % (self.params().task(), iter)
