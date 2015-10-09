@@ -4,6 +4,7 @@ import os
 from pymill.CNN.Definition import *
 from math import ceil
 
+#TODO
 def standardTest(DeployBlock, generateNet=True):
     def Block(net, datasetName, output, prefix=None, use_augmentation_mean=True):
         blobs = net.namedBlobs()
@@ -138,8 +139,8 @@ def standardDeploy(NetworkBlock, generateNet=True):
         epe_losses = {}
         for blob_name in gt_blobs:
           epe_losses[blob_name] = Layers.L1Loss(net, (getattr(blobs,blob_name), getattr(blobs,'predict_' + blob_name + '_final')), nout=1, loss_weight=(1,), name='EPE_' + blob_name, l2_per_location=True, normalize_by_num_entries=True, epsilon=0)
-          epe_loss.setName('epe')
-          epe_loss.enableOutput()
+          #TODO epe_loss.setName('epe')
+          #TODO epe_loss.enableOutput()
 
         return blobs.predict_flow_final
 
