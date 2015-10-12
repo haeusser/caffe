@@ -815,8 +815,6 @@ class MainWindow(QtWidgets.QMainWindow):
     else:
       permute = list(range(len(found_filenames[0])))
 
-    print(permute)
-
     for (cell, files) in zip(self.grid, found_filenames):
       if isinstance(cell, EmptyCell):
         continue
