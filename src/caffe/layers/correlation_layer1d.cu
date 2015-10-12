@@ -437,9 +437,6 @@ void Correlation1DLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     const int bwidthheight = bwidth * bheight;
 
     const int topcount = top_width_ * top_height_ * top_channels_;
-
-    Dtype *top_data = top[0]->mutable_cpu_data();
-    for(int r =0; r < top[0]->count(); r++) top_data[r] = 123.0;
     
     dim3 threadsPerBlock(THREADS_PER_WARP * WARPS_PER_BLOCK); 
     
@@ -530,11 +527,6 @@ void Correlation1DLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     int botThreadCount = bottomcount;
    
     // CorrelationLayerBackward
-    
-    bottom0_diff = bottom[0]->mutable_cpu_diff();
-    bottom1_diff = bottom[1]->mutable_cpu_diff();
-    for(int r =0; r < bottom[0]->count(); r++) bottom0_diff[r] = 123.0;
-    for(int r =0; r < bottom[1]->count(); r++) bottom1_diff[r] = 123.0;
     
     bottom0_diff = bottom[0]->mutable_gpu_diff();
     bottom1_diff = bottom[1]->mutable_gpu_diff();
