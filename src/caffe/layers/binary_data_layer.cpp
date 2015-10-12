@@ -50,12 +50,9 @@ BinaryDataLayer<Dtype>::BinaryDataLayer(const LayerParameter& param)
   if(param.top_size() == param.data_param().sample().Get(0).entry_size() + 1)
       output_index_ = true;
 
-  int out_size = param.top_size();
-  if(output_index_) out_size--;
-
   /// Populate prefetching queue with empty buckets
   for (int i = 0; i < prefetch_.size(); ++i) {
-    for (int j = 0; j < out_size; ++j) {
+    for (int j = 0; j < param.top_size(); ++j) {
       Blob<Dtype> *tmpblob = new Blob<Dtype>();
       prefetch_[i].push_back(tmpblob);
     }
@@ -287,24 +284,13 @@ void BinaryDataLayer<Dtype>::Forward_cpu(const Container& bottom,
   wait_timer.Stop();
   TimingMonitor::addMeasure("train_wait", wait_timer.MilliSeconds());
 
-  int out_size = top.size();
-  if(output_index_)
-      out_size--;
-
   /// Reshape tops and copy data
-  for (unsigned int i = 0; i < out_size; ++i) {
+  for (unsigned int i = 0; i < top.size(); ++i) {
     top[i]->ReshapeLike(*container[i]);
     caffe_copy(container[i]->count(), 
                container[i]->cpu_data(),  
                top[i]->mutable_cpu_data());
     
-  }
-
-  if(output_index_)
-  {
-      // Test for now: output random indices
-      for(int i=0; i<top.back()->num(); i++)
-        top.back()->mutable_cpu_data()[i] = rand() % 1000;
   }
 
   /// Recycle spent data container for prefetching

@@ -2,6 +2,7 @@
 
 import os
 import shutil
+from Notice import notice
 
 class Job:
     def __init__(self):
@@ -150,11 +151,11 @@ class Queue:
             notice('computing locally')
 
             for i in range(0,n):
-                print run('PBS_ARRAYID=%d bash %s/job.sh' % (i,self._path)),
+                print os.system('PBS_ARRAYID=%d bash %s/job.sh' % (i,self._path)),
 
         else:
             notice('submitting queue <%s> to cluster' % self._name)
-            system('ssh lmbtorque "cd /home/ilge/jobs; dir>/dev/null; cd %s; qsub %s/job.sh -t 0-%d"' % (self._path, self._path, n - 1))
+            os.system('ssh lmbtorque "cd /home/ilge/jobs; dir>/dev/null; cd %s; qsub %s/job.sh -t 0-%d"' % (self._path, self._path, n - 1))
 
         os.chdir(cwd)
 

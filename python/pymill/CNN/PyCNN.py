@@ -18,13 +18,16 @@ import sys
 EVILPATH = '/home/mayern/.local/lib/python2.7/site-packages'
 if EVILPATH in sys.path:
   sys.path.remove(EVILPATH)
+  import matplotlib.pyplot as plt
+  sys.path.append(EVILPATH)
+else:
+  import matplotlib.pyplot as plt
 ## <-- (mayern) remove my .local folder from the PYTHONPATH
 from string import Template
 from termcolor import colored
 import argparse
 import argcomplete
 import numpy as np
-import matplotlib.pyplot as plt
 from pymill import Toolbox as tb
 from pymill import CNN as CNN
 import re
@@ -199,11 +202,16 @@ subparser = subparsers.add_parser('sanitize', help='delete everything that was c
 subparser = subparsers.add_parser('plot', help='plot losses and accuracies')
 subparser.add_argument('--select', help='selection of measures, e.g. test_*,train_*', default='')
 
-# plotlr
-subparser = subparsers.add_parser('plotlr', help='plot learning rate')
+# plot-lr
+subparser = subparsers.add_parser('plot-lr', help='plot learning rate')
 
-# plotlr
+# plot-test
 subparser = subparsers.add_parser('plot-test', help='plot test losses')
+
+# compare
+subparser = subparsers.add_parser('compare', help='compare the losses of some networks')
+subparser.add_argument('networks', help='comma separated list of networks')
+subparser.add_argument('losses',   help='comma separated list of loss names', default=None)
 
 # view
 subparser = subparsers.add_parser('view', help='view weights')
@@ -242,11 +250,11 @@ gpuIds = ''
 for i in range(0, args.gpus):
     gpuIds += ',%d' % i
 gpuIds = gpuIds[1:]
-if args.backend == 'binary': backend = BinaryBackend(gpuIds, args.quiet, args.silent)
-else:                        backend = PythonBackend(gpuIds, args.quiet, args.silent)
+if args.backend == 'python': backend = PythonBackend(gpuIds, args.quiet, args.silent)
+else:                        backend = BinaryBackend(gpuIds, args.quiet, args.silent)
 
 env = Environment(args.path, backend, args.unattended, args.silent)
-if args.command != 'copy': env.init()
+if args.command != 'copy' and args.command != 'compare': env.init()
 
 def checkJob():
     currentId = '%s/current_id' % env.jobDir()
@@ -274,11 +282,14 @@ if   args.command == 'sweep':
 elif args.command == 'plot':
     env.plot(args.select)
     sys.exit(0)
-elif args.command == 'plotlr':
+elif args.command == 'plot-lr':
     env.plotLR()
     sys.exit(0)
 elif args.command == 'plot-test':
     env.plot(select='test*')
+    sys.exit(0)
+elif args.command == 'compare':
+    env.compare(args.networks, args.losses)
     sys.exit(0)
 elif args.command == 'view':
     env.view(args.iter)

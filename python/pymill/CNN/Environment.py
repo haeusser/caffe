@@ -11,6 +11,7 @@ from Log import Log
 from pymill import Config
 from string import Template
 import uuid
+from Results import Results
 
 def caffeBin():
     bin = os.environ['CAFFE_BIN']
@@ -36,13 +37,36 @@ class BinaryBackend:
             tb.notice('running "%s"' % cmd, 'run')
         tb.system(cmd)
 
+    def _callCopiedBin(self, cmd):
+        bin = './' + os.path.basename(caffeBin())
+        tb.notice('making a local copy of %s' % caffeBin())
+        os.system('cp %s .' % caffeBin())
+
+        ldd = tb.run('ldd %s' % caffeBin())
+        caffeLib = None
+        for line in ldd.split('\n'):
+            match = re.match('\\s*libcaffe.so => (.*\.so)', line)
+            if match:
+                caffeLib = match.group(1)
+                break
+        if caffeLib is None:
+            raise Exception('cannot find libcaffe.so dependency')
+
+        tb.notice('making a local copy of %s' % caffeLib)
+        os.system('cp %s .' % caffeLib)
+
+        cmd = 'GLOG_logtostderr=%d LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH %s %s' % (not self._quiet, bin, cmd)
+        if not self._silent:
+            tb.notice('running "%s"' % cmd, 'run')
+        tb.system(cmd)
+
     def train(self, solverFilename, logFile, weights=None):
         if weights is not None:
             weightOption = '-weights %s' % weights
         else:
             weightOption = ''
 
-        self._callBin(Template('train -sighup_effect snapshot -solver $solverFilename $weightOption -gpu $gpu 2>&1 | tee -a $logFile').substitute({
+        self._callCopiedBin(Template('train -sighup_effect snapshot -solver $solverFilename $weightOption -gpu $gpu 2>&1 | tee -a $logFile').substitute({
             'solverFilename': solverFilename,
             'weightOption': weightOption,
             'gpu': self._gpus,
@@ -50,7 +74,7 @@ class BinaryBackend:
         }))
 
     def resume(self, solverFilename, solverstateFilename, logFile):
-        self._callBin(Template(
+        self._callCopiedBin(Template(
             'train -sighup_effect snapshot -solver $solverFilename -snapshot $solverstateFilename -gpu $gpu 2>&1 | tee -a $logFile').substitute(
             {
                 'solverFilename': solverFilename,
@@ -59,9 +83,10 @@ class BinaryBackend:
                 'logFile': logFile
             }))
 
-    def run(self, solverFilename):
-        self._callBin(Template('train -solver $solverFilename 2>&1').substitute({
-            'solverFilename': solverFilename,
+    def run(self, caffemodelFilename,iterations):
+        self._callBin(Template('test -model $caffemodelFilename --iterations $iterations 2>&1').substitute({
+            'caffemodelFilename': caffemodelFilename,
+            'iterations': iterations,
             'gpu': self._gpus
         }))
 
@@ -455,6 +480,14 @@ class Environment:
                 print 'saving log to %s', logFile
                 os.system('cp %s %s' % (self._scratchLogFile, logFile))
 
+        if 'dataset' in vars:
+            log = Log(self._name, self._scratchLogFile)
+            measure = self.params().measure()
+            task = self.params().measure()
+            task_measure = '%s_%s' %(task, measure)
+            value = log.getAssignment(measure)
+            Results(self._path).update(iter, vars['dataset'], task_measure, value)
+
         print 'Iteration was %d' %iter
 
     def runTests(self, iter, datasets, output=False, definition=None, vars={}):
@@ -471,9 +504,13 @@ class Environment:
                 vars['dataset'] = dataset
                 self.test(iter, output, definition, vars)
 
-                log = Log(self._scratchLogFile)
-                value = log.getAssignment(self.params().measure())
-                results.append((dataset, value))
+                log = Log(self._name, self._scratchLogFile)
+                measure = self.params().measure()
+                task = self.params().measure()
+                task_measure = '%s_%s' %(task, measure)
+                value = log.getAssignment(measure)
+                results.append((dataset, float(value)))
+                Results(self._path).update(iter, dataset, task_measure, value)
         finally:
             print
             print 'Results(%s) for iteration %d:' % (self.params().task(), iter)
@@ -487,17 +524,40 @@ class Environment:
         if not self.haveLogFile():
             raise Exception('logfile doesn\'t exist')
 
-        log = Log(self._logFile)
-        log.plot(self._name, select)
-        plt.show()
+        log = Log(self._name, self._logFile)
+        log.plot(select)
 
     def plotLR(self):
         if not self.haveLogFile():
             raise Exception('logfile doesn\'t exist')
 
-        log = Log(self._logFile)
-        log.plotlr(self._name)
-        plt.show()
+        log = Log(self._name, self._logFile)
+        log.plotlr()
+
+    def compare(self, networks, losses):
+        folders = [dir for dir in os.listdir('.') if os.path.isdir(dir) and not dir.startswith('.')]
+        networks = tb.wildcardMatch(folders, networks)
+
+        logs = []
+        measureNames = []
+        for net in networks:
+            logfile = '%s/training/log.txt' % net
+            print 'reading %s' % logfile
+            logs.append(Log(net, logfile))
+            for name in logs[-1].measureNames():
+                if name not in measureNames: measureNames.append(name)
+
+        if losses is not None:
+            selectedNames = tb.unique(tb.wildcardMatch(measureNames, losses))
+        else:
+            selectedNames = tb.unique(measureNames)
+
+        print 'comparing networks:'
+        for net in networks: print "   ", net
+        print 'comparing losses: '
+        for name in selectedNames: print "   ", name
+
+        Log.plotComparison(selectedNames, logs)
 
     def view(self, iter):
         raise Exception('under construction')
@@ -547,24 +607,9 @@ class Environment:
         self.makeScratchDir()
         finalProto = self.makeScratchPrototxt(file)
 
-        if iter == -1: iter = 1
-
-        # test requires weighs to be given,
-        # therefore we have to use a sovler
-
-        tmpsolver = self._scratchDir + '/run_solver.prototxt'
-
-        f = open(tmpsolver, 'w')
-        f.write('train_net: "%s"\n' % finalProto)
-        f.write('max_iter: %d\n' % iter)
-        f.write('lr_policy: "fixed"\n')
-        f.write('snapshot: 0\n')
-        f.write('snapshot_after_train: false\n')
-        f.close()
-
         self.notice('running %s for %d iterations ...' % (file, iter), 'notice')
         os.chdir(self._path)
-        self._backend.run(tmpsolver)
+        self._backend.run(finalProto, iter)
 
     def draw(self, prototmp):
         from google.protobuf import text_format

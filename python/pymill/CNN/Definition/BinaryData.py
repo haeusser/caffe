@@ -7,7 +7,7 @@ import os
 
 
 BIN_DB_DIR   = '/misc/lmbraid17/sceneflownet/common/data/4_bin-db'
-SSD_BIN_DB_DIR   = '/scratch/global/hackathon/data/4_bin-db'
+SSD_BIN_DB_DIR   = '/misc/scratch0/hackathon/data/4_bin-db'
 
 COLLECTIONLIST_DIR = '/misc/lmbraid17/sceneflownet/common/data/4_bin-db/collection_lists'
 
@@ -71,9 +71,13 @@ def DataParams(samples, bin_db_dir, collection_list_dir, collection_list, batch_
   def use(p):
     if p in kwargs:
       params[p] = kwargs[p]
-  
+
   use('prefetch')
   use('disk_reader_threads')
+  use('error_based_sampling')
+  use('sampling_alpha')
+  use('sampling_beta')
+  use('sampling_gamma')
 
   if rand_permute_seed is not None:
       params['rand_permute_seed'] = rand_permute_seed
@@ -363,7 +367,8 @@ def BinaryData(net, setting, **kwargs):
   if not os.path.isfile(os.path.join(kwargs['collection_list_dir'],
                                      kwargs['collection_list'])): 
     raise Exception('BinaryData: collection_list %s does not exist' \
-                      %(kwargs['collection_list']))
+                      %(os.path.join(kwargs['collection_list_dir'],
+                                     kwargs['collection_list'])))
 
   if 'bin_db_dir' not in kwargs:
       if 'ssd_storage' in kwargs and kwargs['ssd_storage'] == True:

@@ -91,6 +91,7 @@ class Blob(object):
 
     def setName(self, name):
         self._name = name
+        setattr(self._net.namedBlobs(), name, self)
 
     def incInputRef(self):
         self._inputRefCount += 1

@@ -99,6 +99,39 @@ def standardDeployWithMeanBug(NetworkBlock, generateNet=True):
 
     return Block
 
+def standardExtract(generateNet=True):
+    def Block(net, datasetName, out_path='data'):
+        blobs = net.namedBlobs()
+
+        dataset = Dataset.get(name=datasetName, phase='TEST')
+
+        img0, img1, disp_gt = dataset.dispLayer(net)
+
+        os.system('mkdir -p %s' % out_path)
+
+        f = open('%s/viewer.cfg' % out_path, 'w')
+        f.write('3 2\n')
+        f.write('0 0 -img0.ppm\n')
+        f.write('1 0 -img1.ppm\n')
+        f.write('2 1 -disp\n')
+        f.close()
+
+        net.writeImage(img0, folder=out_path, prefix='', suffix='-img0')
+        net.writeImage(img1, folder=out_path, prefix='', suffix='-img1')
+        net.writeFloat(disp_gt, folder=out_path, prefix='', suffix='-gt')
+
+    if generateNet:
+        net = Network()
+
+        dataset = str(param('dataset'))
+        if dataset is None:
+            raise Exception('please specify dataset=...')
+
+        Block(net, dataset)
+
+        print net.toProto()
+
+    return Block
 
 def standardDeploy(NetworkBlock, generateNet=True):
     def Block(net, img0, img1, disp_gt, width, height, mean_color, augmentation_mean=False):

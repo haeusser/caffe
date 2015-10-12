@@ -11,7 +11,9 @@ class Dataset:
         self._bEnts = []
         self._uEnts = []
 
-        for entry in open('/home/ilge/data/%s.bents'%name).readlines():
+        filename = name if name.endswith('.bents') else '/home/ilge/data/%s.bents' % name
+
+        for entry in open(filename).readlines():
             self._bEnts.append(BinaryEntity(entry))
 
         files = []

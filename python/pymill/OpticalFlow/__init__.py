@@ -249,13 +249,15 @@ def expandDataset(buf, label=-1, limit=''):
 
     parts = buf.split(',')
     for part in parts:
-        for name in Dataset.names():
-            if datasetWildcardMatch(part, name):
-                ds = Dataset(name)
-                ds.restrictTo(label)
-                ds.limitTo(limit)
-                list.append(ds)
-
+        if part.endswith('.bents'):
+            list.append(Dataset(part))
+        else:
+            for name in Dataset.names():
+                if datasetWildcardMatch(part, name):
+                    ds = Dataset(name)
+                    ds.restrictTo(label)
+                    ds.limitTo(limit)
+                    list.append(ds)
     return list
 
 

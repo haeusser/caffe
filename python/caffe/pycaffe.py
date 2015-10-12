@@ -105,6 +105,12 @@ def _Net_forward(self, blobs=None, start=None, end=None, **kwargs):
 
     # Unpack blobs to extract
     return {out: self.blobs[out].data for out in outputs}
+  
+def _Net_forward_simple(self):
+    self._forward(0, len(self.layers) - 1)
+    
+def _Net_backward_simple(self):
+    self._backward(len(self.layers) - 1, 0)
 
 
 def _Net_backward(self, diffs=None, start=None, end=None, **kwargs):
@@ -244,6 +250,13 @@ def _Net_set_input_arrays(self, data, labels):
     return self._set_input_arrays(data, labels)
 
 
+def _Net_update_sample_errors(self, indices, errors):
+    """
+    Send info about net performance to the net
+    """
+    self._update_sample_errors(indices, errors)
+
+
 def _Net_batch(self, blobs):
     """
     Batch blob lists according to net's batch size.
@@ -283,9 +296,12 @@ Net.blob_loss_weights = _Net_blob_loss_weights
 Net.params = _Net_params
 Net.forward = _Net_forward
 Net.backward = _Net_backward
+Net.forward_simple = _Net_forward_simple
+Net.backward_simple = _Net_backward_simple
 Net.forward_all = _Net_forward_all
 Net.forward_backward_all = _Net_forward_backward_all
 Net.set_input_arrays = _Net_set_input_arrays
+Net.update_sample_errors = _Net_update_sample_errors
 Net._batch = _Net_batch
 Net.inputs = _Net_inputs
 Net.outputs = _Net_outputs

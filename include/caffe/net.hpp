@@ -243,8 +243,7 @@ class Net {
 
   inline void set_test_iter_count(int iter) { LOG(INFO) << "Setting test iteration count to " << iter; test_iter_count_=iter; }
   int test_iter_count() { return test_iter_count_; }
-
-
+  
   typedef boost::function<void(vector<int>, vector<float>)> UpdateSampleCallback;
 
   void register_update_sample_callback(UpdateSampleCallback cb) { update_sample_callbacks_.push_back(cb); }
@@ -253,10 +252,6 @@ class Net {
   {
       CHECK(indices.size() == error.size());
 
-      for(int i=0; i<indices.size(); i++)
-          LOG(INFO) << "setting error for sample " << indices[i] << " to " << error[i];
-
-      LOG(INFO) << "calling " << update_sample_callbacks_.size() << " callbacks. ";
       for(int i=0; i<update_sample_callbacks_.size();  i++)
           update_sample_callbacks_[i](indices, error);
   }

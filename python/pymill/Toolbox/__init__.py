@@ -121,11 +121,16 @@ class MyParser(argparse.ArgumentParser):
         self.print_help()
         sys.exit(2)
 
-def wildcardMatch(haystack, needle):
-    if isList(haystack):
-        return [ent for ent in haystack if fnmatch(ent, needle)]
-    else:
-        return [fnmatch(haystack, needle)]
+def wildcardMatch(haystack, needles):
+    needles = needles.split(',')
+    result = []
+    for needle in needles:
+        if isList(haystack):
+            result += [ent for ent in haystack if fnmatch(ent, needle)]
+        else:
+            result += [fnmatch(haystack, needle)]
+    return result
+
 
 def unique(input):
     output = []
@@ -286,7 +291,6 @@ def styleList():
         PlotStyle().setColor('#55FFFF'),
         PlotStyle().setColor('#FF5555'),
         PlotStyle().setColor('#FF55FF'),
-        PlotStyle().setColor('#FFFF55'),
         PlotStyle().setColor('#000000'),
     ]
 

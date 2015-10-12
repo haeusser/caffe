@@ -79,9 +79,10 @@ class UnaryEntity:
         return '%s/%s' % self._sceneName + self.formattedFrameNumber()
 
     def bind(self,spec):
-        from Methods import methods
-        from Method import Method
-        if not spec.name() in methods:
+        from pymill.OpticalFlow import Methods
+        from pymill.OpticalFlow.Method import Method
+
+        if not spec.name() in Methods.methods:
             method = Method()
             method.setEnt(self)
             method.setSpec(spec)

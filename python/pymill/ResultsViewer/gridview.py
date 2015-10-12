@@ -43,6 +43,9 @@ flowStyle = 1
 floatMin = 0.0
 floatMax = 1.0
 
+## Will be set to updateStatus(message) function handle
+updateStatus = None
+
 
 
 ## Configuration
@@ -87,9 +90,9 @@ def readConfig(filename):
 
 
 
-def GenerateFilenames(suffix):
+def GenerateFilenames(suffices):
   '''List all existing files complying to a certain pattern'''
-  if suffix == 'none':
+  '''if suffix == 'none':
     return ['dummy']
   if batch:
     files = []
@@ -114,6 +117,43 @@ def GenerateFilenames(suffix):
         i += 1
       else:
         return files
+  '''
+  found = [[] for s in suffices]
+  if batch:
+    i = j = 0
+    while True:
+      valid_index = False
+      for (idx,suffix) in enumerate(suffices):
+        f = os.path.join(dir, filename_template_batch(i,j,suffix))
+        if os.path.isfile(f):
+          found[idx].append(f)
+          valid_index = True
+        elif idx < len(suffices)-1 or valid_index:
+          found[idx].append(None)
+      if valid_index:
+        j += 1
+      elif j > 0:
+        i += 1
+        j = 0
+      else:
+        return found
+  else:
+    i = 0
+    while True:
+      valid_index = False
+      for (idx,suffix) in enumerate(suffices):
+        f = os.path.join(dir, filename_template%(i,suffix))
+        if os.path.isfile(f):
+          found[idx].append(f)
+          valid_index = True
+        elif idx < len(suffices)-1 or valid_index:
+          found[idx].append(None)
+      if valid_index:
+        i += 1
+      else:
+        return found 
+          
+
 
 
 def readPFM(file):
@@ -230,29 +270,39 @@ class Cell(object):
     '''Add image (or image source)'''
     self.filenames.append(filename)
     if preload:
-      img = QtGui.QImage(filename)
-      if img is None:
-        raise ValueError("Failed to read '%s'!" % f)
-      self.images.append(QtGui.QPixmap.fromImage(img))
+      if filename is None:
+        self.images.append(None)
+      else:
+        img = QtGui.QImage(filename)
+        if img is None:
+          raise ValueError("Failed to read '%s'!" % f)
+        self.images.append(QtGui.QPixmap.fromImage(img))
 
   def namePart(self, fullname):
     '''Extract filename from filepath'''
-    return fullname.split('/')[-1]
+    if fullname is None:
+      return '(missing)'
+    else:
+      return fullname.split('/')[-1]
 
   def index(self, idx, *args):
     '''Change displayed image'''
     if not self.filenames:
       return
     self.caption.setText(self.namePart(self.filenames[idx]))
-    if preload:
-      self.label.setPixmap(self.images[idx]\
-                           .scaled(self.label.size(), 
-                                   QtCore.Qt.KeepAspectRatio))
+    if self.filenames[idx] is None:
+      self.label.clear()
+      return
     else:
-      f = self.filenames[idx]
-      self.label.setPixmap(QtGui.QPixmap.fromImage(QtGui.QImage(f))\
-                           .scaled(self.label.size(),
-                                   QtCore.Qt.KeepAspectRatio))
+      if preload:
+        self.label.setPixmap(self.images[idx]\
+                             .scaled(self.label.size(), 
+                                     QtCore.Qt.KeepAspectRatio))
+      else:
+        f = self.filenames[idx]
+        self.label.setPixmap(QtGui.QPixmap.fromImage(QtGui.QImage(f))\
+                             .scaled(self.label.size(),
+                                     QtCore.Qt.KeepAspectRatio))
 
 
 class EmptyCell(Cell):
@@ -287,18 +337,30 @@ class FloatCell(Cell):
     '''Add image (or image source)'''
     self.filenames.append(filename)
     if preload:
-      raw_float_data = readFloat(filename)
-      self.raw_data.append(raw_float_data)
+      if filename is None:
+        self.raw_data.append(None)
+      else:
+        raw_float_data = readFloat(filename)
+        self.raw_data.append(raw_float_data)
 
   def index(self, idx, *args):
     '''Change displayed image'''
     if not self.filenames:
       return
     self.caption.setText(self.namePart(self.filenames[idx]))
-    if preload:
-      raw_float_data = self.raw_data[idx]
+    if self.filenames[idx] is None:
+      self.label.clear()
+      return
     else:
-      raw_float_data = readFloat(self.filenames[idx])
+      if preload:
+        raw_float_data = self.raw_data[idx]
+      else:
+        raw_float_data = readFloat(self.filenames[idx])
+
+    if (floatMax-floatMin)<0.01:
+      updateStatus('Float scale minimum too close to maximum!')
+      return
+
     scale = 255./(floatMax-floatMin)
     offset = -floatMin
     self.label.setPixmap(QtGui.QPixmap.fromImage(
@@ -324,31 +386,41 @@ class FlowCell(Cell):
     '''Add image (or image source)'''
     self.filenames.append(filename)
     if preload:
-      raw_flow_data = readFlow(filename)
-      self.raw_data.append(raw_flow_data)
+      if filename is None:
+        self.raw_data.append(None)
+      else:
+        raw_flow_data = readFlow(filename)
+        self.raw_data.append(raw_flow_data)
 
   def index(self, idx, *args):
     '''Change displayed image'''
     if not self.filenames:
       return
     self.caption.setText(self.namePart(self.filenames[idx]))
-    if preload:
-      raw_flow_data = self.raw_data[idx],
+    if self.filenames[idx] is None:
+      self.label.clear()
+      return
     else:
-      raw_flow_data = readFlow(self.filenames[idx])
-    flow_image = gridview_c_interface.Flow(flowStyle, 
-                                           raw_flow_data,
-                                           flowScale)
-    self.label.setPixmap(QtGui.QPixmap.fromImage(\
-                         ImageQt(Image.fromarray(flow_image))\
-                         .scaled(self.label.size(),
-                                 QtCore.Qt.KeepAspectRatio)))
+      if preload:
+        raw_flow_data = self.raw_data[idx],
+      else:
+        raw_flow_data = readFlow(self.filenames[idx])
+      flow_image = gridview_c_interface.Flow(flowStyle, 
+                                             raw_flow_data,
+                                             flowScale)
+      self.label.setPixmap(QtGui.QPixmap.fromImage(\
+                           ImageQt(Image.fromarray(flow_image))\
+                           .scaled(self.label.size(),
+                                   QtCore.Qt.KeepAspectRatio)))
 
 
 
 class MainWindow(QtWidgets.QMainWindow):
   def __init__(self, parent=None):
     super(MainWindow, self).__init__(parent)
+
+    global updateStatus
+    updateStatus = self.updateStatus
 
     self.currentIndex = 0
     self.grid = []
@@ -593,6 +665,8 @@ class MainWindow(QtWidgets.QMainWindow):
     flowStyle = newStyle
     self.changeFrame(self.currentIndex)
     self.flowScaleSliderChange(self.flowScaleSlider.value())
+    self.updateStatus('Flow display style set to %s' \
+                      %(['Sintel', 'Middlebury'][flowStyle]))
 
 
   def resizeEvent(self, resizeEvent):
@@ -605,6 +679,7 @@ class MainWindow(QtWidgets.QMainWindow):
     if newValue == self.currentIndex:
       return
     self.changeFrame(newValue)
+    self.updateStatus('Frame %d'%(newValue))
 
 
   def floatMinSliderChange(self, newValue):
@@ -617,6 +692,7 @@ class MainWindow(QtWidgets.QMainWindow):
     self.floatMinSliderLabel.setText("Float min: %.2f" % (floatMin))
     if self.needFloatTools:
       self.floatMinSlider.setValue(newValue)
+    self.updateStatus('Float minimum set to %f'%(floatMin))
 
     
   def floatMaxSliderChange(self, newValue):
@@ -629,6 +705,7 @@ class MainWindow(QtWidgets.QMainWindow):
     self.floatMaxSliderLabel.setText("Float max: %.2f" % (floatMax))
     if self.needFloatTools:
       self.floatMaxSlider.setValue(newValue)
+    self.updateStatus('Float maximum set to %f'%(floatMax))
 
 
   def flowScaleSliderChange(self, newValue):
@@ -645,6 +722,7 @@ class MainWindow(QtWidgets.QMainWindow):
     self.flowScaleSliderLabel.setText("OF scale: %.3f" % (flowScale))
     if self.needFlowTools:
       self.flowScaleSlider.setValue(newValue)
+    self.updateStatus('Flow scale set to %f'%(flowScale))
 
 
   def helpAbout(self):
@@ -722,28 +800,31 @@ class MainWindow(QtWidgets.QMainWindow):
     if not dir:
       return
 
+    ## Find files
+    suffices = [cell.suffix for cell in self.grid]
+    found_filenames = GenerateFilenames(suffices)
+
     ## Generate permutation sequence (trivial ordered list if permute
     #  is disabled)
     global permute
     if permute:
-      permute = list(range(len(GenerateFilenames(self.grid[0].suffix))))
+      permute = list(range(len(found_filenames[0])))
       import random
       random.seed(0)
       random.shuffle(permute)
     else:
-      permute = list(range(len(GenerateFilenames(self.grid[0].suffix))))
+      permute = list(range(len(found_filenames[0])))
 
-    for cell in self.grid:
+    for (cell, files) in zip(self.grid, found_filenames):
       if isinstance(cell, EmptyCell):
         continue
       cell.clear()
-      found_filenames = GenerateFilenames(cell.suffix)
-      if not found_filenames:
+      if not files:
         raise Exception('No filenames found. Did you provide a configuration?')
-      for i in range(len(found_filenames)):
-        cell.addImage(found_filenames[permute[i]])
+      for i in range(len(files)):
+        cell.addImage(files[permute[i]])
         if preload:
-          self.updateStatus("Reading images... %d/%d." % (i+1, len(found_filenames)))
+          self.updateStatus("Reading images... %d/%d." % (i+1, len(files)))
     else:
       self.resetFrameSlider()
       self.changeFrame(0)

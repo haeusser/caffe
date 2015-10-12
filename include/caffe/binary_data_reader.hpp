@@ -61,8 +61,6 @@ class BinaryDataReader : public InternalThread {
 
     int get_num_samples() { return db_->get_num_samples(); }
 
-    void update_sample_errors(vector<int> indices, vector<float> error);
-
    protected:
     void InternalThreadEntry();
     void read_one(int &index, BinaryQueuePair* qp);
@@ -73,6 +71,22 @@ class BinaryDataReader : public InternalThread {
     db::BinaryDB<Dtype>* db_;
     friend class BinaryDataReader;
 
+   // Error based sampling
+   public:
+    void update_sample_errors(vector<int> indices, vector<float> error);
+
+   protected:
+    int epoch_;
+    int counter_;
+    long int total_counter_;
+    bool error_based_sampling_;
+    float sampling_alpha_;
+    float sampling_beta_;
+    float sampling_gamma_;
+    double error_sum_;
+    vector<float> sample_errors_;
+
+    void sample_next_index(int& index);
 
   DISABLE_COPY_AND_ASSIGN(Body);
   };
