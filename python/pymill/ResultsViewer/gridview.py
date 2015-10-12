@@ -146,7 +146,7 @@ def GenerateFilenames(suffices):
         if os.path.isfile(f):
           found[idx].append(f)
           valid_index = True
-        elif idx < len(suffices)-1 or valid_index:
+        elif idx < len(suffices) or valid_index:
           found[idx].append(None)
       if valid_index:
         i += 1
@@ -814,6 +814,8 @@ class MainWindow(QtWidgets.QMainWindow):
       random.shuffle(permute)
     else:
       permute = list(range(len(found_filenames[0])))
+
+    print(permute)
 
     for (cell, files) in zip(self.grid, found_filenames):
       if isinstance(cell, EmptyCell):
