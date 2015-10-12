@@ -19,6 +19,8 @@ namespace caffe {
 
 // == Dimension rearrangement Kernel
   
+namespace corr1d {
+  
 template <typename Dtype>
 __global__ void blob_rearrange_kernel2(const Dtype* in, Dtype* out, int num, int channels, int width, int height, int widthheight, int padding, int pwidthheight)
 {
@@ -421,6 +423,9 @@ __global__ void CorrelateDataBackward1Subtract(const int nthreads, int num, int 
   }
 
 }
+
+} // end namespace
+
 // == Forward 
 
 template <typename Dtype>
@@ -447,10 +452,10 @@ void Correlation1DLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     dim3 totalBlocksRearr((bwidthheight-1)/threads_per_block+1, bchannels, bnum);
     const int pwidthheight = (bwidth + 2 * pad_size_) * (bheight + 2 * pad_size_);
     
-    blob_rearrange_kernel2<Dtype><<<totalBlocksRearr,threads_per_block>>>
+    corr1d::blob_rearrange_kernel2<Dtype><<<totalBlocksRearr,threads_per_block>>>
             (bottom[0]->gpu_data(),rbot1_->mutable_gpu_data(),bnum,bchannels,bwidth,bheight,bwidthheight,pad_size_,pwidthheight);
     
-    blob_rearrange_kernel2<Dtype><<<totalBlocksRearr,threads_per_block>>>
+    corr1d::blob_rearrange_kernel2<Dtype><<<totalBlocksRearr,threads_per_block>>>
             (bottom[1]->gpu_data(),rbot2_->mutable_gpu_data(),bnum,bchannels,bwidth,bheight,bwidthheight,pad_size_,pwidthheight);
     
     const int num = bnum;
@@ -467,7 +472,7 @@ void Correlation1DLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
         dim3 totalBlocksCorr(top_width_, top_height_, num);
         
         
-        CorrelateData<Dtype><<<totalBlocksCorr, threadsPerBlock, shared_memory_per_block * sizeof(Dtype)>>>(
+        corr1d::CorrelateData<Dtype><<<totalBlocksCorr, threadsPerBlock, shared_memory_per_block * sizeof(Dtype)>>>(
             topThreadCount,
             num, top_width_, top_height_, top_channels_, topcount,
             max_displacement_, neighborhood_grid_radius_, neighborhood_grid_width_, kernel_radius_, kernel_size_,
@@ -484,7 +489,7 @@ void Correlation1DLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
             
             int topThreadCount = topcount;
             
-            CorrelateDataSubtract<Dtype><<<CAFFE_GET_BLOCKS(topThreadCount), CAFFE_CUDA_NUM_THREADS>>>(
+            corr1d::CorrelateDataSubtract<Dtype><<<CAFFE_GET_BLOCKS(topThreadCount), CAFFE_CUDA_NUM_THREADS>>>(
                 topThreadCount,
                 num, n, top_width_, top_height_, top_channels_, topcount,
                 max_displacement_, neighborhood_grid_radius_, neighborhood_grid_width_, kernel_radius_,
@@ -542,7 +547,7 @@ void Correlation1DLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         // == Run kernel Backward 0 
         for(int n = 0; n < num; n++) {
         //Bottom0:
-        CorrelateDataBackward0<Dtype><<<CAFFE_GET_BLOCKS(botThreadCount), CAFFE_CUDA_NUM_THREADS>>>(
+        corr1d::CorrelateDataBackward0<Dtype><<<CAFFE_GET_BLOCKS(botThreadCount), CAFFE_CUDA_NUM_THREADS>>>(
             botThreadCount,
             num, n, top_width_, top_height_, top_channels_,
             max_displacement_, neighborhood_grid_radius_, neighborhood_grid_width_, kernel_radius_,
@@ -556,7 +561,7 @@ void Correlation1DLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         
         // == Run kernel Backward 1
         for(int n = 0; n < num; n++) {
-        CorrelateDataBackward1<Dtype><<<CAFFE_GET_BLOCKS(botThreadCount), CAFFE_CUDA_NUM_THREADS>>>(
+        corr1d::CorrelateDataBackward1<Dtype><<<CAFFE_GET_BLOCKS(botThreadCount), CAFFE_CUDA_NUM_THREADS>>>(
             botThreadCount,
             num, n, top_width_, top_height_, top_channels_,
             max_displacement_, neighborhood_grid_radius_, neighborhood_grid_width_, kernel_radius_,
@@ -571,7 +576,7 @@ void Correlation1DLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     } else if(corr_type_ == CorrelationParameter_CorrelationType_SUBTRACT) {
         for(int n = 0; n < num; n++) {
         //Bottom0:
-        CorrelateDataBackward0Subtract<Dtype><<<CAFFE_GET_BLOCKS(botThreadCount), CAFFE_CUDA_NUM_THREADS>>>(
+        corr1d::CorrelateDataBackward0Subtract<Dtype><<<CAFFE_GET_BLOCKS(botThreadCount), CAFFE_CUDA_NUM_THREADS>>>(
             botThreadCount,
             num, n, top_width_, top_height_, top_channels_,
             max_displacement_, neighborhood_grid_radius_, neighborhood_grid_width_, kernel_radius_,
@@ -585,7 +590,7 @@ void Correlation1DLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
 
         for(int n = 0; n < num; n++) {
         //Bottom0:
-        CorrelateDataBackward1Subtract<Dtype><<<CAFFE_GET_BLOCKS(botThreadCount), CAFFE_CUDA_NUM_THREADS>>>(
+        corr1d::CorrelateDataBackward1Subtract<Dtype><<<CAFFE_GET_BLOCKS(botThreadCount), CAFFE_CUDA_NUM_THREADS>>>(
             botThreadCount,
             num, n, top_width_, top_height_, top_channels_,
             max_displacement_, neighborhood_grid_radius_, neighborhood_grid_width_, kernel_radius_,
