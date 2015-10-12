@@ -142,6 +142,17 @@ def imageToRange01(net, image_blob):
 
 Network.imageToRange01 = imageToRange01
 
+def imageToRange255(net, image_blob):
+    return Layers.Eltwise(net,
+                          image_blob,
+                          nout=1,
+                          eltwise_param={
+                            'operation': Params.Eltwise.SUM,
+                            'coeff': (255.0,)
+                          })
+
+Network.imageToRange255 = imageToRange255
+
 def imageToRange0255(net, image_blob):
     return Layers.Eltwise(net,
                           image_blob,
