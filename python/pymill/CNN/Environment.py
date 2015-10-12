@@ -84,7 +84,7 @@ class BinaryBackend:
             }))
 
     def run(self, caffemodelFilename,iterations):
-        self._callBin(Template('test -model $caffemodelFilename --iterations $iterations 2>&1').substitute({
+        self._callBin(Template('test -model $caffemodelFilename --iterations $iterations -gpu $gpu 2>&1').substitute({
             'caffemodelFilename': caffemodelFilename,
             'iterations': iterations,
             'gpu': self._gpus
@@ -381,7 +381,7 @@ class Environment:
 
     def sanitize(self):
         self.notice('removing *.pyc', 'del')
-        os.system('rm -f %s/*.pyc' % (self._path, file))
+        os.system('rm -f %s/*.pyc' % (self._path))
 
         if self.haveTrainDir():
             self.notice('removing training', 'del')
@@ -483,7 +483,7 @@ class Environment:
         if 'dataset' in vars:
             log = Log(self._name, self._scratchLogFile)
             measure = self.params().measure()
-            task = self.params().measure()
+            task = self.params().task()
             task_measure = '%s_%s' %(task, measure)
             value = log.getAssignment(measure)
             Results(self._path).update(iter, vars['dataset'], task_measure, value)
@@ -506,7 +506,7 @@ class Environment:
 
                 log = Log(self._name, self._scratchLogFile)
                 measure = self.params().measure()
-                task = self.params().measure()
+                task = self.params().task()
                 task_measure = '%s_%s' %(task, measure)
                 value = log.getAssignment(measure)
                 results.append((dataset, float(value)))
