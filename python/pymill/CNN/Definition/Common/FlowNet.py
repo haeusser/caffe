@@ -42,7 +42,8 @@ def standardTest(DeployBlock, generateNet=True):
                 out_path = 'output_%s_%s' % (prefix, datasetName)
             else:
                 out_path = 'output_%s' % datasetName
-            os.makedirs(out_path)
+            if not os.path.isdir(out_path):
+                os.makedirs(out_path)
             
             ## Write configuration file for viewer tool
             f = open('%s/viewer.cfg' % out_path, 'w')
@@ -102,7 +103,8 @@ def standardExtract(generateNet=True):
         dataset = Dataset.get(name=datasetName, phase='TEST')
         img0, img1, flow_gt = dataset.flowLayer(net)
 
-        os.makedirs(out_path)
+        if not os.path.isdir(out_path):
+            os.makedirs(out_path)
         ## Write configuration file for viewer tool
         f = open('%s/viewer.cfg' % (out_path), 'w')
         f.write('2 2\n')

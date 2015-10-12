@@ -33,7 +33,7 @@ def standardTest(DeployBlock, generateNet=True):
         dataset = Dataset.get(name=datasetName, phase='TEST')
         img0L, img0R, img1L, img1R,  \
           flowL_gt, flowR_gt,        \
-          disp0L_gt, disp1L_gt, dispChangeL_gt = dataset.flowLayer(net)
+          disp0L_gt, disp1L_gt, dispChangeL_gt = dataset.sceneFlowLayer(net)
         ## Connect data to Deploy-mode net
         blobs_dict = {'img0L': img0L,
                       'img0R': img0R,
@@ -49,18 +49,19 @@ def standardTest(DeployBlock, generateNet=True):
         predictions = DeployBlock(net, blobs_dict,
                                   dataset.width(), dataset.height(),
                                   dataset.meanColors(), use_augmentation_mean)
-        flowL_pred  = predictions.predict_flowL_final
-        flowR_pred  = predictions.predict_flowR_final
-        disp0L      = predictions.predict_disp0L_final
-        disp1L      = predictions.predict_disp1L_final
-        dispChangeL = predictions.predict_dispChangeL_final
+        flowL_pred       = predictions['predict_flowL_gt_final']
+        flowR_pred       = predictions['predict_flowR_gt_final']
+        disp0L_pred      = predictions['predict_disp0L_gt_final']
+        disp1L_pred      = predictions['predict_disp1L_gt_final']
+        dispChangeL_pred = predictions['predict_dispChangeL_gt_final']
         ## Output network input and output
         if output:
             if prefix:
                 out_path = 'output_%s_%s' % (prefix, datasetName) 
             else:
                 out_path = 'output_%s' % datasetName
-            os.makedirs(out_path)
+            if not os.path.isdir(out_path):
+                os.makedirs(out_path)
 
             ## Write configuration file for viewer tool
             f = open('%s/viewer.cfg' % out_path, 'w')
@@ -148,9 +149,10 @@ def standardExtract(generateNet=True):
         dataset = Dataset.get(name=datasetName, phase='TEST')
         img0L, img0R, img1L, img1R,  \
           flowL_gt, flowR_gt,        \
-          disp0L_gt, disp1L_gt, dispChangeL_gt = dataset.flowLayer(net)
+          disp0L_gt, disp1L_gt, dispChangeL_gt = dataset.sceneFlowLayer(net)
 
-        os.makedirs(out_path)
+        if not os.path.isdir(out_path):
+            os.makedirs(out_path)
 
         ## Write configuration file for viewer tool
         f = open('%s/viewer.cfg' % out_path, 'w')
@@ -220,12 +222,12 @@ def standardDeploy(NetworkBlock, generateNet=True):
             setattr(blobs, key, value)
         
         ## Input DATA
-        data_blobs = ('img0L'. 'img0R', 'img1L', 'img1R')
+        data_blobs = ('img0L', 'img0R', 'img1L', 'img1R')
         ## Input GROUNDTRUTH
-        gt_blobs = ('flowL', 'flowR', 'disp0L', 'disp1L', 'dispChangeL')
+        gt_blobs = ('flowL_gt', 'flowR_gt', 'disp0L_gt', 'disp1L_gt', 'dispChangeL_gt')
         
         ## Rescale input images to [0,1]
-        for blob_name in data_blobs
+        for blob_name in data_blobs:
             #setattr(blobs, blob_name + 's', net.imageToRange01(getattr(blobs, blob_name)))
             scaled = net.imageToRange01(getattr(blobs, blob_name))
             scaled.setName(blob_name + 's')
@@ -262,33 +264,33 @@ def standardDeploy(NetworkBlock, generateNet=True):
         for blob_name in gt_blobs:
             # Use NEAREST here, since kitti gt is sparse
             setattr(blobs, 
-                    blob_name + '_gt_resize', 
-                    net.resample(blob_name, 
+                    blob_name + '_resize', 
+                    net.resample(getattr(blobs, blob_name),
                                  width=temp_width, height=temp_height, 
-                                 type='NEAREST', antialias=True) 
+                                 type='NEAREST', antialias=True))
                  
         net_blobs = {}
         for blob_name in data_blobs:
             net_blobs[blob_name + '_nomean_resize'] = \
               getattr(blobs, blob_name + '_nomean_resize')
         for blob_name in gt_blobs:
-            net_blobs[blob_name + '_gt_resize'] = \
-              getattr(blobs, blob_name + '_gt_resize')
+            net_blobs[blob_name + '_resize'] = \
+              getattr(blobs, blob_name + '_resize')
 
         ## Connect data preprocessing layers to raw net
-        from net import Block as Network
-        prediction = NetworkBlock(net, net_blobs)
+        #from net import Block as Network
+        prediction = NetworkBlock(net)
 
         for blob_name in gt_blobs:
             setattr(blobs, 
                     'predict_' + blob_name + '_resize',
                     net.resample(prediction[blob_name], 
                                  width=width, height=height, 
-                                 reference=None, type='LINEAR', antialias=True)
+                                 reference=None, type='LINEAR', antialias=True))
             setattr(blobs, 
                     'predict_' + blob_name + '_final', 
                     net.scale(getattr(blobs, 'predict_' + blob_name + '_resize'),
-                              (rescale_coeff_x, rescale_coeff_y))
+                              (rescale_coeff_x, rescale_coeff_y)))
 
         ## Connect L1 loss layers
         epe_losses = {}
@@ -306,8 +308,9 @@ def standardDeploy(NetworkBlock, generateNet=True):
             epe_losses[blob_name].setName('epe_'+blob_name)
             epe_losses[blob_name].enableOutput()
 
-        return tuple([getattr(blobs, 'predict_'+blob_name+'_final') 
-                      for blob_name in gt_blobs])
+        return {'predict_'+blob_name+'_final': getattr(blobs,
+                                                       'predict_'+blob_name+'_final')
+                for blob_name in gt_blobs}
 
     if generateNet:
         net = Network()
