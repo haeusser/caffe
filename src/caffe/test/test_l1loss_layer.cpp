@@ -24,8 +24,11 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
       : blob_bottom_data_(new Blob<Dtype>(5, 4, 3, 2)),
         blob_bottom_label_(new Blob<Dtype>(5, 4, 3, 2)),
         blob_top_loss_(new Blob<Dtype>()) {
+          
+    Caffe::set_random_seed(1701);
     // fill the values
     FillerParameter filler_param;
+    filler_param.set_std(10);
     GaussianFiller<Dtype> filler(filler_param);
     filler.Fill(this->blob_bottom_data_);
     blob_bottom_vec_.push_back(blob_bottom_data_);
@@ -76,12 +79,13 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     EXPECT_GE(fabs(loss_weight_1), kNonTrivialAbsThresh);
   }
   
-  void TestForward_values() {
+  void TestForward_values(float plateau) {
     LayerParameter layer_param;
 
     const Dtype kLossWeight = 0.00345;
     layer_param.add_loss_weight(kLossWeight);
     layer_param.mutable_l1_loss_param()->set_l2_per_location(false);
+    layer_param.mutable_l1_loss_param()->set_plateau(plateau);
     
     L1LossLayer<Dtype> layer_weight_2(layer_param);
     layer_weight_2.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
@@ -95,7 +99,10 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     const Dtype *bot0 = blob_bottom_data_->cpu_data();
     const Dtype *bot1 = blob_bottom_label_->cpu_data();
     for(int c = 0; c < blob_bottom_data_->count(); c++) {
-        refloss += fabs(bot0[c] - bot1[c]);
+      float absdifference = fabs(bot0[c] - bot1[c]);
+      if(absdifference >= plateau) {
+        refloss += absdifference;
+      }
     }
     refloss /= (Dtype)blob_bottom_data_->num();
     
@@ -206,7 +213,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     bot_data[17] = tmp_val;
   }
   
-  void TestForward_values_singleblob() {
+  void TestForward_values_singleblob(float plateau) {
     LayerParameter layer_param;
 
     vector<Blob<Dtype>*> mybottom; // Only one blob
@@ -215,6 +222,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     const Dtype kLossWeight = 0.02345;
     layer_param.add_loss_weight(kLossWeight);
     layer_param.mutable_l1_loss_param()->set_l2_per_location(false);
+    layer_param.mutable_l1_loss_param()->set_plateau(plateau);
     
     L1LossLayer<Dtype> layer_weight_2(layer_param);
     layer_weight_2.SetUp(mybottom, this->blob_top_vec_);
@@ -227,7 +235,9 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     Dtype refloss = 0;
     const Dtype *bot0 = blob_bottom_data_->cpu_data();
     for(int c = 0; c < blob_bottom_data_->count(); c++) {
-        refloss += fabs(bot0[c]);
+        if(fabs(bot0[c]) >= plateau) {
+          refloss += fabs(bot0[c]);
+        }
     }
     refloss /= (Dtype)blob_bottom_data_->num();
     
@@ -287,8 +297,22 @@ TYPED_TEST(L1LossLayerTest, TestForward_values) {
       LOG(INFO) << "Skipping CPU test";
       return;
   }
-  this->TestForward_values();
-  this->TestForward_values_singleblob();
+  this->TestForward_values(0);
+  this->TestForward_values_singleblob(0);
+}
+
+TYPED_TEST(L1LossLayerTest, TestForward_plateau) {
+  if(Caffe::mode()==Caffe::CPU)
+  {
+      LOG(INFO) << "Skipping CPU test";
+      return;
+  }
+  this->TestForward_values(1.0);
+  /*this->TestForward_values(0.5);
+  this->TestForward_values(5.0);
+  this->TestForward_values_singleblob(1.0);
+  this->TestForward_values_singleblob(1.3);
+  this->TestForward_values_singleblob(2.5);*/
 }
 
 TYPED_TEST(L1LossLayerTest, TestForward_values_l2) {
