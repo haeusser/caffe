@@ -146,7 +146,7 @@ void ResampleLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   float fx = float(bottomwidth)/float(topwidth);
   float fy = float(bottomheight)/float(topheight);
 
-  int botsize = bottomwidth*bottomheight*bottomchannels*bottomnum;
+  //int botsize = bottomwidth*bottomheight*bottomchannels*bottomnum;
   int topsize = topwidth*topheight*topchannels*bottomnum;
   int topchannelsize = topwidth*topheight;
   int botchannelsize = bottomwidth*bottomheight;

@@ -55,8 +55,11 @@ void ImgWriterLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
     DIR* dir = opendir(this->layer_param_.writer_param().folder().c_str());
     if (dir)
         closedir(dir);
-    else if (ENOENT == errno)
-        system((std::string("mkdir -p ")+this->layer_param_.writer_param().folder()).c_str());
+    else if (ENOENT == errno) {
+        std::string cmd("mkdir -p " + this->layer_param_.writer_param().folder());
+        int retval = system(cmd.c_str());
+        (void)retval;
+    }
 }
 
 template <typename Dtype>

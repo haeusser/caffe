@@ -127,8 +127,8 @@ void DevicePair::compute(const vector<int> devices, vector<DevicePair>* pairs) {
 
   // Group GPUs by board
   for (int d = 0; d < remaining_depth; ++d) {
-    for (int i = 0; i < remaining.size(); ++i) {
-      for (int j = i + 1; j < remaining.size(); ++j) {
+    for (uint i = 0; i < remaining.size(); ++i) {
+      for (uint j = i + 1; j < remaining.size(); ++j) {
         cudaDeviceProp a, b;
         CUDA_CHECK(cudaGetDeviceProperties(&a, remaining[i]));
         CUDA_CHECK(cudaGetDeviceProperties(&b, remaining[j]));
@@ -144,7 +144,7 @@ void DevicePair::compute(const vector<int> devices, vector<DevicePair>* pairs) {
     }
   }
   ostringstream s;
-  for (int i = 0; i < remaining.size(); ++i) {
+  for (uint i = 0; i < remaining.size(); ++i) {
     s << (i ? ", " : "") << remaining[i];
   }
   DLOG(INFO) << "GPUs paired by boards, remaining: " << s.str();
@@ -152,8 +152,8 @@ void DevicePair::compute(const vector<int> devices, vector<DevicePair>* pairs) {
   // Group by P2P accessibility
   remaining_depth = ceil(log2(remaining.size()));
   for (int d = 0; d < remaining_depth; ++d) {
-    for (int i = 0; i < remaining.size(); ++i) {
-      for (int j = i + 1; j < remaining.size(); ++j) {
+    for (uint i = 0; i < remaining.size(); ++i) {
+      for (uint j = i + 1; j < remaining.size(); ++j) {
         int access;
         CUDA_CHECK(
             cudaDeviceCanAccessPeer(&access, remaining[i], remaining[j]));
@@ -167,7 +167,7 @@ void DevicePair::compute(const vector<int> devices, vector<DevicePair>* pairs) {
     }
   }
   s.str("");
-  for (int i = 0; i < remaining.size(); ++i) {
+  for (uint i = 0; i < remaining.size(); ++i) {
     s << (i ? ", " : "") << remaining[i];
   }
   DLOG(INFO) << "GPUs paired by P2P access, remaining: " << s.str();
@@ -175,7 +175,7 @@ void DevicePair::compute(const vector<int> devices, vector<DevicePair>* pairs) {
   // Group remaining
   remaining_depth = ceil(log2(remaining.size()));
   for (int d = 0; d < remaining_depth; ++d) {
-    for (int i = 0; i < remaining.size(); ++i) {
+    for (uint i = 0; i < remaining.size(); ++i) {
       pairs->push_back(DevicePair(remaining[i], remaining[i + 1]));
       DLOG(INFO) << "Remaining pair: " << remaining[i] << ":"
                  << remaining[i + 1];
@@ -189,9 +189,9 @@ void DevicePair::compute(const vector<int> devices, vector<DevicePair>* pairs) {
   pairs->insert(pairs->begin(), DevicePair(-1, remaining[0]));
 
   CHECK(pairs->size() == devices.size());
-  for (int i = 0; i < pairs->size(); ++i) {
+  for (uint i = 0; i < pairs->size(); ++i) {
     CHECK((*pairs)[i].parent() != (*pairs)[i].device());
-    for (int j = i + 1; j < pairs->size(); ++j) {
+    for (uint j = i + 1; j < pairs->size(); ++j) {
       CHECK((*pairs)[i].device() != (*pairs)[j].device());
     }
   }

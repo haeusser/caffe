@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
     int n = bp::len((ret));
     
     std::cout << "Len: " << n << std::endl;
-    for(unsigned int i=0; i<n; i++){
+    for(unsigned int i=0; i<(uint)n; i++){
       string str = boost::python::extract<string>((ret)[i]);
       std::cout << "String: " << str << std::endl;
     }

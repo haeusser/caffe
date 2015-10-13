@@ -214,7 +214,7 @@ void TimingMonitor::collapseHistories()
     {
         std::vector<double>& list = it->second;
         double total = 0;
-        for(int i=0; i<list.size(); i++)
+        for(uint i=0; i<list.size(); i++)
             total += list[i];
         measures[it->first] = total / double(list.size());
 
