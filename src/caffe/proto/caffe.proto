@@ -263,13 +263,14 @@ message SolverParameter {
   
   optional string param_file = 3007 [default = ""]; // Don't need to set this. It's done automatically
   
-  optional int32 log_interval = 2001 [default = 10];  // log per this number of iterations (simple log)
-  optional int32 viz_interval = 2002 [default = 50];  // log visualization per this number of iterations (net blobs snapshot)
-  
+  //optional int32 log_interval = 2001 [default = 10];  // log per this number of iterations (simple log)
+  //optional int32 viz_interval = 2002 [default = 50];  // log visualization per this number of iterations (net blobs snapshot)
+  optional int32 log_interval = 2001 [default = 10000000];  // log per this number of iterations (simple log)
+  optional int32 viz_interval = 2002 [default = 10000000];  // log visualization per this number of iterations (net blobs snapshot)
+
   optional string se_index_blob = 2003 [default = "sample_index"];  // the blob that contains the index for the sample
   optional string se_error_blob = 2004 [default = "epe"];  // the blob that contains the error for the sample
-  optional int32 se_interval = 2005 [default = 0];  // number of iterations after which the errors will be sent to the Net
-  
+  optional int32 se_interval = 2005 [default = 0];  // number of iterations after which the errors will be sent to the Net  
 }
 
 // A message that stores the solver snapshots
