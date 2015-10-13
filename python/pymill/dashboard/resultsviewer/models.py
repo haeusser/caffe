@@ -14,6 +14,7 @@ class Results(models.Model):
     iteration = models.IntegerField(verbose_name="Iteration")
     dataset = models.TextField(blank=True, null=True, verbose_name="Dataset")
     measure = models.TextField(blank=True, null=True, verbose_name="Error Measure")
+    position = models.TextField(blank=True, null=True, verbose_name="Position")
     value = models.FloatField(verbose_name="Error Value")
 
     class Meta:

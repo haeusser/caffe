@@ -2,36 +2,38 @@ from django.shortcuts import render
 from django_tables2   import RequestConfig
 from resultsviewer.models  import Results
 from resultsviewer.tables  import ResultsTable
-import sqlite3 as lite
-
-"""
-def people(request):
-    table = PersonTable(Person.objects.all())
-    RequestConfig(request).configure(table)
-    return render(request, 'people.html', {'table': table})
-"""
-
+from .forms import MeasureSelectorForm
 def results(request):
     queryset = Results.objects.using('results')
     table = ResultsTable(queryset.all())
+
+
     best = queryset.order_by('value')[0]
     best_net = best.networkname
     best_dataset = best.dataset
     best_value = best.value
     best_measure = best.measure
-    RequestConfig(request).configure(table)
-    """
-    dbPath = '/home/haeusser/libs/hackathon-caffe2/python/pymill/test/results/db.sqlite'
-    conn = lite.connect(dbPath)
-    query = ''  # TODO set to live DB
-    try:
-        conn.row_factory = lite.Row
-        cur = conn.cursor(lite.Cursor)
-        cur.execute('SELECT * FROM results')
-        query = cur.fetchall()
-    finally:
-        conn.close()
-    """
 
+    measures = [x.values() for x in queryset.all().values('measure').distinct()]
+
+    RequestConfig(request, paginate=False).configure(table)
+
+    if request.method == 'GET':
+        measure_selector_form = MeasureSelectorForm()
+        selected_measure = 'none'
+
+    if request.method == 'POST':
+        if 'selected_measure' in request.POST:
+            selected_measure = request.POST['selected_measure']
+            measure_selector_form = MeasureSelectorForm(request.POST)
+            if not request.POST['selected_measure'] == 'all':
+                table = ResultsTable(queryset.filter(measure=selected_measure).all())
+                #table.exclude += ('measure',)
+            else:
+                table = ResultsTable(queryset.all())
+
+
+    table.exclude += ('id',)
+    table.order_by = 'value'
 
     return render(request, 'results.html', locals()) # {'table': table})
