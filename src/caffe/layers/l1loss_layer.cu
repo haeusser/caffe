@@ -48,6 +48,14 @@ __global__ void MaskPlateauValues(const int n, const Dtype* in, Dtype* out, Dtyp
 } 
 
 template <typename Dtype>
+__global__ void KillSmallValues(const int n, Dtype* out, Dtype threshold) {
+  CUDA_KERNEL_LOOP(index, n) {
+    out[index] = out[index] < threshold ? Dtype(0) : out[index];
+  }
+}
+
+
+template <typename Dtype>
 void L1LossLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top)
 {
@@ -75,30 +83,41 @@ void L1LossLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     normalize_coeff_ = num;
   }
   
-  //diffptr->print("DIFF");
-  //mask_.print("MASK1");
-    
-  // Mask plateau:
-  if(this->layer_param_.l1_loss_param().plateau() > 0) {
-    MaskPlateauValues<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, diffptr->gpu_data(), mask_.mutable_gpu_data(), this->layer_param_.l1_loss_param().plateau());
-    CUDA_POST_KERNEL_CHECK;
-  }
-  
-  //mask_.print("MASK2");
-  
-  // set masked (NaNs, plateau) to zero
-  KillMasked<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, mask_.gpu_data(), diffptr->mutable_gpu_data());
-  CUDA_POST_KERNEL_CHECK;
-  
   if (this->layer_param_.l1_loss_param().l2_per_location()) {
+    // set masked (NaNs only) to zero
+    KillMasked<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
+          count, mask_.gpu_data(), diffptr->mutable_gpu_data());
+    CUDA_POST_KERNEL_CHECK;
+    
     square_layer_->Forward(diff_top_vec_, square_top_vec_);
     sum_layer_->Forward(square_top_vec_, sum_top_vec_);
+    
+    // Mask plateau:
+    if(this->layer_param_.l1_loss_param().plateau() > 0) {
+      float plateau_val_squared = this->layer_param_.l1_loss_param().plateau() * this->layer_param_.l1_loss_param().plateau();
+      KillSmallValues<Dtype><<<CAFFE_GET_BLOCKS(sum_output_.count()), CAFFE_CUDA_NUM_THREADS>>>(
+          sum_output_.count(), sum_output_.mutable_gpu_data(), plateau_val_squared);
+      CUDA_POST_KERNEL_CHECK;
+    }
+    
     sqrt_layer_->Forward(sum_top_vec_, sqrt_top_vec_);
     caffe_gpu_dot(sqrt_output_.count(), sqrt_output_.gpu_data(), sign_.gpu_data(), &dot);
   }
   else {    
+    // Mask plateau:
+    if(this->layer_param_.l1_loss_param().plateau() > 0) {
+      MaskPlateauValues<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
+          count, diffptr->gpu_data(), mask_.mutable_gpu_data(), this->layer_param_.l1_loss_param().plateau());
+      CUDA_POST_KERNEL_CHECK;
+    }
+    
+    //mask_.print("MASK2");
+    
+    // set masked (NaNs, plateau) to zero
+    KillMasked<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
+          count, mask_.gpu_data(), diffptr->mutable_gpu_data());
+    CUDA_POST_KERNEL_CHECK;
+    
     ComputeSign<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, diffptr->gpu_data(), sign_.mutable_gpu_data());
     CUDA_POST_KERNEL_CHECK;
