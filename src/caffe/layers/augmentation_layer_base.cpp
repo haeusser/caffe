@@ -378,7 +378,9 @@ void AugmentationLayerBase<Dtype>::array_to_coeff(const Dtype* in, AugmentationC
   }
 }
 
-template class AugmentationLayerBase<float>;
-template class AugmentationLayerBase<double>;
+
+INSTANTIATE_CLASS(AugmentationLayerBase);
+// template class AugmentationLayerBase<float>;
+// template class AugmentationLayerBase<double>;
 
 }  // namespace caffe

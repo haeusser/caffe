@@ -11,12 +11,12 @@ const void* dataType<float>::one =
 const void* dataType<float>::zero =
     static_cast<void *>(&dataType<float>::zeroval);
 
-double dataType<double>::oneval = 1.0;
-double dataType<double>::zeroval = 0.0;
-const void* dataType<double>::one =
-    static_cast<void *>(&dataType<double>::oneval);
-const void* dataType<double>::zero =
-    static_cast<void *>(&dataType<double>::zeroval);
+// double dataType<double>::oneval = 1.0;
+// double dataType<double>::zeroval = 0.0;
+// const void* dataType<double>::one =
+//     static_cast<void *>(&dataType<double>::oneval);
+// const void* dataType<double>::zero =
+//     static_cast<void *>(&dataType<double>::zeroval);
 
 }  // namespace cudnn
 }  // namespace caffe

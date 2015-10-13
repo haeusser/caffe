@@ -38,7 +38,7 @@ class MultiDeviceTest : public ::testing::Test {
   virtual ~MultiDeviceTest() {}
 };
 
-typedef ::testing::Types<float, double> TestDtypes;
+typedef ::testing::Types<float/*, double*/> TestDtypes;
 
 template <typename TypeParam>
 struct CPUDevice {
@@ -52,8 +52,8 @@ class CPUDeviceTest : public MultiDeviceTest<CPUDevice<Dtype> > {
 
 #ifdef CPU_ONLY
 
-typedef ::testing::Types<CPUDevice<float>,
-                         CPUDevice<double> > TestDtypesAndDevices;
+typedef ::testing::Types<CPUDevice<float>/*,
+                         CPUDevice<double>*/ > TestDtypesAndDevices;
 
 #else
 
@@ -67,8 +67,8 @@ template <typename Dtype>
 class GPUDeviceTest : public MultiDeviceTest<GPUDevice<Dtype> > {
 };
 
-typedef ::testing::Types<CPUDevice<float>, CPUDevice<double>,
-                         GPUDevice<float>, GPUDevice<double> >
+typedef ::testing::Types<CPUDevice<float>, /*CPUDevice<double>,*/
+                         GPUDevice<float> /*, GPUDevice<double>*/ >
                          TestDtypesAndDevices;
 
 #endif

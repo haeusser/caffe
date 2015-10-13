@@ -397,7 +397,7 @@ endif
 	py mat py$(PROJECT) mat$(PROJECT) proto runtest \
 	superclean supercleanlist supercleanfiles warn everything
 
-all: lib tools examples
+all: lib tools #examples
 
 lib: $(STATIC_NAME) $(DYNAMIC_NAME)
 
