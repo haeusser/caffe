@@ -34,7 +34,7 @@ __global__ void WarpData(const int nthreads, const int num, const int channels, 
     float xpos = (float)(x) + flow[width*(height*(2*n+0) + y) + x];
     float ypos = (float)(y) + flow[width*(height*(2*n+1) + y) + x];
     
-    if (xpos > 0. && xpos <= width-1.01 && ypos > 0. && ypos <= height-1.01) {      
+    if (xpos > 0.f && xpos <= width-1.01f && ypos > 0.f && ypos <= height-1.01f) {      
       // Get interpolated sample
       float tlx = floor(xpos);
       float tly = floor(ypos);

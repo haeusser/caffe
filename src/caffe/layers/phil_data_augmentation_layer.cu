@@ -96,11 +96,11 @@ __global__ void ColorContrastAugmentation(const int nthreads, const int num, con
           mean_out += rgb[c];
         }
         
-        float brightness_coeff = mean_in / (mean_out + 0.01);
+        float brightness_coeff = mean_in / (mean_out + 0.01f);
         
         for (int c=0;c<3;++c) {
           //compensate brightness
-          rgb[c] = clamp(rgb[c] * brightness_coeff, 0., 1.);
+          rgb[c] = clamp(rgb[c] * brightness_coeff, 0.f, 1.f);
           
           // do gamma change
           rgb[c] = pow(rgb[c],chromatic[n].gamma);
@@ -112,7 +112,7 @@ __global__ void ColorContrastAugmentation(const int nthreads, const int num, con
           rgb[c] = 0.5f + (rgb[c]-0.5f)*chromatic[n].contrast;
 
           // write sample to destination
-          dest_data[data_index[c]] = clamp(rgb[c], 0., max_multiplier);
+          dest_data[data_index[c]] = clamp(rgb[c], 0.f, max_multiplier);
         }
     }
 }
@@ -214,7 +214,7 @@ __global__ void ChromaticEigenAugmentation(const int nthreads, const int num, co
         Dtype eig [3];
         for (int c=0; c<channels; c++) {
             eig[c] = eigen->eigvec[3*c] * rgb[0] + eigen->eigvec[3*c+1] * rgb[1] + eigen->eigvec[3*c+2] * rgb[2];
-            if ( eigen->max_abs_eig[c] > 1e-2 ) {
+            if ( eigen->max_abs_eig[c] > 1e-2f ) {
                 eig[c] = eig[c] / eigen->max_abs_eig[c];
                 if (c==0) {
                     eig[c] = copysign(pow(abs(eig[c]),(Dtype)chromatic[n].pow_nomean0),eig[c]);
@@ -238,16 +238,16 @@ __global__ void ChromaticEigenAugmentation(const int nthreads, const int num, co
             eig[c] = eig[c] + eigen->mean_eig[c];
 
         // doing the withmean stuff
-        if ( eigen->max_abs_eig[0] > 1e-2) {
+        if ( eigen->max_abs_eig[0] > 1e-2f) {
                 eig[0] = copysign(pow(abs(eig[0]),(Dtype)chromatic[n].pow_withmean0),eig[0]);
                 eig[0] = eig[0] + chromatic[n].add_withmean0;
                 eig[0] = eig[0] * chromatic[n].mult_withmean0;
         }
         s = sqrt(eig[1]*eig[1] + eig[2]*eig[2]);
         s1 = s;
-        if (s > 1e-2) {
+        if (s > 1e-2f) {
                 s1 = pow(s1, (Dtype)chromatic[n].pow_withmean1);
-                s1 = max(s1 + chromatic[n].add_withmean1, 0.);
+                s1 = max(s1 + chromatic[n].add_withmean1, 0.f);
                 s1 = s1 * chromatic[n].mult_withmean1;
         }
         if(chromatic[n].col_angle!=0)
@@ -259,24 +259,24 @@ __global__ void ChromaticEigenAugmentation(const int nthreads, const int num, co
             eig[2] = temp2;
         }
         for (int c=0; c<channels; c++) {
-            if ( eigen->max_abs_eig[c] > 1e-2 )
+            if ( eigen->max_abs_eig[c] > 1e-2f )
                 eig[c] = eig[c] * eigen->max_abs_eig[c];
         }
-        if (eigen->max_l > 1e-2) {
+        if (eigen->max_l > 1e-2f) {
             l1 = sqrt(eig[0]*eig[0] + eig[1]*eig[1] + eig[2]*eig[2]);
             l1 = l1 / eigen->max_l;
         }
-        if (s > 1e-2) {
+        if (s > 1e-2f) {
             eig[1] = eig[1] / s * s1;
             eig[2] = eig[2] / s * s1;
         }
-        if (eigen->max_l > 1e-2) {
+        if (eigen->max_l > 1e-2f) {
             l = sqrt(eig[0]*eig[0] + eig[1]*eig[1] + eig[2]*eig[2]);
             l1 = pow(l1, (Dtype)chromatic[n].lmult_pow);
-            l1 = _max(l1 + chromatic[n].lmult_add, 0.);
+            l1 = _max(l1 + chromatic[n].lmult_add, 0.f);
             l1 = l1 * chromatic[n].lmult_mult;
             l1 = l1 * eigen->max_l;
-            if (l > 1e-2)
+            if (l > 1e-2f)
                 for (int c=0; c<channels; c++) {
                     eig[c] = eig[c] / l * l1;
                     if (eig[c] > eigen->max_abs_eig[c])
@@ -314,7 +314,7 @@ __global__ void ApplyEffects( const int nthreads, const int num,
             sample-=effects[n].shadow_strength;
         }
 
-        data[index] = clamp(sample, 0., max_multiplier);
+        data[index] = clamp(sample, 0.f, max_multiplier);
     }
 }
 
@@ -370,7 +370,7 @@ void PhilDataAugmentationLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& b
 
         Dtype discount_coeff = discount_coeff_schedule_.initial_coeff() +
                 ( discount_coeff_schedule_.final_coeff() - discount_coeff_schedule_.initial_coeff()) *
-                (Dtype(2) / (Dtype(1) + exp(- 1.0986 * num_iter / discount_coeff_schedule_.half_life())) - Dtype(1));
+                (Dtype(2) / (Dtype(1) + exp((Dtype)-1.0986 * num_iter / discount_coeff_schedule_.half_life())) - Dtype(1));
         //   LOG(INFO) << "num_iter=" << num_iter << ", discount_coeff=" << discount_coeff;
 
         if(!input_params_) {

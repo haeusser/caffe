@@ -26,7 +26,7 @@ void ScaleGradientLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   } else  
     coeff = discount_coeff_schedule_.initial_coeff() *
                 exp(( log(discount_coeff_schedule_.final_coeff() /discount_coeff_schedule_.initial_coeff()) ) *
-                (Dtype(2) / (Dtype(1) + exp(- 1.0986 * iter_ / discount_coeff_schedule_.half_life())) - Dtype(1)));
+                (Dtype(2) / (Dtype(1) + exp((Dtype)-1.0986 * iter_ / discount_coeff_schedule_.half_life())) - Dtype(1)));
                 
   caffe_gpu_axpby<Dtype>(top[0]->count(), coeff, top[0]->gpu_diff(),
     Dtype(0), bottom[0]->mutable_gpu_diff());

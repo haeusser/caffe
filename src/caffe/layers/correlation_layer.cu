@@ -29,7 +29,7 @@ __global__ void blob_rearrange_kernel2(const Dtype* in, Dtype* out, int num, int
     int ch = blockIdx.y;
     int n  = blockIdx.z;
 
-    float value=in[(n*channels+ch)*widthheight+xy];
+    Dtype value=in[(n*channels+ch)*widthheight+xy];
 
     __syncthreads();
 

@@ -24,7 +24,7 @@ void GenerateAugmentationParametersLayer<Dtype>::Forward_gpu(const vector<Blob<D
   
   Dtype discount_coeff = discount_coeff_schedule_.initial_coeff() + 
       (discount_coeff_schedule_.final_coeff() - discount_coeff_schedule_.initial_coeff()) * (Dtype(2) /
-      (Dtype(1) + exp(- 1.0986 * num_iter_ / discount_coeff_schedule_.half_life())) - Dtype(1));
+      (Dtype(1) + exp((Dtype)-1.0986 * num_iter_ / discount_coeff_schedule_.half_life())) - Dtype(1));
       
 //   LOG(INFO) << "num_iter=" << num_iter_ << ", discount_coeff=" << discount_coeff;
   

@@ -21,7 +21,7 @@ static __device__ __forceinline__ float bicubicCoeff(float x_)
 
 static __device__ __forceinline__ float boxCoeff(float x)
 {
-    if (-0.5 <= x  && x<0.5) return 1.0;
+    if (-0.5f <= x  && x<0.5f) return 1.0f;
     return 0;
 }
 
@@ -59,8 +59,8 @@ __global__ void InterpolationKernel(
         int x_out = (index % out_channelsize) % out_width;
         int y_out = (index % out_channelsize) / out_width;
 
-        float x_in = x_out * fx + fy / 2.0 - 0.5;
-        float y_in = y_out * fy + fx / 2.0 - 0.5;
+        float x_in = x_out * fx + fy / (Dtype)2.0 - (Dtype)0.5;
+        float y_in = y_out * fy + fx / (Dtype)2.0 - (Dtype)0.5;
 
         int x_in_round = round(x_in);
         int y_in_round = round(y_in);
@@ -68,10 +68,10 @@ __global__ void InterpolationKernel(
         Dtype sum=0;
         Dtype wsum=0;
 
-        float ax = 1.0 / (antialias ? fx : 1.0);
-        float ay = 1.0 / (antialias ? fy : 1.0);
-        int rx = (fx < 1.0) ? 2 : ceil(float(kernel_width)/ax);
-        int ry = (fy < 1.0) ? 2 : ceil(float(kernel_width)/ay);
+        float ax = (Dtype)1.0 / (antialias ? fx : (Dtype)1.0);
+        float ay = (Dtype)1.0 / (antialias ? fy : (Dtype)1.0);
+        int rx = (fx < (Dtype)1.0) ? (Dtype)2 : ceil(float(kernel_width)/ax);
+        int ry = (fy < (Dtype)1.0) ? (Dtype)2 : ceil(float(kernel_width)/ay);
         
         for(int y=y_in_round-ry; y<=y_in_round+ry; y++)
             for(int x=x_in_round-rx; x<=x_in_round+rx; x++)
@@ -114,8 +114,8 @@ __global__ void NearestNeighborKernel(
         int x_out = (index % out_channelsize) % out_width;
         int y_out = (index % out_channelsize) / out_width;
 
-        float x_in = x_out * fx + fy / 2.0 - 0.5;
-        float y_in = y_out * fx + fy / 2.0 - 0.5;
+        float x_in = x_out * fx + fy / (Dtype)2.0 - (Dtype)0.5;
+        float y_in = y_out * fx + fy / (Dtype)2.0 - (Dtype)0.5;
 
         int x_in_round = round(x_in);
         int y_in_round = round(y_in);

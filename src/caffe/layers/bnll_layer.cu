@@ -12,8 +12,8 @@ template <typename Dtype>
 __global__ void BNLLForward(const int n, const Dtype* in, Dtype* out) {
   CUDA_KERNEL_LOOP(index, n) {
     out[index] = in[index] > 0 ?
-        in[index] + log(1. + exp(-in[index])) :
-        log(1. + exp(in[index]));
+        in[index] + log((Dtype)1. + exp(-in[index])) :
+        log((Dtype)1. + exp(in[index]));
   }
 }
 
@@ -34,7 +34,7 @@ __global__ void BNLLBackward(const int n, const Dtype* in_diff,
     const Dtype* in_data, Dtype* out_diff) {
   CUDA_KERNEL_LOOP(index, n) {
     Dtype expval = exp(min(in_data[index], Dtype(kBNLL_THRESHOLD)));
-    out_diff[index] = in_diff[index] * expval / (expval + 1.);
+    out_diff[index] = in_diff[index] * expval / (expval + (Dtype)1.);
   }
 }
 
