@@ -1,4 +1,2 @@
-python manage.py makemigrations resultsviewer
-python manage.py migrate
-python manage.py runserver
+./manage.py runserver 0.0.0.0:8000
 
