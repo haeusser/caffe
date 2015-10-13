@@ -33,7 +33,7 @@ __global__ void KillNaNs(const int n, const Dtype* in, Dtype* out) {
 template <typename Dtype>
 __global__ void KillMasked(const int n, const Dtype* in, Dtype* out) {
   CUDA_KERNEL_LOOP(index, n) {
-    out[index] = in[index]>0.5 ? out[index] : Dtype(0);
+    out[index] = in[index] > Dtype(0.5) ? out[index] : Dtype(0);
 //     out[index] = out[index]==out[index] ? out[index] : Dtype(0);
 //     out[index] = out[index]>1e3 ? 0 : out[index];
 //     out[index] = out[index]<-1e3 ? 0 : out[index];
@@ -43,7 +43,7 @@ __global__ void KillMasked(const int n, const Dtype* in, Dtype* out) {
 template <typename Dtype>
 __global__ void MaskPlateauValues(const int n, const Dtype* in, Dtype* out, Dtype plateau) {
   CUDA_KERNEL_LOOP(index, n) {
-    if(in[index] < plateau) out[index] = Dtype(0); // Mask out plateau values and keep other as is
+    if(fabs(in[index]) < plateau) out[index] = Dtype(0); // Mask out plateau values and keep other as is
   }
 } 
 
@@ -75,12 +75,17 @@ void L1LossLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     normalize_coeff_ = num;
   }
   
+  //diffptr->print("DIFF");
+  //mask_.print("MASK1");
+    
   // Mask plateau:
   if(this->layer_param_.l1_loss_param().plateau() > 0) {
     MaskPlateauValues<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, diffptr->gpu_data(), mask_.mutable_gpu_data(), this->layer_param_.l1_loss_param().plateau());
     CUDA_POST_KERNEL_CHECK;
   }
+  
+  //mask_.print("MASK2");
   
   // set masked (NaNs, plateau) to zero
   KillMasked<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
