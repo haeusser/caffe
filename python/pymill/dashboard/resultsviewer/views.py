@@ -6,23 +6,17 @@ from .forms import OptionsForm
 def results(request):
     queryset = Results.objects.using('results')
 
-    best = queryset.order_by('value')[0]
-    best_net = best.networkname
-    best_dataset = best.dataset
-    best_value = best.value
-    best_measure = best.measure
-
     measures = [x.values() for x in queryset.all().values('measure').distinct()]
 
     if request.method == 'GET':
-        measure_selector_form = OptionsForm()
+        measure_selector_form = OptionsForm(measures=measures)
         selected_measure = 'none'
 
     if request.method == 'POST':
         selected_options = request.POST
         if 'selected_measure' in request.POST:
             selected_measure = request.POST['selected_measure']
-            measure_selector_form = OptionsForm(request.POST)
+            measure_selector_form = OptionsForm(request.POST, measures=measures)
             if not request.POST['selected_measure'] == 'all':
                 queryset = queryset.filter(measure=selected_measure)
                 #table.exclude += ('measure',)
@@ -38,5 +32,11 @@ def results(request):
     RequestConfig(request, paginate=False).configure(table)
     table.exclude += ('id',)
     #table.order_by = 'value'
+
+    best = queryset.order_by('value')[0]
+    best_net = best.networkname
+    best_dataset = best.dataset
+    best_value = best.value
+    best_measure = best.measure
 
     return render(request, 'results.html', locals()) # {'table': table})
