@@ -104,3 +104,7 @@ Makefile.config-mayern
 
 # allow small testing db
 !python/pymill/test/mnist/*
+
+# results dashboard related stuff
+python/pymill/dashboard/resultsviewer/migrations/*
+

@@ -1,0 +1,24 @@
+{% load render_table from django_tables2 %}
+<!doctype html>
+<html>
+    <head>
+        <title>SceneFlowNet Results Dashboard</title>
+        <link rel="stylesheet" href="{{ STATIC_URL }}django_tables2/themes/paleblue/css/screen.css" />
+    </head>
+    <body>
+    
+    <h1><strong>SceneFlowNet Results Dashboard</strong></h1>
+
+<p><strong>Best performing net:</strong>
+
+<strong>{{ best_net }} </strong>on <strong>{{ best_dataset }}</strong> with <strong>{{ best_value }}</strong> ({{ best_measure }}).</p>
+
+{% render_table table %}
+
+<p>Support: Philip <code>Haeusser@cs.tum.edu</code></p>
+
+    
+    
+    </body>
+</html>
+
