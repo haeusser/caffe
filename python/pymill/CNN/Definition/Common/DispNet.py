@@ -87,7 +87,7 @@ def standardDeployWithMeanBug(NetworkBlock, generateNet=True):
         blobs.predict_disp_final  = net.scale(blobs.predict_disp_resize, rescale_coeff_x)
 
         epe_loss = Layers.L1Loss(net, (blobs.disp_gt, blobs.predict_disp_final), nout=1, loss_weight=(1,), name='epe', l2_per_location=False, normalize_by_num_entries=True, epsilon=0)
-        epe_loss.setName('epe')
+        epe_loss.setName('disp_epe')
         epe_loss.enableOutput()
 
         return blobs.predict_disp_final
@@ -168,8 +168,8 @@ def standardDeploy(NetworkBlock, generateNet=True):
         blobs.predict_disp_resize = net.resample(blobs.predict_disp2, width=width, height=height, reference=None, type='LINEAR', antialias=True)
         blobs.predict_disp_final  = net.scale(blobs.predict_disp_resize, rescale_coeff_x)
 
-        epe_loss = Layers.L1Loss(net, (blobs.disp_gt, blobs.predict_disp_final), nout=1, loss_weight=(1,), name='epe', l2_per_location=False, normalize_by_num_entries=True, epsilon=0)
-        epe_loss.setName('epe')
+        epe_loss = Layers.L1Loss(net, (blobs.disp_gt, blobs.predict_disp_final), nout=1, loss_weight=(1,), name='disp_epe', l2_per_location=False, normalize_by_num_entries=True, epsilon=0)
+        epe_loss.setName('disp_epe')
         epe_loss.enableOutput()
 
         return blobs.predict_disp_final

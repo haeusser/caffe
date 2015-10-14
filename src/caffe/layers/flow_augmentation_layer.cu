@@ -44,8 +44,12 @@ __global__ void WarpData(const int nthreads, const int num, const int height, co
     ypos1 = x * transMat1->t1 + y * transMat1->t3 + transMat1->t5;
 
     // Step 2: Apply flow field
-    int srcIdxOffx = width*(height*(2*n+0) + (int)(ypos1+0.5)) + (int)(xpos1+0.5);
-    int srcIdxOffy = width*(height*(2*n+1) + (int)(ypos1+0.5)) + (int)(xpos1+0.5);
+    int srcIdxOffx = width*(height*(2*n+0) + 
+                     (int)(ypos1+(Dtype)0.5)) + 
+                     (int)(xpos1+(Dtype)0.5);
+    int srcIdxOffy = width*(height*(2*n+1) + 
+                     (int)(ypos1+(Dtype)0.5)) + 
+                     (int)(xpos1+(Dtype)0.5);
     
     xpos2 = xpos1 + src_data[min(srcIdxOffx,src_count)];
     ypos2 = ypos1 + src_data[min(srcIdxOffy,src_count)];

@@ -173,6 +173,8 @@ class NamedBlobs(object):
 
     def dict(self): return self.members
 
+    def blobs(self): return self.members.values()
+
     def __setattr__(self, key, value):
         if key in self.members:
             value.makeSibling(self.members[key])
@@ -181,6 +183,94 @@ class NamedBlobs(object):
 
     def __getattr__(self, item):
         return self.members[item]
+
+    def copyNamesTo(self, other):
+        if isinstance(other, Network):
+            other = other.namedBlobs()
+
+        for key, value in self.members.iteritems():
+            setattr(other, key, value)
+
+    def __iter__(self):
+        return iter(self.members.keys())
+
+    def iteritems(self):
+        return self.dict().iteritems()
+
+    def __getitem__(self, index):
+        return getattr(self, index)
+
+    def __setitem__(self, index, value):
+        return setattr(self, index, value)
+
+
+class DataStruct(object):
+    def __init__(self):
+        super(DataStruct, self).__setattr__('_namedBlobs', OrderedDict())
+        super(DataStruct, self).__setattr__('_suffixes', OrderedDict())
+
+        for setName, namedBlobs in self._namedBlobs.iteritems():
+            super(DataStruct, self).__setattr__(setName, namedBlobs)
+
+    def addSet(self, name, suffix=None):
+        if name in self._namedBlobs:
+            raise Exception('stage %s already exists' % name)
+
+        if suffix is None:
+            suffix = '_' + name
+
+        namedBlobs = NamedBlobs()
+        self._namedBlobs[name] = namedBlobs
+        self._suffixes[name] = suffix
+
+        return namedBlobs
+
+    def dict(self):
+        dict = {}
+        for setName, namedBlobs in self._namedBlobs:
+            for name, blob in namedBlobs:
+                dict[name + self._suffixes[setName]] = blob
+        return dict
+
+    def __iter__(self):
+        return iter(self.dict().keys())
+
+    def iteritems(self):
+        return self.dict().iteritems()
+
+    def copyNamesTo(self, other):
+        if isinstance(other, Network):
+            other = other.namedBlobs()
+
+        for setName, namedBlobs in self._namedBlobs.iteritems():
+            for name, blob in namedBlobs.iteritems():
+                other[name + self._suffixes[setName]] = blob
+
+    def __getattr__(self, item):
+        for setName, namedBlobs in self._namedBlobs.iteritems():
+            if item == setName:
+                return namedBlobs
+
+        return self.addSet(item)
+
+    def __setattr__(self, index, value):
+        if not isinstance(value, NamedBlobs):
+            raise Exception('tried to set a member of DataStruct that is not of type NamedBlobs')
+
+        self._namedBlobs[index] = value
+        self._suffixes[index] = '_' + index
+
+    def __getitem__(self, index):
+        return getattr(self, index)
+
+    def __setitem__(self, index, value):
+        return setattr(self, index, value)
+
+    def makeSibling(self, other):
+        for setName, namedBlobs in other._namedBlobs.iteritems():
+            for name, blob in namedBlobs.iteritems():
+                self._namedBlobs[setName][name].makeSibling(blob)
+
 
 class Network(object):
     """A NetSpec contains a set of Tops (assigned directly as attributes).

@@ -74,6 +74,23 @@ class Blob {
   }
   inline int num_axes() const { return shape_.size(); }
   inline int count() const { return count_; }
+  
+  /**
+   * @brief Print out a blob for debugging (for 3D blobs)
+   */
+  inline void print(const char *name) {
+    printf("%s:\n", name);
+    for (int c = 0; c < this->channels(); ++c) {
+      for (int h = 0; h < this->height(); ++h) {
+        for (int w = 0; w < this->width(); ++w) {
+          printf(" %f", 
+                  static_cast<float>(this->cpu_data()[this->offset(0, c, h, w)]));
+        }
+        printf("\n");
+      }
+      printf("---\n");
+    }
+  }
 
   /**
    * @brief Compute the volume of a slice; i.e., the product of dimensions

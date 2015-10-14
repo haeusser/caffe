@@ -337,7 +337,7 @@ __global__ void CorrelateDataBackward0Subtract(const int nthreads, int num, int 
             int idxbot = ((item * pbottomheight + (m)) * pbottomwidth + (l+s2o)) * bottomchannels + n;
             Dtype bot0tmp = bottom0[idxbot]; // bottom0[l+s2o,m,n]
             Dtype bot1tmp = bottom1[idxbot]; // bottom1[l+s2o,m,n]
-            Dtype sign = (bot0tmp >= bot1tmp) ? 1.0 : -1.0;
+            Dtype sign = (bot0tmp >= bot1tmp) ? Dtype(1.0) : Dtype(-1.0);
 
             // Index offset for topdiff in following loops:
             int op = (o+neighborhood_grid_radius); // index [o,p]
@@ -403,7 +403,7 @@ __global__ void CorrelateDataBackward1Subtract(const int nthreads, int num, int 
             int idxbot = ((item * pbottomheight + (m)) * pbottomwidth + (l-s2o)) * bottomchannels + n;
             Dtype bot0tmp = bottom0[idxbot]; // bottom0[l+s2o,m,n]
             Dtype bot1tmp = bottom1[idxbot]; // bottom1[l+s2o,m,n]
-            Dtype sign = (bot0tmp >= bot1tmp) ? -1.0 : 1.0;
+            Dtype sign = (bot0tmp >= bot1tmp) ? Dtype(-1.0) : Dtype(1.0);
 
             // Index offset for topdiff in following loops:
             int op = (o+neighborhood_grid_radius); // index [o,p]

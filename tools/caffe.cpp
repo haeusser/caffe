@@ -92,7 +92,7 @@ static void get_gpus(vector<int>* gpus) {
   } else if (FLAGS_gpu.size()) {
     vector<string> strings;
     boost::split(strings, FLAGS_gpu, boost::is_any_of(","));
-    for (int i = 0; i < strings.size(); ++i) {
+    for (uint i = 0; i < strings.size(); ++i) {
       gpus->push_back(boost::lexical_cast<int>(strings[i]));
     }
   } else {
@@ -111,7 +111,7 @@ int device_query() {
   LOG(INFO) << "Querying GPUs " << FLAGS_gpu;
   vector<int> gpus;
   get_gpus(&gpus);
-  for (int i = 0; i < gpus.size(); ++i) {
+  for (uint i = 0; i < gpus.size(); ++i) {
     caffe::Caffe::SetDevice(gpus[i]);
     caffe::Caffe::DeviceQuery();
   }
@@ -124,10 +124,10 @@ RegisterBrewFunction(device_query);
 void CopyLayers(caffe::Solver<float>* solver, const std::string& model_list) {
   std::vector<std::string> model_names;
   boost::split(model_names, model_list, boost::is_any_of(",") );
-  for (int i = 0; i < model_names.size(); ++i) {
+  for (uint i = 0; i < model_names.size(); ++i) {
     LOG(INFO) << "Finetuning from " << model_names[i];
     solver->net()->CopyTrainedLayersFrom(model_names[i]);
-    for (int j = 0; j < solver->test_nets().size(); ++j) {
+    for (uint j = 0; j < solver->test_nets().size(); ++j) {
       solver->test_nets()[j]->CopyTrainedLayersFrom(model_names[i]);
     }
   }
@@ -179,7 +179,7 @@ int train() {
     Caffe::set_mode(Caffe::CPU);
   } else {
     ostringstream s;
-    for (int i = 0; i < gpus.size(); ++i) {
+    for (uint i = 0; i < gpus.size(); ++i) {
       s << (i ? ", " : "") << gpus[i];
     }
     LOG(INFO) << "Using GPUs " << s.str();
@@ -262,7 +262,7 @@ int test() {
         caffe_net.Forward(bottom_vec, &iter_loss);
     loss += iter_loss;
     int idx = 0;
-    for (int j = 0; j < result.size(); ++j) {
+    for (uint j = 0; j < result.size(); ++j) {
       const float* result_vec = result[j]->cpu_data();
       for (int k = 0; k < result[j]->count(); ++k, ++idx) {
         const float score = result_vec[k];
@@ -280,7 +280,7 @@ int test() {
   }
   loss /= FLAGS_iterations;
   LOG(INFO) << "Loss: " << loss;
-  for (int i = 0; i < test_score.size(); ++i) {
+  for (uint i = 0; i < test_score.size(); ++i) {
     const std::string& output_name = caffe_net.blob_names()[
         caffe_net.output_blob_indices()[test_score_output_id[i]]];
     const float loss_weight = caffe_net.blob_loss_weights()[
@@ -348,7 +348,7 @@ int time() {
     Timer iter_timer;
     iter_timer.Start();
     forward_timer.Start();
-    for (int i = 0; i < layers.size(); ++i) {
+    for (uint i = 0; i < layers.size(); ++i) {
       timer.Start();
       layers[i]->Forward(bottom_vecs[i], top_vecs[i]);
       forward_time_per_layer[i] += timer.MicroSeconds();
@@ -366,7 +366,7 @@ int time() {
       << iter_timer.MilliSeconds() << " ms.";
   }
   LOG(INFO) << "Average time per layer: ";
-  for (int i = 0; i < layers.size(); ++i) {
+  for (uint i = 0; i < layers.size(); ++i) {
     const caffe::string& layername = layers[i]->layer_param().name();
     LOG(INFO) << std::setfill(' ') << std::setw(10) << layername <<
       "\tforward: " << forward_time_per_layer[i] / 1000 /

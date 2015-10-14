@@ -12,6 +12,8 @@ from pymill import Config
 from string import Template
 import uuid
 from Results import Results
+from collections import OrderedDict
+
 
 def caffeBin():
     bin = os.environ['CAFFE_BIN']
@@ -138,13 +140,36 @@ class PythonBackend(BinaryBackend):
 
 
 class Environment:
+    class Measure:
+        def __init__(self, type = None, position=None):
+            self._type = type
+            self._position = position
+
+        def parseFrom(self, line):
+            parts = line.split(':')
+            if len(parts) == 1:
+                self._type = parts[0].strip()
+            elif len(parts) == 2:
+                self._type = parts[0].strip()
+                self._position = parts[1].strip()
+            else:
+                raise Exception('invalid measure: %s' % measure)
+
+        def type(self): return self._type
+
+        def position(self): return self._position
+
+        def __str__(self):
+            if self._position: return self._type + ':' + self._position
+            return self._type
+
     class Parameters:
         def __init__(self, env):
             self._lines = ''
             self._gpuArch = 'any'
             self._env = env
             self._task = None
-            self._measure = None
+            self._measures = []
             self._nameDepth = 1
 
         def read(self, filename):
@@ -153,20 +178,25 @@ class Environment:
             for line in self._lines:
                 line = line.strip()
                 if line.strip() == '': continue
-                key, value = line.split(':')
+                key, value = line.split(':', 1)
                 key = key.strip()
                 value = value.strip()
                 if key == 'gpu-arch':     self._gpuArch = value
                 elif key == 'name':       self._env._name = value
                 elif key == 'task':       self._task = value
-                elif key == 'measure':    self._measure = value
+                elif key == 'measure':
+                    measure = Environment.Measure()
+                    measure.parseFrom(value)
+                    self._measures.append(measure)
                 elif key == 'name-depth': self._nameDepth = int(value)
                 else:
                     raise Exception('invalid entry in params.txt: %s' % key)
 
         def gpuArch(self): return self._gpuArch
-        def task(self): return self._task
-        def measure(self): return self._measure
+        def task(self):
+            if self._task is None: raise Exception('task not set in params.txt')
+            return self._task
+        def measures(self): return self._measures
         def nameDepth(self): return self._nameDepth
 
     def __init__(self, path='.', backend=BinaryBackend(), unattended=False, silent=False):
@@ -196,6 +226,9 @@ class Environment:
 
     def makeScratchDir(self):
         tb.system('mkdir -p %s' % self._scratchDir)
+
+        tb.system('rm -f %s/scratch/current' % self._path)
+        tb.system('ln -s %s %s/scratch/current' % (self._scratchDir, self._path))
 
     def makeJobDir(self):
         tb.system('mkdir -p %s' % self._jobDir)
@@ -352,7 +385,7 @@ class Environment:
         return (stateFile, iter)
 
     def truncateLog(self, startIter):
-        log = Log(self._logFile)
+        log = Log(self._name, self._logFile)
         log.writeUpTo(self._logFile, startIter)
 
     def clean(self, startIter=-1):
@@ -447,6 +480,17 @@ class Environment:
         os.chdir(self._trainDir)
         self._backend.resume(solverFilename=solverFilename, solverstateFilename=stateFile, logFile=self._logFile)
 
+    def _saveTestResults(self, iter, dataset):
+        log = Log(self._name, self._scratchLogFile)
+
+        results = OrderedDict()
+        for measure in self.params().measures():
+            value = log.getAssignment(str(measure))
+            Results(self._path).update(iter, dataset, self.params().task(), measure.type(), measure.position(), value)
+            results[str(measure)] = value
+
+        return results
+
     def test(self, iter, output=False, definition=None, vars={}, num_iter=-1):
         modelFile, iter = self.getModelFile(iter)
 
@@ -481,12 +525,7 @@ class Environment:
                 os.system('cp %s %s' % (self._scratchLogFile, logFile))
 
         if 'dataset' in vars:
-            log = Log(self._name, self._scratchLogFile)
-            measure = self.params().measure()
-            task = self.params().task()
-            task_measure = '%s_%s' %(task, measure)
-            value = log.getAssignment(measure)
-            Results(self._path).update(iter, vars['dataset'], task_measure, value)
+            self._saveTestResults(iter,vars['dataset'])
 
         print 'Iteration was %d' %iter
 
@@ -504,19 +543,15 @@ class Environment:
                 vars['dataset'] = dataset
                 self.test(iter, output, definition, vars)
 
-                log = Log(self._name, self._scratchLogFile)
-                measure = self.params().measure()
-                task = self.params().task()
-                task_measure = '%s_%s' %(task, measure)
-                value = log.getAssignment(measure)
-                results.append((dataset, float(value)))
-                Results(self._path).update(iter, dataset, task_measure, value)
+                values = self._saveTestResults(iter, dataset)
+                results.append((dataset, values))
         finally:
             print
-            print 'Results(%s) for iteration %d:' % (self.params().task(), iter)
+            print 'Results of net %s (%s) for iteration %d:' % (self.name(), self.params().task(), iter)
             print '--------------------------------------------------------------------------------'
             for result in results:
-                print '%30s: %5.3f' % (result[0], result[1])
+                for measure, value in result[1].iteritems():
+                    print '%30s: %15s = %5.3f' % (result[0], measure, value)
             print '--------------------------------------------------------------------------------'
             print
 

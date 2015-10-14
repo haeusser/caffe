@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
   int data_size = 0;
   bool data_size_initialized = false;
 
-  for (int line_id = 0; line_id < lines.size(); ++line_id) {
+  for (uint line_id = 0; line_id < lines.size(); ++line_id) {
     bool status;
     std::string enc = encode_type;
     if (encoded && !enc.size()) {

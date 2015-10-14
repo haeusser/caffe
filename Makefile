@@ -179,7 +179,7 @@ LIBRARIES += glog gflags protobuf leveldb snappy \
 	lmdb boost_system hdf5_hl hdf5 m \
 	opencv_core opencv_highgui opencv_imgproc
 PYTHON_LIBRARIES := boost_python python2.7
-WARNINGS := -Wall -Wno-sign-compare
+WARNINGS := -Wall
 
 ##############################
 # Set build directories
@@ -397,7 +397,7 @@ endif
 	py mat py$(PROJECT) mat$(PROJECT) proto runtest \
 	superclean supercleanlist supercleanfiles warn everything
 
-all: lib tools examples
+all: lib tools #examples
 
 lib: $(STATIC_NAME) $(DYNAMIC_NAME)
 

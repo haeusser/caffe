@@ -315,7 +315,7 @@ def preprocessFile(inFile, outFile, defs={}):
     settings = ''
 
     for key in defs:
-        settings += ' -D%s=%s' % (key, defs[key])
+        settings += ' -D%s=%s' % (key.upper(), defs[key])
 
     incPath = '-I%s' % Config.prototmpInclude
 

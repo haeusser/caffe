@@ -29,7 +29,7 @@ __global__ void blob_rearrange_kernel2(const Dtype* in, Dtype* out, int num, int
     int ch = blockIdx.y;
     int n  = blockIdx.z;
 
-    float value=in[(n*channels+ch)*widthheight+xy];
+    Dtype value=in[(n*channels+ch)*widthheight+xy];
 
     __syncthreads();
 
@@ -337,7 +337,7 @@ __global__ void CorrelateDataBackward0Subtract(const int nthreads, int num, int 
             int idxbot = ((item * pbottomheight + (m+s2p)) * pbottomwidth + (l+s2o)) * bottomchannels + n;
             Dtype bot0tmp = bottom0[idxbot]; // bottom0[l+s2o,m+s2p,n]
             Dtype bot1tmp = bottom1[idxbot]; // bottom1[l+s2o,m+s2p,n]
-            Dtype sign = (bot0tmp >= bot1tmp) ? 1.0 : -1.0;
+            Dtype sign = (bot0tmp >= bot1tmp) ? Dtype(1.0) : Dtype(-1.0);
 
             // Index offset for topdiff in following loops:
             int op = (p+neighborhood_grid_radius) * neighborhood_grid_width + (o+neighborhood_grid_radius); // index [o,p]
@@ -404,7 +404,7 @@ __global__ void CorrelateDataBackward1Subtract(const int nthreads, int num, int 
             int idxbot = ((item * pbottomheight + (m-s2p)) * pbottomwidth + (l-s2o)) * bottomchannels + n;
             Dtype bot0tmp = bottom0[idxbot]; // bottom0[l+s2o,m+s2p,n]
             Dtype bot1tmp = bottom1[idxbot]; // bottom1[l+s2o,m+s2p,n]
-            Dtype sign = (bot0tmp >= bot1tmp) ? -1.0 : 1.0;
+            Dtype sign = (bot0tmp >= bot1tmp) ? Dtype(-1.0) : Dtype(1.0);
 
             // Index offset for topdiff in following loops:
             int op = (p+neighborhood_grid_radius) * neighborhood_grid_width + (o+neighborhood_grid_radius); // index [o,p]

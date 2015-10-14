@@ -291,4 +291,3 @@ def GaussianBernoulli(mean, spread, exp=False, prob=1.0):
       'exp': exp,
       'prob': prob,
     }
-

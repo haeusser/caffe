@@ -16,6 +16,9 @@ class Implementation(OpticalFlow.Method):
         return 'flow'
 
     def computeJobImplementation(self,job):
-        raise Exception('not implemented')
-
-
+        args = []
+        args.append('flow')
+        args.append('compute')
+        args.append('+ldof[%s]' % self.spec().inputs()[0])
+        args.append(self.img1Path()+','+self.img2Path())
+        job.addCommand(self.path(),' '.join(args))

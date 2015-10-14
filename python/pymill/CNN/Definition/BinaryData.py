@@ -4,7 +4,7 @@ from CaffeAdapter import  *
 from caffe.proto import caffe_pb2 as Proto
 from pymill import Toolbox as tb
 import os
-
+from collections import OrderedDict
 
 BIN_DB_DIR   = '/misc/lmbraid17/sceneflownet/common/data/4_bin-db'
 SSD_BIN_DB_DIR   = '/misc/scratch0/hackathon/data/4_bin-db'
@@ -158,6 +158,22 @@ def BinaryData_OpticalFlow_Single(net, **kwargs):
                            data_param=DataParams(samples, **kwargs))
 
 
+def _dataStructFromSceneFlow(list):
+    struct = DataStruct()
+
+    struct.inp.img0L      = list[0]
+    struct.inp.img0R      = list[1]
+    struct.inp.img1L      = list[2]
+    struct.inp.img1R      = list[3]
+    struct.gt.flowL       = list[4]
+    struct.gt.flowR       = list[5]
+    struct.gt.disp0L      = list[6]
+    struct.gt.disp1L      = list[7]
+    struct.gt.dispChangeL = list[8]
+
+    return struct
+
+
 def BinaryData_SceneFlow(net, **kwargs):
   '''
   @brief Setup network inputs for scene flow
@@ -210,10 +226,13 @@ def BinaryData_SceneFlow(net, **kwargs):
       nout += 1
       del kwargs['output_index']
 
-  return Layers.BinaryData(net,
+  blobs = Layers.BinaryData(net,
                            nout=nout,
                            include=(Proto.NetStateRule(phase=kwargs['phase']),),
                            data_param=DataParams(samples, **kwargs))
+
+  if kwargs['return_struct']: return _dataStructFromSceneFlow(blobs)
+  else: return blobs
 
 
 def BinaryData_SceneFlow_Single(net, **kwargs):
@@ -250,10 +269,15 @@ def BinaryData_SceneFlow_Single(net, **kwargs):
       nout += 1
       del kwargs['output_index']
 
-  return Layers.BinaryData(net,
+  blobs = Layers.BinaryData(net,
                            nout=nout,
                            include=(Proto.NetStateRule(phase=kwargs['phase']),),
                            data_param=DataParams(samples, **kwargs))
+
+  if kwargs['return_struct']: return _dataStructFromSceneFlow(blobs)
+  else: return blobs
+
+
 
 #def instantiate(net):
   #net.input, net.gt = BinaryData(
@@ -348,7 +372,6 @@ def BinaryData(net, setting, **kwargs):
   if 'collection_list' not in kwargs: 
     raise Exception('BinaryData requires parameter collectionList')
 
-
   def default(arg, val):
     if not arg in kwargs:
       kwargs[arg] = val
@@ -360,6 +383,11 @@ def BinaryData(net, setting, **kwargs):
   default('rand_permute',      True)
   default('rand_permute_seed', 77)
   default('collection_list_dir', COLLECTIONLIST_DIR)
+
+  if setting in ('SCENE_FLOW', 'SCENE_FLOW_SINGLE'):
+    default('return_struct', True)
+  else:
+    default('return_struct', False)
 
   if kwargs['phase'] == 'TEST': kwargs['phase'] = Proto.TEST
   if kwargs['phase'] == 'TRAIN': kwargs['phase'] = Proto.TRAIN

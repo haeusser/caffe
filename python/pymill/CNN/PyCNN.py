@@ -37,9 +37,6 @@ from Environment import BinaryBackend
 import time
 import signal
 
-
-
-
 def sigusr1(signum, stack):
     print 'pycnn: got signal SIGUSR1'
 
@@ -147,7 +144,7 @@ parser.add_argument('--verbose',       help='verbose', action='store_true')
 parser.add_argument('--path',          help='model path (default=.)', default='.')
 parser.add_argument('--unattended',    help='always assume Y as answer (dangerous)', action='store_true')
 parser.add_argument('--yes',           help='same as unattended', action='store_true')
-parser.add_argument('--backend',       help='backend to use (default=python)', choices=('binary','python'))
+parser.add_argument('--backend',       help='backend to use (default=python)', choices=('binary','python'), default='python')
 parser.add_argument('--local',         help='run on local machine', action='store_true')
 parser.add_argument('--background',    help='run on cluster in background', action='store_true')
 parser.add_argument('--node',          help='run on a specific node', default=None)
@@ -250,8 +247,8 @@ gpuIds = ''
 for i in range(0, args.gpus):
     gpuIds += ',%d' % i
 gpuIds = gpuIds[1:]
-if args.backend == 'python': backend = PythonBackend(gpuIds, args.quiet, args.silent)
-else:                        backend = BinaryBackend(gpuIds, args.quiet, args.silent)
+if args.backend == 'binary': backend = BinaryBackend(gpuIds, args.quiet, args.silent)
+else:                        backend = PythonBackend(gpuIds, args.quiet, args.silent)
 
 env = Environment(args.path, backend, args.unattended, args.silent)
 if args.command != 'copy' and args.command != 'compare': env.init()

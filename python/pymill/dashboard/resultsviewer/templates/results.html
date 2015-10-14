@@ -13,6 +13,13 @@
 
 <strong>{{ best_net }} </strong>on <strong>{{ best_dataset }}</strong> with <strong>{{ best_value }}</strong> ({{ best_measure }}).</p>
 
+<form action="/" method="post">
+    {% csrf_token %}
+    {{ measure_selector_form }}
+    <input type="submit" value="go" />
+</form>
+
+Selected Options (Debug): {{ selected_options }}
 {% render_table table %}
 
 <p>Support: Philip <code>Haeusser@cs.tum.edu</code></p>

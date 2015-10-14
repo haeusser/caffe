@@ -2,6 +2,7 @@
 
 import os
 import sqlite3 as lite
+import datetime
 
 basePath = "/misc/lmbraid17/sceneflownet/common"
 dbPath = "/misc/lmbraid17/sceneflownet/common/results/db.sqlite"
@@ -24,9 +25,10 @@ class Results:
         cur.execute('SELECT value FROM results WHERE networkName ="%s" AND iteration="%d" AND dataset="%s" AND measure="%s"' % (self._net, int(iter), dataset, measure))
         return cur.fetchone()[0]
 
-    def update(self, iter, dataset, measure, value):
-        self._conn.execute('UPDATE results SET value = %f WHERE networkName ="%s" AND iteration="%d" AND dataset="%s" AND measure="%s"' % (float(value), self._net, int(iter), dataset, measure))
+    def update(self, iter, dataset, task, measure, position, value):
+        if position is None: position = ""
+        self._conn.execute('UPDATE results SET value = %f, date = "%s" WHERE networkName ="%s" AND iteration="%d" AND dataset="%s" AND task="%s" AND measure="%s" AND position="%s"' % (float(value), str(datetime.datetime.now()), self._net, int(iter), dataset, task, measure, position))
         if self._conn.total_changes == 0:
-            self._conn.execute('INSERT INTO results VALUES ("%s", %d, "%s", "%s", %f)' % (self._net, iter, dataset, measure, float(value)))
+            self._conn.execute('INSERT INTO results (networkName, task, iteration, dataset, measure, position, value, date) VALUES ("%s", "%s", %d, "%s", "%s", "%s", %f, "%s")' % (self._net, task, iter, dataset, measure, position, float(value), str(datetime.datetime.now())))
         self._conn.commit()
 

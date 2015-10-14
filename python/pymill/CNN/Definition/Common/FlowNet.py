@@ -218,10 +218,10 @@ def standardDeploy(NetworkBlock, generateNet=True):
         
         ## Connect L1 flow loss layer
         epe_loss = Layers.L1Loss(net, (blobs.flow_gt, blobs.predict_flow_final),
-                                 nout=1, loss_weight=(1,), name='EPE',
+                                 nout=1, loss_weight=(1,), name='flow_epe',
                                  l2_per_location=True, 
                                  normalize_by_num_entries=True, epsilon=0)
-        epe_loss.setName('epe')
+        epe_loss.setName('flow_epe')
         epe_loss.enableOutput()
 
         return blobs.predict_flow_final
