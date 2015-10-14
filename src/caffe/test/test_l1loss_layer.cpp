@@ -382,6 +382,25 @@ TYPED_TEST(L1LossLayerTest, TestGradient_l2_per_location) {
       this->blob_top_vec_);
 }
 
+TYPED_TEST(L1LossLayerTest, TestGradient_l2_per_location_plateau) {
+  if(Caffe::mode()==Caffe::CPU)
+  {
+      LOG(INFO) << "Skipping CPU test";
+      return;
+  }
+  typedef typename TypeParam::Dtype Dtype;
+  LayerParameter layer_param;
+  layer_param.mutable_l1_loss_param()->set_l2_per_location(true);
+  layer_param.mutable_l1_loss_param()->set_plateau(1.0);
+  const Dtype kLossWeight = 3.7;
+  layer_param.add_loss_weight(kLossWeight);
+  L1LossLayer<Dtype> layer(layer_param);
+  layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+  GradientChecker<Dtype> checker(1e-2, 1e-3, 1701);
+  checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
+      this->blob_top_vec_);
+}
+
 TYPED_TEST(L1LossLayerTest, TestForward_values_l2_nans) {
   if(Caffe::mode()==Caffe::CPU)
   {
