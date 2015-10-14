@@ -106,7 +106,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     EXPECT_GE(fabs(refloss), kNonTrivialAbsThresh);
   }
   
-  void TestForward_values_l2() {
+  void TestForward_values_l2(float plateau) {
     LayerParameter layer_param;
 
     const Dtype kLossWeight = 5.67;
@@ -114,6 +114,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     layer_param.mutable_l1_loss_param()->set_l2_per_location(true);
     layer_param.mutable_l1_loss_param()->set_l2_prescale_by_channels(true);
     layer_param.mutable_l1_loss_param()->set_epsilon(1e-3);
+    layer_param.mutable_l1_loss_param()->set_plateau(plateau);
     
     L1LossLayer<Dtype> layer_weight_2(layer_param);
     layer_weight_2.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
@@ -138,7 +139,11 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
                 int off = (n*channels + c)*height*width + xy;
                 per_location_loss += (bot0[off]-bot1[off]) * (bot0[off]-bot1[off]);
             }
-            refloss += sqrt(per_location_loss / (channels) + 1e-3);
+            float summed_scaled  = per_location_loss / channels;
+            
+            if(summed_scaled < plateau*plateau) summed_scaled = 0;
+            
+            refloss += sqrt(summed_scaled + 1e-3);
         }
     }
     refloss /= (Dtype)num;
@@ -297,7 +302,16 @@ TYPED_TEST(L1LossLayerTest, TestForward_values_l2) {
       LOG(INFO) << "Skipping CPU test";
       return;
   }
-  this->TestForward_values_l2();
+  this->TestForward_values_l2(0);
+}
+
+TYPED_TEST(L1LossLayerTest, TestForward_values_l2_plateau) {
+  if(Caffe::mode()==Caffe::CPU)
+  {
+      LOG(INFO) << "Skipping CPU test";
+      return;
+  }
+  this->TestForward_values_l2(1.0);
 }
 
 TYPED_TEST(L1LossLayerTest, TestForward_l2_per_location) {
@@ -337,6 +351,25 @@ TYPED_TEST(L1LossLayerTest, TestGradient_l2_per_location) {
   typedef typename TypeParam::Dtype Dtype;
   LayerParameter layer_param;
   layer_param.mutable_l1_loss_param()->set_l2_per_location(true);
+  const Dtype kLossWeight = 3.7;
+  layer_param.add_loss_weight(kLossWeight);
+  L1LossLayer<Dtype> layer(layer_param);
+  layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+  GradientChecker<Dtype> checker(1e-2, 1e-3, 1701);
+  checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
+      this->blob_top_vec_);
+}
+
+TYPED_TEST(L1LossLayerTest, TestGradient_l2_per_location_plateau) {
+  if(Caffe::mode()==Caffe::CPU)
+  {
+      LOG(INFO) << "Skipping CPU test";
+      return;
+  }
+  typedef typename TypeParam::Dtype Dtype;
+  LayerParameter layer_param;
+  layer_param.mutable_l1_loss_param()->set_l2_per_location(true);
+  layer_param.mutable_l1_loss_param()->set_plateau(1.0);
   const Dtype kLossWeight = 3.7;
   layer_param.add_loss_weight(kLossWeight);
   L1LossLayer<Dtype> layer(layer_param);
