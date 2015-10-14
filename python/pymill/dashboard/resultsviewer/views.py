@@ -38,8 +38,13 @@ def results(request):
         if 'only_last_iteration' in filter_params and filter_params['only_last_iteration'] == 'on':
             ids = []
             nets = [x.values() for x in queryset.all().values('networkname').distinct()]
+            datasets = [x.values() for x in queryset.all().values('dataset').distinct()]
             for net in nets:
-                ids.append(queryset.filter(networkname=net[0]).order_by('-iteration').values()[0]['id'])
+                for ds in datasets:
+                    q = queryset.filter(networkname=net[0]).filter(dataset=ds[0]).order_by('-iteration').values()
+                    if len(q) > 0:
+                        ids.append(q[0]['id'])
+
             queryset = queryset.filter(id__in=ids)
 
     if request.method == 'GET':
