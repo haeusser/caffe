@@ -346,7 +346,7 @@ class L1LossLayer : public LossLayer<Dtype> {
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 
-  Blob<Dtype> sign_, mask_, plateau_;
+  Blob<Dtype> sign_, mask_;
   float scale_;
   Dtype normalize_coeff_;
   
