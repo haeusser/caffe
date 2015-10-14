@@ -1,0 +1,975 @@
+Dataset StaticThings3D, subfolder TEST/A, threshold 500
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TEST/A/0000
+Bad frame  27  , max dispL  392.61  , max dispR  9015.17
+Writing clip frames 1 to 26
+Bad frame  28  , max dispL  400.157  , max dispR  2983.88
+Bad frame  29  , max dispL  404.416  , max dispR  2292.11
+Bad frame  30  , max dispL  405.157  , max dispR  1552.87
+Bad frame  31  , max dispL  483.304  , max dispR  970.547
+Bad frame  32  , max dispL  441.623  , max dispR  738.134
+Bad frame  33  , max dispL  396.351  , max dispR  605.437
+Bad frame  34  , max dispL  361.133  , max dispR  518.046
+Bad frame  79  , max dispL  513.714  , max dispR  513.669
+Writing clip frames 35 to 78
+Bad frame  80  , max dispL  534.38  , max dispR  534.384
+Bad frame  81  , max dispL  539.479  , max dispR  544.931
+Bad frame  82  , max dispL  533.723  , max dispR  544.462
+Bad frame  83  , max dispL  507.457  , max dispR  534.118
+Bad frame  84  , max dispL  478.832  , max dispR  516.27
+Bad frame  88  , max dispL  618.168  , max dispR  427.21
+Bad frame  89  , max dispL  615.54  , max dispR  406.912
+Bad frame  90  , max dispL  611.879  , max dispR  388.747
+Bad frame  91  , max dispL  630.345  , max dispR  372.758
+Bad frame  92  , max dispL  641.052  , max dispR  358.859
+Bad frame  93  , max dispL  660.636  , max dispR  347.084
+Bad frame  94  , max dispL  716.801  , max dispR  337.253
+Bad frame  95  , max dispL  774.009  , max dispR  329.233
+Bad frame  96  , max dispL  802.38  , max dispR  322.891
+Bad frame  97  , max dispL  804.219  , max dispR  318.03
+Bad frame  98  , max dispL  805.45  , max dispR  314.668
+Bad frame  99  , max dispL  806.238  , max dispR  312.708
+Bad frame  100  , max dispL  806.583  , max dispR  312.074
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TEST/A/0001
+Bad frame  14  , max dispL  515.935  , max dispR  545.001
+Bad frame  15  , max dispL  590.729  , max dispR  626.251
+Bad frame  16  , max dispL  697.492  , max dispR  747.726
+Bad frame  17  , max dispL  861.442  , max dispR  939.221
+Bad frame  18  , max dispL  1141.84  , max dispR  1282.48
+Bad frame  19  , max dispL  1625.62  , max dispR  2068.25
+Bad frame  20  , max dispL  2204.76  , max dispR  5637.16
+Bad frame  21  , max dispL  3327.9  , max dispR  95.9079
+Bad frame  22  , max dispL  6847.78  , max dispR  97.9496
+Bad frame  23  , max dispL  6680.69  , max dispR  100.117
+Writing clip frames 24 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TEST/A/0002
+Bad frame  1  , max dispL  1143.66  , max dispR  249.867
+Bad frame  2  , max dispL  1151.26  , max dispR  250.411
+Bad frame  3  , max dispL  1164.46  , max dispR  251.411
+Bad frame  4  , max dispL  1183.53  , max dispR  252.707
+Bad frame  5  , max dispL  1208.69  , max dispR  254.456
+Bad frame  6  , max dispL  1241.04  , max dispR  256.532
+Bad frame  7  , max dispL  1281.36  , max dispR  259.074
+Bad frame  8  , max dispL  1328.36  , max dispR  262.06
+Bad frame  9  , max dispL  1371.58  , max dispR  295.138
+Bad frame  10  , max dispL  1422.79  , max dispR  269.444
+Bad frame  11  , max dispL  1481.23  , max dispR  273.888
+Bad frame  12  , max dispL  1525.16  , max dispR  278.869
+Bad frame  13  , max dispL  1549.69  , max dispR  284.228
+Bad frame  14  , max dispL  1545.53  , max dispR  289.756
+Bad frame  43  , max dispL  422.591  , max dispR  509.419
+Writing clip frames 15 to 42
+Bad frame  44  , max dispL  425.553  , max dispR  518.402
+Bad frame  45  , max dispL  428.052  , max dispR  526.161
+Bad frame  46  , max dispL  430.09  , max dispR  532.638
+Bad frame  47  , max dispL  431.667  , max dispR  537.848
+Bad frame  48  , max dispL  432.788  , max dispR  541.438
+Bad frame  49  , max dispL  433.458  , max dispR  543.69
+Bad frame  50  , max dispL  433.68  , max dispR  544.507
+Bad frame  51  , max dispL  432.464  , max dispR  541.45
+Bad frame  52  , max dispL  428.818  , max dispR  532.176
+Bad frame  53  , max dispL  422.784  , max dispR  517.419
+Writing clip frames 54 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TEST/A/0003
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TEST/A/0004
+Bad frame  23  , max dispL  404.511  , max dispR  517.12
+Writing clip frames 1 to 22
+Bad frame  24  , max dispL  427.319  , max dispR  622.569
+Bad frame  25  , max dispL  446.637  , max dispR  789.179
+Bad frame  26  , max dispL  458.845  , max dispR  1068.13
+Bad frame  27  , max dispL  469.846  , max dispR  1752.96
+Bad frame  28  , max dispL  447.727  , max dispR  4973.75
+Bad frame  29  , max dispL  462.849  , max dispR  10495.6
+Bad frame  30  , max dispL  425.177  , max dispR  3187.39
+Bad frame  31  , max dispL  419.979  , max dispR  3316.45
+Bad frame  32  , max dispL  1643.78  , max dispR  2131.11
+Bad frame  33  , max dispL  2563.99  , max dispR  2092.5
+Bad frame  34  , max dispL  8249.08  , max dispR  693.987
+Bad frame  35  , max dispL  6564.22  , max dispR  838.128
+Bad frame  36  , max dispL  5611.16  , max dispR  1017.61
+Bad frame  37  , max dispL  1845.98  , max dispR  1095.17
+Bad frame  38  , max dispL  434.253  , max dispR  1139.34
+Bad frame  39  , max dispL  1015.76  , max dispR  1128.84
+Bad frame  40  , max dispL  1090.19  , max dispR  3371.69
+Bad frame  41  , max dispL  1006.05  , max dispR  2638.74
+Bad frame  42  , max dispL  2432.43  , max dispR  2407.39
+Bad frame  43  , max dispL  1940.46  , max dispR  4336.43
+Bad frame  44  , max dispL  1523.68  , max dispR  10488.7
+Bad frame  45  , max dispL  7052.17  , max dispR  1058.1
+Bad frame  46  , max dispL  4602.22  , max dispR  569.737
+Bad frame  47  , max dispL  10373.8  , max dispR  285.73
+Bad frame  48  , max dispL  1516.91  , max dispR  275.754
+Bad frame  49  , max dispL  797.414  , max dispR  266.278
+Bad frame  50  , max dispL  603.055  , max dispR  257.426
+Bad frame  51  , max dispL  500.644  , max dispR  249.196
+Writing clip frames 52 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TEST/A/0005
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TEST/A/0006
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TEST/A/0007
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TEST/A/0008
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TEST/A/0009
+Writing clip frames 1 to 100
+Dataset StaticThings3D, subfolder TEST/B, threshold 500
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TEST/B/0000
+Bad frame  1  , max dispL  517.663  , max dispR  182.327
+Bad frame  2  , max dispL  518.132  , max dispR  182.365
+Bad frame  3  , max dispL  518.92  , max dispR  182.43
+Bad frame  4  , max dispL  520.029  , max dispR  182.51
+Bad frame  5  , max dispL  521.466  , max dispR  182.628
+Bad frame  6  , max dispL  523.233  , max dispR  182.773
+Bad frame  7  , max dispL  525.338  , max dispR  182.944
+Bad frame  8  , max dispL  527.784  , max dispR  183.147
+Bad frame  9  , max dispL  530.577  , max dispR  183.376
+Bad frame  10  , max dispL  533.722  , max dispR  183.626
+Bad frame  11  , max dispL  537.224  , max dispR  183.891
+Bad frame  12  , max dispL  541.086  , max dispR  184.203
+Bad frame  13  , max dispL  545.313  , max dispR  184.53
+Bad frame  14  , max dispL  549.904  , max dispR  184.875
+Bad frame  15  , max dispL  554.862  , max dispR  185.253
+Bad frame  16  , max dispL  560.186  , max dispR  185.648
+Bad frame  17  , max dispL  565.873  , max dispR  186.064
+Bad frame  18  , max dispL  571.917  , max dispR  186.49
+Bad frame  19  , max dispL  578.311  , max dispR  186.944
+Bad frame  20  , max dispL  585.044  , max dispR  187.422
+Bad frame  21  , max dispL  592.103  , max dispR  187.907
+Bad frame  22  , max dispL  599.469  , max dispR  188.406
+Bad frame  23  , max dispL  607.121  , max dispR  188.906
+Bad frame  24  , max dispL  615.035  , max dispR  189.449
+Bad frame  25  , max dispL  623.18  , max dispR  189.969
+Bad frame  26  , max dispL  631.522  , max dispR  190.489
+Bad frame  27  , max dispL  640.025  , max dispR  191.025
+Bad frame  28  , max dispL  648.644  , max dispR  191.552
+Bad frame  29  , max dispL  657.334  , max dispR  192.084
+Bad frame  30  , max dispL  666.044  , max dispR  192.607
+Bad frame  31  , max dispL  676.117  , max dispR  193.107
+Bad frame  32  , max dispL  687.098  , max dispR  193.616
+Bad frame  33  , max dispL  698.235  , max dispR  194.096
+Bad frame  34  , max dispL  709.042  , max dispR  194.575
+Bad frame  35  , max dispL  719.886  , max dispR  195.048
+Bad frame  36  , max dispL  729.817  , max dispR  195.485
+Bad frame  37  , max dispL  739.198  , max dispR  195.894
+Bad frame  38  , max dispL  746.336  , max dispR  196.321
+Bad frame  39  , max dispL  752.956  , max dispR  196.696
+Bad frame  40  , max dispL  759.007  , max dispR  197.041
+Bad frame  41  , max dispL  764.44  , max dispR  197.38
+Bad frame  42  , max dispL  769.21  , max dispR  197.684
+Bad frame  43  , max dispL  773.283  , max dispR  197.978
+Bad frame  44  , max dispL  776.625  , max dispR  198.231
+Bad frame  45  , max dispL  779.215  , max dispR  198.475
+Bad frame  46  , max dispL  781.035  , max dispR  198.691
+Bad frame  47  , max dispL  782.078  , max dispR  198.85
+Bad frame  48  , max dispL  782.339  , max dispR  199.014
+Bad frame  49  , max dispL  781.826  , max dispR  199.135
+Bad frame  50  , max dispL  780.548  , max dispR  199.232
+Bad frame  51  , max dispL  777.845  , max dispR  199.325
+Bad frame  52  , max dispL  773.072  , max dispR  199.412
+Bad frame  53  , max dispL  766.299  , max dispR  199.541
+Bad frame  54  , max dispL  757.638  , max dispR  199.648
+Bad frame  55  , max dispL  747.236  , max dispR  199.795
+Bad frame  56  , max dispL  735.27  , max dispR  199.93
+Bad frame  57  , max dispL  721.938  , max dispR  200.072
+Bad frame  58  , max dispL  707.454  , max dispR  200.235
+Bad frame  59  , max dispL  692.038  , max dispR  200.391
+Bad frame  60  , max dispL  675.908  , max dispR  200.562
+Bad frame  61  , max dispL  659.278  , max dispR  200.72
+Bad frame  62  , max dispL  642.346  , max dispR  200.88
+Bad frame  63  , max dispL  625.297  , max dispR  201.045
+Bad frame  64  , max dispL  607.742  , max dispR  201.206
+Bad frame  65  , max dispL  589.774  , max dispR  201.379
+Bad frame  66  , max dispL  571.6  , max dispR  201.522
+Bad frame  67  , max dispL  554.187  , max dispR  201.67
+Bad frame  68  , max dispL  541.258  , max dispR  201.793
+Writing clip frames 69 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TEST/B/0001
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TEST/B/0002
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TEST/B/0003
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TEST/B/0004
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TEST/B/0005
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TEST/B/0006
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TEST/B/0007
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TEST/B/0008
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TEST/B/0009
+Writing clip frames 1 to 100
+Dataset StaticThings3D, subfolder TRAIN/A, threshold 500
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0000
+Bad frame  47  , max dispL  508.07  , max dispR  537.439
+Writing clip frames 1 to 46
+Bad frame  48  , max dispL  546.938  , max dispR  586.243
+Bad frame  49  , max dispL  575.976  , max dispR  642.861
+Bad frame  50  , max dispL  514.34  , max dispR  709.474
+Bad frame  51  , max dispL  508.777  , max dispR  791.341
+Bad frame  52  , max dispL  534.889  , max dispR  897.622
+Bad frame  53  , max dispL  538.577  , max dispR  1040.57
+Bad frame  54  , max dispL  585.505  , max dispR  694.157
+Bad frame  55  , max dispL  643.017  , max dispR  779.471
+Bad frame  56  , max dispL  714.928  , max dispR  890.235
+Bad frame  57  , max dispL  807.473  , max dispR  1013.22
+Bad frame  58  , max dispL  930.496  , max dispR  1100.15
+Bad frame  59  , max dispL  1101.66  , max dispR  1176.88
+Bad frame  60  , max dispL  1355.23  , max dispR  263.25
+Bad frame  61  , max dispL  1755.59  , max dispR  275.623
+Bad frame  62  , max dispL  2507.23  , max dispR  289.092
+Bad frame  63  , max dispL  3510.75  , max dispR  303.746
+Bad frame  64  , max dispL  4721.61  , max dispR  319.577
+Bad frame  65  , max dispL  9116.37  , max dispR  336.576
+Bad frame  74  , max dispL  508.377  , max dispR  508.391
+Bad frame  75  , max dispL  523.216  , max dispR  523.208
+Bad frame  76  , max dispL  447.951  , max dispR  532.441
+Bad frame  77  , max dispL  452.282  , max dispR  535.695
+Bad frame  78  , max dispL  452.656  , max dispR  537.157
+Bad frame  79  , max dispL  449.159  , max dispR  529.159
+Bad frame  80  , max dispL  213.693  , max dispR  517.078
+Bad frame  81  , max dispL  215.736  , max dispR  501.284
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0001
+Bad frame  73  , max dispL  509.86  , max dispR  509.868
+Writing clip frames 1 to 72
+Bad frame  74  , max dispL  546.146  , max dispR  546.151
+Bad frame  75  , max dispL  581.549  , max dispR  581.53
+Bad frame  76  , max dispL  617.836  , max dispR  617.842
+Bad frame  77  , max dispL  650.215  , max dispR  650.252
+Bad frame  78  , max dispL  676.151  , max dispR  675.682
+Bad frame  79  , max dispL  692.543  , max dispR  682.254
+Bad frame  80  , max dispL  698.322  , max dispR  683.522
+Bad frame  81  , max dispL  693.464  , max dispR  676.774
+Bad frame  82  , max dispL  680.542  , max dispR  664.496
+Bad frame  83  , max dispL  662.784  , max dispR  648.016
+Bad frame  84  , max dispL  642.523  , max dispR  629.246
+Bad frame  85  , max dispL  619.637  , max dispR  608.813
+Bad frame  86  , max dispL  588.967  , max dispR  586.91
+Bad frame  87  , max dispL  564.87  , max dispR  564.843
+Bad frame  88  , max dispL  542.211  , max dispR  541.925
+Bad frame  89  , max dispL  521.912  , max dispR  521.879
+Bad frame  90  , max dispL  501.686  , max dispR  501.669
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0002
+Bad frame  31  , max dispL  532.576  , max dispR  443.409
+Writing clip frames 1 to 30
+Bad frame  32  , max dispL  661.686  , max dispR  663.221
+Bad frame  33  , max dispL  1204.75  , max dispR  1203.07
+Bad frame  34  , max dispL  2003.54  , max dispR  985.484
+Bad frame  35  , max dispL  471.952  , max dispR  1782.77
+Bad frame  36  , max dispL  572.908  , max dispR  573.674
+Bad frame  37  , max dispL  680.981  , max dispR  663.198
+Bad frame  38  , max dispL  1088.95  , max dispR  815.733
+Bad frame  39  , max dispL  2466.46  , max dispR  526.713
+Bad frame  40  , max dispL  2665.61  , max dispR  594.693
+Bad frame  41  , max dispL  1650.86  , max dispR  492.802
+Bad frame  42  , max dispL  1132.91  , max dispR  1101.45
+Bad frame  43  , max dispL  2210.37  , max dispR  833.943
+Bad frame  44  , max dispL  1412.94  , max dispR  673.446
+Bad frame  45  , max dispL  1071.81  , max dispR  579.711
+Bad frame  46  , max dispL  891.916  , max dispR  522.506
+Bad frame  47  , max dispL  846.857  , max dispR  489.615
+Bad frame  48  , max dispL  821.566  , max dispR  467.674
+Bad frame  49  , max dispL  793.784  , max dispR  454.706
+Bad frame  50  , max dispL  783.03  , max dispR  450.394
+Bad frame  51  , max dispL  785.484  , max dispR  451.134
+Bad frame  52  , max dispL  792.992  , max dispR  453.377
+Bad frame  53  , max dispL  806.465  , max dispR  457.019
+Bad frame  54  , max dispL  816.944  , max dispR  462.174
+Bad frame  55  , max dispL  825.289  , max dispR  468.732
+Bad frame  56  , max dispL  835.641  , max dispR  477.556
+Bad frame  57  , max dispL  834.36  , max dispR  488.336
+Bad frame  58  , max dispL  830.268  , max dispR  500.584
+Bad frame  59  , max dispL  845.821  , max dispR  516.151
+Bad frame  60  , max dispL  891.658  , max dispR  533.246
+Bad frame  61  , max dispL  953.229  , max dispR  551.277
+Bad frame  62  , max dispL  1027.23  , max dispR  579.668
+Bad frame  63  , max dispL  1116.0  , max dispR  611.94
+Bad frame  64  , max dispL  1222.56  , max dispR  648.217
+Bad frame  65  , max dispL  1350.57  , max dispR  688.502
+Bad frame  66  , max dispL  1503.93  , max dispR  732.567
+Bad frame  67  , max dispL  1686.89  , max dispR  780.013
+Bad frame  68  , max dispL  10496.6  , max dispR  830.087
+Bad frame  69  , max dispL  8476.88  , max dispR  881.983
+Bad frame  70  , max dispL  3913.19  , max dispR  932.805
+Bad frame  71  , max dispL  2353.8  , max dispR  968.459
+Bad frame  72  , max dispL  1601.84  , max dispR  950.181
+Bad frame  73  , max dispL  1273.75  , max dispR  902.399
+Bad frame  74  , max dispL  1082.18  , max dispR  842.779
+Bad frame  75  , max dispL  939.075  , max dispR  1977.58
+Bad frame  76  , max dispL  824.79  , max dispR  2420.54
+Bad frame  77  , max dispL  731.472  , max dispR  10493.4
+Bad frame  78  , max dispL  1449.99  , max dispR  10275.5
+Bad frame  79  , max dispL  1931.93  , max dispR  3792.4
+Bad frame  80  , max dispL  2382.22  , max dispR  2463.73
+Bad frame  81  , max dispL  2200.51  , max dispR  1880.58
+Bad frame  82  , max dispL  1999.82  , max dispR  1550.57
+Bad frame  83  , max dispL  1724.3  , max dispR  1334.27
+Bad frame  84  , max dispL  1927.08  , max dispR  1172.8
+Bad frame  85  , max dispL  1527.61  , max dispR  1050.8
+Bad frame  86  , max dispL  1299.09  , max dispR  957.828
+Bad frame  87  , max dispL  1190.51  , max dispR  884.993
+Bad frame  88  , max dispL  1075.61  , max dispR  826.783
+Bad frame  89  , max dispL  943.244  , max dispR  779.596
+Bad frame  90  , max dispL  883.184  , max dispR  740.985
+Bad frame  91  , max dispL  833.754  , max dispR  709.22
+Bad frame  92  , max dispL  796.81  , max dispR  683.578
+Bad frame  93  , max dispL  766.752  , max dispR  660.761
+Bad frame  94  , max dispL  752.375  , max dispR  641.603
+Bad frame  95  , max dispL  725.95  , max dispR  626.171
+Bad frame  96  , max dispL  709.106  , max dispR  614.109
+Bad frame  97  , max dispL  698.911  , max dispR  605.046
+Bad frame  98  , max dispL  686.713  , max dispR  598.769
+Bad frame  99  , max dispL  662.639  , max dispR  595.085
+Bad frame  100  , max dispL  668.119  , max dispR  593.875
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0003
+Bad frame  9  , max dispL  108.917  , max dispR  536.018
+Bad frame  10  , max dispL  111.522  , max dispR  599.711
+Bad frame  11  , max dispL  114.512  , max dispR  559.166
+Bad frame  53  , max dispL  510.383  , max dispR  289.767
+Writing clip frames 12 to 52
+Bad frame  54  , max dispL  524.341  , max dispR  289.677
+Bad frame  55  , max dispL  539.063  , max dispR  289.262
+Bad frame  56  , max dispL  564.128  , max dispR  288.485
+Bad frame  57  , max dispL  591.836  , max dispR  287.375
+Bad frame  58  , max dispL  611.833  , max dispR  285.903
+Bad frame  59  , max dispL  648.563  , max dispR  283.96
+Bad frame  60  , max dispL  697.683  , max dispR  281.512
+Bad frame  61  , max dispL  714.944  , max dispR  278.497
+Bad frame  62  , max dispL  682.245  , max dispR  625.341
+Bad frame  63  , max dispL  680.446  , max dispR  641.932
+Bad frame  64  , max dispL  642.438  , max dispR  642.442
+Bad frame  65  , max dispL  634.708  , max dispR  634.633
+Bad frame  66  , max dispL  616.755  , max dispR  616.666
+Bad frame  67  , max dispL  590.574  , max dispR  590.941
+Bad frame  68  , max dispL  550.682  , max dispR  563.271
+Bad frame  69  , max dispL  204.717  , max dispR  525.43
+Bad frame  75  , max dispL  2348.57  , max dispR  196.181
+Bad frame  76  , max dispL  2436.0  , max dispR  189.858
+Bad frame  77  , max dispL  7762.46  , max dispR  183.808
+Bad frame  78  , max dispL  4037.02  , max dispR  178.033
+Bad frame  79  , max dispL  6492.85  , max dispR  172.592
+Bad frame  80  , max dispL  3057.67  , max dispR  1658.83
+Bad frame  81  , max dispL  2346.97  , max dispR  1441.46
+Bad frame  82  , max dispL  1894.46  , max dispR  1825.92
+Bad frame  83  , max dispL  1581.84  , max dispR  1588.95
+Bad frame  84  , max dispL  1144.59  , max dispR  1348.07
+Bad frame  85  , max dispL  1023.53  , max dispR  1171.69
+Bad frame  86  , max dispL  832.284  , max dispR  1063.64
+Bad frame  87  , max dispL  770.601  , max dispR  965.039
+Bad frame  88  , max dispL  720.492  , max dispR  887.158
+Bad frame  89  , max dispL  679.435  , max dispR  824.708
+Bad frame  90  , max dispL  645.591  , max dispR  774.257
+Bad frame  91  , max dispL  617.559  , max dispR  733.122
+Bad frame  92  , max dispL  594.463  , max dispR  699.616
+Bad frame  93  , max dispL  575.337  , max dispR  672.316
+Bad frame  94  , max dispL  559.722  , max dispR  650.225
+Bad frame  95  , max dispL  543.736  , max dispR  632.677
+Bad frame  96  , max dispL  528.42  , max dispR  618.972
+Bad frame  97  , max dispL  516.985  , max dispR  608.782
+Bad frame  98  , max dispL  508.977  , max dispR  601.729
+Bad frame  99  , max dispL  504.369  , max dispR  597.551
+Bad frame  100  , max dispL  502.823  , max dispR  596.199
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0004
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0005
+Bad frame  8  , max dispL  372.119  , max dispR  551.375
+Bad frame  9  , max dispL  507.868  , max dispR  611.182
+Bad frame  10  , max dispL  611.717  , max dispR  671.687
+Bad frame  11  , max dispL  672.386  , max dispR  762.838
+Bad frame  12  , max dispL  712.083  , max dispR  806.202
+Bad frame  13  , max dispL  754.822  , max dispR  812.318
+Bad frame  14  , max dispL  780.355  , max dispR  780.274
+Bad frame  15  , max dispL  714.148  , max dispR  708.984
+Bad frame  16  , max dispL  628.868  , max dispR  598.506
+Bad frame  17  , max dispL  540.564  , max dispR  512.386
+Bad frame  67  , max dispL  70.4317  , max dispR  522.417
+Writing clip frames 18 to 66
+Bad frame  68  , max dispL  70.6151  , max dispR  527.484
+Bad frame  69  , max dispL  70.8087  , max dispR  532.803
+Bad frame  70  , max dispL  71.008  , max dispR  538.29
+Bad frame  71  , max dispL  492.265  , max dispR  531.371
+Bad frame  72  , max dispL  531.605  , max dispR  533.887
+Bad frame  73  , max dispL  542.834  , max dispR  542.841
+Bad frame  74  , max dispL  550.015  , max dispR  549.999
+Bad frame  75  , max dispL  555.218  , max dispR  553.792
+Bad frame  76  , max dispL  557.229  , max dispR  546.378
+Bad frame  77  , max dispL  554.538  , max dispR  551.217
+Bad frame  78  , max dispL  554.813  , max dispR  530.548
+Bad frame  79  , max dispL  555.833  , max dispR  516.641
+Bad frame  80  , max dispL  552.213  , max dispR  501.638
+Bad frame  81  , max dispL  543.711  , max dispR  461.735
+Bad frame  82  , max dispL  524.97  , max dispR  77.6074
+Bad frame  83  , max dispL  506.858  , max dispR  78.3499
+Bad frame  84  , max dispL  500.846  , max dispR  79.086
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0006
+Bad frame  1  , max dispL  1072.65  , max dispR  734.323
+Bad frame  2  , max dispL  1075.38  , max dispR  731.454
+Bad frame  3  , max dispL  1079.3  , max dispR  726.617
+Bad frame  4  , max dispL  1083.94  , max dispR  720.137
+Bad frame  5  , max dispL  1087.82  , max dispR  711.027
+Bad frame  6  , max dispL  1089.52  , max dispR  700.367
+Bad frame  7  , max dispL  1087.51  , max dispR  688.031
+Bad frame  8  , max dispL  1079.63  , max dispR  674.276
+Bad frame  9  , max dispL  1064.52  , max dispR  659.417
+Bad frame  10  , max dispL  1041.03  , max dispR  644.077
+Bad frame  11  , max dispL  1009.06  , max dispR  628.762
+Bad frame  12  , max dispL  969.112  , max dispR  614.239
+Bad frame  13  , max dispL  922.793  , max dispR  600.676
+Bad frame  14  , max dispL  872.138  , max dispR  587.322
+Bad frame  15  , max dispL  819.113  , max dispR  575.734
+Bad frame  16  , max dispL  766.999  , max dispR  565.256
+Bad frame  17  , max dispL  715.717  , max dispR  555.011
+Bad frame  18  , max dispL  666.726  , max dispR  543.709
+Bad frame  19  , max dispL  620.679  , max dispR  531.763
+Bad frame  20  , max dispL  577.866  , max dispR  517.576
+Bad frame  21  , max dispL  538.536  , max dispR  499.178
+Bad frame  22  , max dispL  502.721  , max dispR  500.137
+Bad frame  24  , max dispL  440.875  , max dispR  857.895
+Bad frame  25  , max dispL  414.51  , max dispR  980.555
+Bad frame  26  , max dispL  390.824  , max dispR  859.664
+Bad frame  27  , max dispL  369.549  , max dispR  765.656
+Bad frame  28  , max dispL  350.467  , max dispR  690.317
+Bad frame  29  , max dispL  333.326  , max dispR  629.456
+Bad frame  30  , max dispL  317.994  , max dispR  579.326
+Bad frame  31  , max dispL  463.597  , max dispR  537.606
+Bad frame  32  , max dispL  440.635  , max dispR  502.33
+Bad frame  44  , max dispL  512.187  , max dispR  322.82
+Bad frame  45  , max dispL  526.762  , max dispR  318.18
+Bad frame  46  , max dispL  520.739  , max dispR  314.287
+Bad frame  47  , max dispL  515.457  , max dispR  311.28
+Bad frame  48  , max dispL  510.784  , max dispR  309.073
+Bad frame  49  , max dispL  506.19  , max dispR  307.631
+Bad frame  50  , max dispL  500.983  , max dispR  306.824
+Writing clip frames 51 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0007
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0008
+Bad frame  85  , max dispL  523.668  , max dispR  523.661
+Writing clip frames 1 to 84
+Bad frame  86  , max dispL  548.782  , max dispR  548.787
+Bad frame  87  , max dispL  572.889  , max dispR  572.883
+Bad frame  88  , max dispL  596.811  , max dispR  596.812
+Bad frame  89  , max dispL  620.649  , max dispR  620.654
+Bad frame  90  , max dispL  644.007  , max dispR  644.006
+Bad frame  91  , max dispL  666.216  , max dispR  666.205
+Bad frame  92  , max dispL  687.036  , max dispR  687.037
+Bad frame  93  , max dispL  706.196  , max dispR  706.185
+Bad frame  94  , max dispL  723.375  , max dispR  723.371
+Bad frame  95  , max dispL  738.329  , max dispR  738.333
+Bad frame  96  , max dispL  750.831  , max dispR  750.843
+Bad frame  97  , max dispL  760.723  , max dispR  760.708
+Bad frame  98  , max dispL  767.849  , max dispR  767.848
+Bad frame  99  , max dispL  772.149  , max dispR  772.138
+Bad frame  100  , max dispL  773.587  , max dispR  773.581
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0009
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0010
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0011
+Bad frame  67  , max dispL  538.794  , max dispR  343.435
+Writing clip frames 1 to 66
+Bad frame  68  , max dispL  629.347  , max dispR  388.159
+Bad frame  69  , max dispL  775.05  , max dispR  446.806
+Bad frame  70  , max dispL  1052.05  , max dispR  521.766
+Bad frame  71  , max dispL  1731.79  , max dispR  615.509
+Bad frame  72  , max dispL  3225.29  , max dispR  745.07
+Bad frame  73  , max dispL  944.051  , max dispR  915.631
+Bad frame  74  , max dispL  1271.69  , max dispR  1124.52
+Bad frame  75  , max dispL  2056.49  , max dispR  1356.03
+Bad frame  76  , max dispL  3778.69  , max dispR  1572.23
+Bad frame  77  , max dispL  7489.14  , max dispR  1716.85
+Bad frame  78  , max dispL  10094.8  , max dispR  1777.3
+Bad frame  79  , max dispL  5963.99  , max dispR  1706.41
+Bad frame  80  , max dispL  3186.9  , max dispR  1511.58
+Bad frame  81  , max dispL  1921.2  , max dispR  1273.16
+Bad frame  82  , max dispL  1325.11  , max dispR  1059.8
+Bad frame  83  , max dispL  1058.73  , max dispR  885.479
+Bad frame  84  , max dispL  835.671  , max dispR  750.89
+Bad frame  85  , max dispL  690.91  , max dispR  672.336
+Bad frame  86  , max dispL  591.676  , max dispR  587.157
+Bad frame  87  , max dispL  518.976  , max dispR  518.975
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0012
+Bad frame  1  , max dispL  682.033  , max dispR  809.61
+Bad frame  2  , max dispL  692.172  , max dispR  827.292
+Bad frame  3  , max dispL  709.622  , max dispR  860.048
+Bad frame  4  , max dispL  736.74  , max dispR  908.818
+Bad frame  5  , max dispL  781.9  , max dispR  979.633
+Bad frame  6  , max dispL  834.853  , max dispR  1084.93
+Bad frame  7  , max dispL  889.04  , max dispR  1240.96
+Bad frame  8  , max dispL  925.556  , max dispR  1488.41
+Bad frame  9  , max dispL  152.004  , max dispR  1486.98
+Bad frame  10  , max dispL  155.937  , max dispR  1267.41
+Writing clip frames 11 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0013
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0014
+Bad frame  23  , max dispL  434.111  , max dispR  707.186
+Writing clip frames 1 to 22
+Bad frame  24  , max dispL  402.514  , max dispR  829.016
+Bad frame  25  , max dispL  1055.83  , max dispR  855.852
+Bad frame  26  , max dispL  1208.8  , max dispR  624.588
+Bad frame  27  , max dispL  778.798  , max dispR  481.588
+Bad frame  28  , max dispL  564.428  , max dispR  394.024
+Bad frame  29  , max dispL  552.041  , max dispR  334.139
+Writing clip frames 30 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0015
+Bad frame  7  , max dispL  406.435  , max dispR  503.695
+Bad frame  8  , max dispL  423.274  , max dispR  526.745
+Bad frame  9  , max dispL  443.868  , max dispR  555.697
+Bad frame  10  , max dispL  469.147  , max dispR  591.74
+Bad frame  11  , max dispL  500.383  , max dispR  637.179
+Bad frame  12  , max dispL  538.59  , max dispR  695.207
+Bad frame  13  , max dispL  586.653  , max dispR  770.883
+Bad frame  14  , max dispL  647.244  , max dispR  872.164
+Bad frame  15  , max dispL  724.939  , max dispR  1013.77
+Bad frame  16  , max dispL  826.844  , max dispR  1222.08
+Bad frame  17  , max dispL  882.467  , max dispR  1275.9
+Bad frame  18  , max dispL  950.902  , max dispR  1272.74
+Bad frame  19  , max dispL  1114.85  , max dispR  961.955
+Bad frame  20  , max dispL  1269.34  , max dispR  302.387
+Bad frame  21  , max dispL  1269.14  , max dispR  326.404
+Bad frame  22  , max dispL  1269.68  , max dispR  350.374
+Bad frame  26  , max dispL  1.97649  , max dispR  503.482
+Bad frame  27  , max dispL  2.0037  , max dispR  596.749
+Bad frame  28  , max dispL  163.679  , max dispR  677.363
+Bad frame  29  , max dispL  155.854  , max dispR  778.728
+Bad frame  30  , max dispL  148.751  , max dispR  909.957
+Bad frame  31  , max dispL  146.934  , max dispR  1090.17
+Bad frame  32  , max dispL  146.993  , max dispR  1299.41
+Bad frame  33  , max dispL  145.702  , max dispR  10492.5
+Bad frame  34  , max dispL  143.649  , max dispR  10493.8
+Bad frame  35  , max dispL  375.591  , max dispR  1246.46
+Bad frame  36  , max dispL  759.389  , max dispR  1131.07
+Bad frame  37  , max dispL  763.902  , max dispR  1020.72
+Bad frame  38  , max dispL  871.569  , max dispR  924.333
+Bad frame  39  , max dispL  825.311  , max dispR  843.862
+Bad frame  40  , max dispL  1522.95  , max dispR  780.854
+Bad frame  41  , max dispL  728.489  , max dispR  728.465
+Bad frame  42  , max dispL  685.427  , max dispR  689.654
+Bad frame  43  , max dispL  649.994  , max dispR  657.807
+Bad frame  44  , max dispL  631.769  , max dispR  631.419
+Bad frame  45  , max dispL  610.701  , max dispR  610.526
+Bad frame  46  , max dispL  594.024  , max dispR  593.646
+Bad frame  47  , max dispL  581.375  , max dispR  583.08
+Bad frame  48  , max dispL  572.688  , max dispR  575.877
+Bad frame  49  , max dispL  567.691  , max dispR  571.533
+Bad frame  50  , max dispL  566.573  , max dispR  570.179
+Bad frame  51  , max dispL  565.431  , max dispR  569.476
+Bad frame  52  , max dispL  563.653  , max dispR  567.315
+Bad frame  53  , max dispL  560.145  , max dispR  563.287
+Bad frame  54  , max dispL  554.183  , max dispR  556.546
+Bad frame  55  , max dispL  545.072  , max dispR  546.421
+Bad frame  56  , max dispL  528.841  , max dispR  531.961
+Bad frame  57  , max dispL  508.137  , max dispR  513.783
+Writing clip frames 58 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0016
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0017
+Bad frame  80  , max dispL  1793.21  , max dispR  280.403
+Writing clip frames 1 to 79
+Bad frame  81  , max dispL  2868.57  , max dispR  321.267
+Bad frame  82  , max dispL  4788.71  , max dispR  415.485
+Bad frame  86  , max dispL  547.484  , max dispR  578.946
+Bad frame  87  , max dispL  588.54  , max dispR  596.797
+Bad frame  88  , max dispL  510.263  , max dispR  513.331
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0018
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0019
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0020
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0021
+Bad frame  68  , max dispL  506.352  , max dispR  365.16
+Writing clip frames 1 to 67
+Bad frame  69  , max dispL  530.965  , max dispR  374.487
+Bad frame  70  , max dispL  550.122  , max dispR  386.638
+Bad frame  71  , max dispL  568.498  , max dispR  398.107
+Bad frame  72  , max dispL  589.685  , max dispR  433.2
+Bad frame  73  , max dispL  603.411  , max dispR  440.262
+Bad frame  74  , max dispL  569.652  , max dispR  449.233
+Bad frame  75  , max dispL  532.724  , max dispR  454.142
+Bad frame  76  , max dispL  502.191  , max dispR  461.598
+Bad frame  86  , max dispL  778.771  , max dispR  347.069
+Bad frame  87  , max dispL  879.024  , max dispR  339.637
+Bad frame  88  , max dispL  789.28  , max dispR  333.134
+Bad frame  89  , max dispL  719.973  , max dispR  327.279
+Bad frame  90  , max dispL  665.692  , max dispR  322.247
+Bad frame  91  , max dispL  622.632  , max dispR  317.809
+Bad frame  92  , max dispL  588.286  , max dispR  312.886
+Bad frame  93  , max dispL  560.838  , max dispR  420.57
+Bad frame  94  , max dispL  538.986  , max dispR  444.037
+Bad frame  95  , max dispL  521.787  , max dispR  461.231
+Bad frame  96  , max dispL  508.543  , max dispR  474.324
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0022
+Bad frame  83  , max dispL  507.692  , max dispR  469.144
+Writing clip frames 1 to 82
+Bad frame  84  , max dispL  563.412  , max dispR  507.392
+Bad frame  85  , max dispL  616.532  , max dispR  590.845
+Bad frame  86  , max dispL  665.407  , max dispR  632.448
+Bad frame  87  , max dispL  711.178  , max dispR  670.634
+Bad frame  88  , max dispL  750.145  , max dispR  704.179
+Bad frame  89  , max dispL  780.85  , max dispR  740.497
+Bad frame  90  , max dispL  802.635  , max dispR  773.645
+Bad frame  91  , max dispL  794.443  , max dispR  793.092
+Bad frame  92  , max dispL  772.279  , max dispR  772.233
+Bad frame  93  , max dispL  740.004  , max dispR  740.004
+Bad frame  94  , max dispL  460.886  , max dispR  715.071
+Bad frame  95  , max dispL  458.492  , max dispR  697.521
+Bad frame  96  , max dispL  456.862  , max dispR  683.173
+Bad frame  97  , max dispL  455.114  , max dispR  672.071
+Bad frame  98  , max dispL  453.43  , max dispR  664.254
+Bad frame  99  , max dispL  452.338  , max dispR  659.591
+Bad frame  100  , max dispL  451.98  , max dispR  658.067
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0023
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0024
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0025
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0026
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0027
+Bad frame  42  , max dispL  2026.32  , max dispR  61.7185
+Writing clip frames 1 to 41
+Bad frame  43  , max dispL  2247.18  , max dispR  61.5178
+Bad frame  44  , max dispL  2483.9  , max dispR  61.3479
+Bad frame  45  , max dispL  2313.99  , max dispR  61.1996
+Bad frame  46  , max dispL  2118.36  , max dispR  61.079
+Bad frame  47  , max dispL  1987.58  , max dispR  60.9864
+Bad frame  48  , max dispL  1903.58  , max dispR  60.919
+Bad frame  49  , max dispL  1856.56  , max dispR  60.8774
+Bad frame  50  , max dispL  1841.46  , max dispR  60.8639
+Bad frame  51  , max dispL  1841.87  , max dispR  60.8702
+Bad frame  52  , max dispL  1843.08  , max dispR  60.8696
+Bad frame  53  , max dispL  1845.13  , max dispR  60.8794
+Bad frame  54  , max dispL  1848.02  , max dispR  60.8887
+Bad frame  55  , max dispL  1852.17  , max dispR  60.9026
+Bad frame  56  , max dispL  1856.97  , max dispR  60.9177
+Bad frame  57  , max dispL  1862.5  , max dispR  60.9377
+Bad frame  58  , max dispL  1869.07  , max dispR  60.9604
+Bad frame  59  , max dispL  1876.72  , max dispR  60.985
+Bad frame  60  , max dispL  1884.9  , max dispR  61.0108
+Bad frame  61  , max dispL  1894.2  , max dispR  61.0424
+Bad frame  62  , max dispL  1904.64  , max dispR  61.0778
+Bad frame  63  , max dispL  1913.89  , max dispR  61.1149
+Writing clip frames 64 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0028
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0029
+Bad frame  16  , max dispL  670.049  , max dispR  328.31
+Bad frame  17  , max dispL  511.55  , max dispR  298.469
+Writing clip frames 18 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0030
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0031
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0032
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0033
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0034
+Bad frame  35  , max dispL  1328.6  , max dispR  1238.64
+Writing clip frames 1 to 34
+Bad frame  36  , max dispL  1830.02  , max dispR  1678.09
+Bad frame  37  , max dispL  3081.73  , max dispR  1800.68
+Bad frame  38  , max dispL  7058.09  , max dispR  2301.47
+Bad frame  39  , max dispL  6704.77  , max dispR  3775.21
+Bad frame  40  , max dispL  6610.9  , max dispR  10495.7
+Bad frame  41  , max dispL  5028.95  , max dispR  6215.95
+Bad frame  42  , max dispL  4993.23  , max dispR  3628.51
+Bad frame  43  , max dispL  3778.22  , max dispR  2571.24
+Bad frame  44  , max dispL  3557.48  , max dispR  1863.47
+Bad frame  45  , max dispL  1989.14  , max dispR  10421.7
+Bad frame  46  , max dispL  2308.73  , max dispR  630.535
+Bad frame  47  , max dispL  2589.51  , max dispR  707.184
+Bad frame  48  , max dispL  5785.71  , max dispR  492.721
+Bad frame  49  , max dispL  3141.27  , max dispR  283.71
+Bad frame  50  , max dispL  1157.07  , max dispR  284.779
+Bad frame  51  , max dispL  607.015  , max dispR  607.084
+Bad frame  52  , max dispL  674.771  , max dispR  675.197
+Bad frame  53  , max dispL  736.523  , max dispR  736.388
+Bad frame  54  , max dispL  787.241  , max dispR  779.379
+Bad frame  55  , max dispL  809.466  , max dispR  786.083
+Bad frame  56  , max dispL  796.94  , max dispR  785.345
+Bad frame  57  , max dispL  770.179  , max dispR  768.164
+Bad frame  58  , max dispL  730.573  , max dispR  730.551
+Bad frame  59  , max dispL  673.877  , max dispR  673.688
+Bad frame  60  , max dispL  581.769  , max dispR  1158.73
+Bad frame  61  , max dispL  463.546  , max dispR  1191.84
+Bad frame  62  , max dispL  406.642  , max dispR  958.782
+Bad frame  63  , max dispL  360.053  , max dispR  746.228
+Writing clip frames 64 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0035
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0036
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0037
+Bad frame  10  , max dispL  513.093  , max dispR  257.738
+Bad frame  11  , max dispL  584.958  , max dispR  302.774
+Bad frame  12  , max dispL  638.185  , max dispR  339.064
+Bad frame  13  , max dispL  699.469  , max dispR  432.027
+Bad frame  14  , max dispL  737.611  , max dispR  555.126
+Bad frame  15  , max dispL  736.392  , max dispR  580.442
+Bad frame  16  , max dispL  663.105  , max dispR  604.195
+Bad frame  17  , max dispL  587.654  , max dispR  585.333
+Bad frame  18  , max dispL  551.616  , max dispR  551.728
+Bad frame  19  , max dispL  512.996  , max dispR  513.061
+Bad frame  83  , max dispL  10498.7  , max dispR  111.617
+Writing clip frames 20 to 82
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0038
+Bad frame  79  , max dispL  435.652  , max dispR  547.869
+Writing clip frames 1 to 78
+Bad frame  80  , max dispL  481.547  , max dispR  639.858
+Bad frame  81  , max dispL  535.348  , max dispR  759.288
+Bad frame  82  , max dispL  555.784  , max dispR  908.979
+Bad frame  83  , max dispL  142.814  , max dispR  1107.69
+Bad frame  84  , max dispL  135.834  , max dispR  1412.48
+Bad frame  85  , max dispL  140.064  , max dispR  1906.32
+Bad frame  86  , max dispL  144.373  , max dispR  2168.67
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0039
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0040
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0041
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0042
+Bad frame  79  , max dispL  446.719  , max dispR  627.447
+Writing clip frames 1 to 78
+Bad frame  80  , max dispL  556.526  , max dispR  815.482
+Bad frame  81  , max dispL  731.413  , max dispR  735.426
+Bad frame  82  , max dispL  1047.06  , max dispR  1050.11
+Bad frame  83  , max dispL  1766.39  , max dispR  1539.13
+Bad frame  84  , max dispL  4595.55  , max dispR  2891.06
+Bad frame  91  , max dispL  536.972  , max dispR  421.864
+Bad frame  92  , max dispL  598.539  , max dispR  447.262
+Bad frame  93  , max dispL  664.987  , max dispR  432.012
+Bad frame  94  , max dispL  734.749  , max dispR  434.043
+Bad frame  95  , max dispL  805.281  , max dispR  457.753
+Bad frame  96  , max dispL  845.873  , max dispR  480.31
+Bad frame  97  , max dispL  815.649  , max dispR  499.221
+Bad frame  98  , max dispL  830.005  , max dispR  513.492
+Bad frame  99  , max dispL  838.801  , max dispR  522.421
+Bad frame  100  , max dispL  841.758  , max dispR  525.415
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0043
+Bad frame  55  , max dispL  173.208  , max dispR  5666.21
+Writing clip frames 1 to 54
+Writing clip frames 56 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0044
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0045
+Bad frame  78  , max dispL  128.165  , max dispR  590.937
+Writing clip frames 1 to 77
+Bad frame  79  , max dispL  136.073  , max dispR  592.112
+Writing clip frames 80 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0046
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0047
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0048
+Bad frame  1  , max dispL  505.922  , max dispR  508.798
+Bad frame  2  , max dispL  512.14  , max dispR  522.077
+Bad frame  3  , max dispL  518.157  , max dispR  547.063
+Bad frame  4  , max dispL  524.303  , max dispR  587.302
+Bad frame  5  , max dispL  530.765  , max dispR  653.056
+Bad frame  6  , max dispL  537.322  , max dispR  767.672
+Bad frame  7  , max dispL  543.937  , max dispR  833.367
+Bad frame  8  , max dispL  550.827  , max dispR  6402.35
+Bad frame  9  , max dispL  559.286  , max dispR  3726.66
+Bad frame  10  , max dispL  569.744  , max dispR  2594.09
+Bad frame  11  , max dispL  582.386  , max dispR  1967.89
+Bad frame  12  , max dispL  589.387  , max dispR  1576.58
+Bad frame  13  , max dispL  1213.03  , max dispR  1152.93
+Bad frame  14  , max dispL  1086.18  , max dispR  907.292
+Bad frame  15  , max dispL  888.162  , max dispR  850.285
+Bad frame  16  , max dispL  761.689  , max dispR  816.281
+Bad frame  17  , max dispL  672.974  , max dispR  740.425
+Bad frame  18  , max dispL  596.015  , max dispR  645.611
+Bad frame  19  , max dispL  533.039  , max dispR  556.547
+Writing clip frames 20 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/A/0049
+Bad frame  18  , max dispL  503.121  , max dispR  462.733
+Bad frame  19  , max dispL  528.699  , max dispR  481.04
+Bad frame  20  , max dispL  554.807  , max dispR  500.981
+Bad frame  21  , max dispL  579.777  , max dispR  520.76
+Bad frame  22  , max dispL  606.01  , max dispR  541.958
+Bad frame  23  , max dispL  634.093  , max dispR  561.648
+Bad frame  24  , max dispL  664.251  , max dispR  582.411
+Bad frame  25  , max dispL  696.254  , max dispR  604.338
+Bad frame  26  , max dispL  730.199  , max dispR  627.022
+Bad frame  27  , max dispL  766.266  , max dispR  650.749
+Bad frame  28  , max dispL  803.802  , max dispR  675.107
+Bad frame  29  , max dispL  804.455  , max dispR  700.002
+Bad frame  30  , max dispL  771.867  , max dispR  725.618
+Bad frame  31  , max dispL  810.854  , max dispR  747.432
+Bad frame  32  , max dispL  851.341  , max dispR  777.391
+Bad frame  33  , max dispL  893.124  , max dispR  807.297
+Bad frame  34  , max dispL  936.341  , max dispR  827.153
+Bad frame  35  , max dispL  980.337  , max dispR  835.779
+Bad frame  36  , max dispL  1017.08  , max dispR  838.442
+Bad frame  37  , max dispL  994.308  , max dispR  833.825
+Bad frame  38  , max dispL  952.476  , max dispR  821.861
+Bad frame  39  , max dispL  897.895  , max dispR  806.656
+Bad frame  40  , max dispL  831.393  , max dispR  786.341
+Bad frame  41  , max dispL  772.588  , max dispR  759.716
+Bad frame  42  , max dispL  731.299  , max dispR  731.401
+Bad frame  43  , max dispL  700.26  , max dispR  701.286
+Bad frame  44  , max dispL  676.434  , max dispR  678.286
+Bad frame  45  , max dispL  649.332  , max dispR  661.05
+Bad frame  46  , max dispL  623.293  , max dispR  648.754
+Bad frame  47  , max dispL  589.405  , max dispR  640.89
+Bad frame  48  , max dispL  208.082  , max dispR  637.415
+Bad frame  49  , max dispL  209.258  , max dispR  638.049
+Bad frame  50  , max dispL  210.277  , max dispR  642.724
+Bad frame  51  , max dispL  211.108  , max dispR  648.0
+Bad frame  52  , max dispL  211.768  , max dispR  650.0
+Bad frame  53  , max dispL  212.272  , max dispR  648.351
+Bad frame  54  , max dispL  212.508  , max dispR  642.846
+Bad frame  55  , max dispL  212.467  , max dispR  630.387
+Bad frame  56  , max dispL  212.092  , max dispR  614.445
+Bad frame  57  , max dispL  211.344  , max dispR  595.823
+Bad frame  58  , max dispL  210.1  , max dispR  575.308
+Bad frame  59  , max dispL  208.357  , max dispR  546.72
+Bad frame  60  , max dispL  206.074  , max dispR  517.973
+Writing clip frames 61 to 100
+Dataset StaticThings3D, subfolder TRAIN/B, threshold 500
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0000
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0001
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0002
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0003
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0004
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0005
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0006
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0007
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0008
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0009
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0010
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0011
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0012
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0013
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0014
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0015
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0016
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0017
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0018
+Bad frame  77  , max dispL  143.612  , max dispR  10486.4
+Writing clip frames 1 to 76
+Bad frame  78  , max dispL  143.13  , max dispR  10496.7
+Bad frame  79  , max dispL  142.683  , max dispR  10498.1
+Bad frame  80  , max dispL  142.217  , max dispR  10495.7
+Bad frame  81  , max dispL  141.798  , max dispR  10496.4
+Bad frame  82  , max dispL  141.427  , max dispR  10496.9
+Bad frame  83  , max dispL  141.045  , max dispR  10497.2
+Bad frame  84  , max dispL  140.655  , max dispR  9814.6
+Bad frame  85  , max dispL  140.313  , max dispR  8963.42
+Bad frame  86  , max dispL  140.034  , max dispR  10481.7
+Bad frame  87  , max dispL  139.681  , max dispR  10491.6
+Bad frame  88  , max dispL  139.386  , max dispR  10496.6
+Bad frame  89  , max dispL  139.148  , max dispR  10497.0
+Bad frame  90  , max dispL  138.967  , max dispR  10379.5
+Bad frame  91  , max dispL  138.71  , max dispR  9002.6
+Bad frame  92  , max dispL  138.523  , max dispR  8045.96
+Bad frame  93  , max dispL  138.38  , max dispR  7356.29
+Bad frame  94  , max dispL  138.231  , max dispR  6848.26
+Bad frame  95  , max dispL  138.138  , max dispR  6470.04
+Bad frame  96  , max dispL  138.039  , max dispR  6192.17
+Bad frame  97  , max dispL  137.917  , max dispR  5992.28
+Bad frame  98  , max dispL  137.925  , max dispR  5859.33
+Bad frame  99  , max dispL  137.848  , max dispR  5781.58
+Bad frame  100  , max dispL  137.884  , max dispR  5756.2
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0019
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0020
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0021
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0022
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0023
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0024
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0025
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0026
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0027
+Bad frame  75  , max dispL  549.453  , max dispR  549.457
+Writing clip frames 1 to 74
+Bad frame  76  , max dispL  544.596  , max dispR  544.621
+Bad frame  77  , max dispL  539.899  , max dispR  539.733
+Bad frame  78  , max dispL  534.855  , max dispR  534.898
+Bad frame  79  , max dispL  530.038  , max dispR  530.089
+Bad frame  80  , max dispL  525.253  , max dispR  525.266
+Bad frame  81  , max dispL  520.393  , max dispR  520.552
+Bad frame  82  , max dispL  516.023  , max dispR  515.917
+Bad frame  83  , max dispL  511.478  , max dispR  511.677
+Bad frame  84  , max dispL  507.072  , max dispR  507.275
+Bad frame  85  , max dispL  503.126  , max dispR  503.153
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0028
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0029
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0030
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0031
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0032
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0033
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0034
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0035
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0036
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0037
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0038
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0039
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0040
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0041
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0042
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0043
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0044
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0045
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0046
+Bad frame  6  , max dispL  147.187  , max dispR  548.359
+Bad frame  36  , max dispL  153.87  , max dispR  605.434
+Writing clip frames 7 to 35
+Writing clip frames 37 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0047
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0048
+Writing clip frames 1 to 100
+Processing  /misc/lmbraid17/sceneflownet/common/data/2_blender-out/lowres/StaticThings3D/TRAIN/B/0049
+Writing clip frames 1 to 100
