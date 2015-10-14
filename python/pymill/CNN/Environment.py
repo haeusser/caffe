@@ -422,7 +422,7 @@ class Environment:
 
         if self.haveScratchDir():
             self.notice('removing scratch', 'del')
-            os.system('rm -rf %s' % self._scratchDir)
+            os.system('rm -rf %s/scracth' % self._path)
 
         if self.haveJobDir():
             self.notice('removing jobs', 'del')
@@ -503,15 +503,14 @@ class Environment:
         if definition is None: definition = 'test'
         proto = self.findProto(definition)
 
-        finalProto = self.makeScratchPrototxt(proto, vars)
-        solverProto = self.makeScratchPrototxt(self._solverProto, vars)
-
         if output and 'dataset' in vars:
             outPath = '%s/output_%d_%s' % (self._path, iter, vars['dataset'])
             if os.path.isdir(outPath):
                 if self._unattended or tb.queryYesNo('Output folder %s exists, do you want to delete it first?' % os.path.basename(outPath)):
                     os.system('rm -rf %s' % outPath)
 
+        finalProto = self.makeScratchPrototxt(proto, vars)
+        solverProto = self.makeScratchPrototxt(self._solverProto, vars)
 
         self.notice('testing snapshot iteration %d for %d iterations...' % (iter, num_iter), 'notice')
         os.chdir(self._path)
