@@ -25,8 +25,10 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
         blob_bottom_label_(new Blob<Dtype>(5, 4, 3, 2)),
         blob_top_loss_(new Blob<Dtype>()) {
           
+    Caffe::set_random_seed(1701);
     // fill the values
     FillerParameter filler_param;
+    filler_param.set_std(10);
     GaussianFiller<Dtype> filler(filler_param);
     filler.Fill(this->blob_bottom_data_);
     blob_bottom_vec_.push_back(blob_bottom_data_);
@@ -40,7 +42,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     // So lets avoid that:
     for(int i=0; i<this->blob_bottom_data_->count(); i++) {
         Dtype dist = fabs(bot0[i] - bot1[i]);
-        if(dist < 3e-2) bot0[i] += 4e-2;
+        if(dist < 2e-2) bot0[i] += 2e-2;
     }
         
     
@@ -70,7 +72,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     layer_weight_2.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
     const Dtype loss_weight_2 =
         layer_weight_2.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-    const Dtype kErrorMargin = 2e-5;
+    const Dtype kErrorMargin = 1e-5;
     EXPECT_NEAR(loss_weight_1 * kLossWeight, loss_weight_2, kErrorMargin);
     // Make sure the loss is non-trivial.
     const Dtype kNonTrivialAbsThresh = 1e-1;
@@ -84,14 +86,14 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     layer_param.add_loss_weight(kLossWeight);
     layer_param.mutable_l1_loss_param()->set_l2_per_location(false);
     layer_param.mutable_l1_loss_param()->set_plateau(plateau);
-
+    
     L1LossLayer<Dtype> layer_weight_2(layer_param);
     layer_weight_2.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
     
     const Dtype loss_weight_2 =
         layer_weight_2.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-    const Dtype kErrorMargin = 2e-5;
-
+    const Dtype kErrorMargin = 1e-5;
+    
     //Compute reference
     Dtype refloss = 0;
     const Dtype *bot0 = blob_bottom_data_->cpu_data();
@@ -125,7 +127,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     
     const Dtype loss_weight_2 =
         layer_weight_2.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-    const Dtype kErrorMargin = 2e-5;
+    const Dtype kErrorMargin = 1e-5;
     
     //Compute reference
     Dtype refloss = 0;
@@ -174,7 +176,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     
     const Dtype loss_weight_2 =
         layer_weight_2.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-    const Dtype kErrorMargin = 2e-5;
+    const Dtype kErrorMargin = 1e-5;
     
     //Compute reference
     Dtype refloss = 0;
@@ -227,7 +229,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     
     const Dtype loss_weight_2 =
         layer_weight_2.Forward(mybottom, this->blob_top_vec_);
-    const Dtype kErrorMargin = 2e-5;
+    const Dtype kErrorMargin = 1e-5;
     
     //Compute reference
     Dtype refloss = 0;
@@ -264,7 +266,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     layer_weight_2.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
     const Dtype loss_weight_2 =
         layer_weight_2.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-    const Dtype kErrorMargin = 2e-5;
+    const Dtype kErrorMargin = 1e-5;
     EXPECT_NEAR(loss_weight_1 * kLossWeight, loss_weight_2, kErrorMargin);
     // Make sure the loss is non-trivial.
     const Dtype kNonTrivialAbsThresh = 1e-1;
@@ -305,12 +307,12 @@ TYPED_TEST(L1LossLayerTest, TestForward_plateau) {
       LOG(INFO) << "Skipping CPU test";
       return;
   }
-  this->TestForward_values(0.5);
   this->TestForward_values(1.0);
-  this->TestForward_values(2.5);
+  /*this->TestForward_values(0.5);
+  this->TestForward_values(5.0);
   this->TestForward_values_singleblob(1.0);
   this->TestForward_values_singleblob(1.3);
-  this->TestForward_values_singleblob(2.5);
+  this->TestForward_values_singleblob(2.5);*/
 }
 
 TYPED_TEST(L1LossLayerTest, TestForward_values_l2) {
