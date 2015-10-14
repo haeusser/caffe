@@ -56,11 +56,11 @@ __global__ void MaskPlateauValues(const int n, const Dtype* in, Dtype* out, Dtyp
 } 
 
 template <typename Dtype>
-__global__ void KillSmallValues(const int n, Dtype* out, Dtype threshold) {
+__global__ void MaskPlateauValuesInitial(const int n, const Dtype* in, Dtype* out, Dtype plateau) {
   CUDA_KERNEL_LOOP(index, n) {
-    out[index] = out[index] < threshold ? Dtype(0) : out[index];
+    out[index] = (fabs(in[index]) < plateau) ? Dtype(0) : Dtype(1);
   }
-}
+} 
 
 
 template <typename Dtype>
@@ -80,6 +80,7 @@ void L1LossLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   int num = bottom[0]->num();
   FindNotNaNs<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, diffptr->gpu_data(), mask_.mutable_gpu_data());
+  cudaDeviceSynchronize();
   CUDA_POST_KERNEL_CHECK;
   
   if (this->layer_param_.l1_loss_param().normalize_by_num_entries()) {    
@@ -93,6 +94,7 @@ void L1LossLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     // set masked (NaNs only) to zero
     KillMasked<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
           count, mask_.gpu_data(), diffptr->mutable_gpu_data());
+    cudaDeviceSynchronize();
     CUDA_POST_KERNEL_CHECK;
     
     square_layer_->Forward(diff_top_vec_, square_top_vec_);
@@ -101,8 +103,14 @@ void L1LossLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     // Mask plateau in summed blob (only one channel):
     if(this->layer_param_.l1_loss_param().plateau() > 0) {
       float plateau_val_squared = this->layer_param_.l1_loss_param().plateau() * this->layer_param_.l1_loss_param().plateau();
-      MaskPlateauValues<Dtype><<<CAFFE_GET_BLOCKS(sum_output_.count()), CAFFE_CUDA_NUM_THREADS>>>(
+      MaskPlateauValuesInitial<Dtype><<<CAFFE_GET_BLOCKS(sum_output_.count()), CAFFE_CUDA_NUM_THREADS>>>(
           sum_output_.count(), sum_output_.gpu_data(), plateau_l2_.mutable_gpu_data(), plateau_val_squared);
+      cudaDeviceSynchronize();
+      CUDA_POST_KERNEL_CHECK;
+      
+      KillMasked<Dtype><<<CAFFE_GET_BLOCKS(sum_output_.count()), CAFFE_CUDA_NUM_THREADS>>>(
+            sum_output_.count(), plateau_l2_.gpu_data(), sum_output_.mutable_gpu_data());
+      cudaDeviceSynchronize();
       CUDA_POST_KERNEL_CHECK;
     }
     
@@ -151,14 +159,16 @@ void L1LossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
           Dtype(0), sqrt_output_.mutable_gpu_diff());
       sqrt_layer_->Backward(sqrt_top_vec_, prop_down, sum_top_vec_);
       
+      if(this->layer_param_.l1_loss_param().plateau() > 0) {
+        KillMasked<Dtype><<<CAFFE_GET_BLOCKS(sum_output_.count()), CAFFE_CUDA_NUM_THREADS>>>(
+              sum_output_.count(), plateau_l2_.gpu_data(), sum_output_.mutable_gpu_diff());
+        cudaDeviceSynchronize();
+        CUDA_POST_KERNEL_CHECK;
+      }
+      
       sum_layer_->Backward(sum_top_vec_, prop_down, square_top_vec_);
       square_layer_->Backward(square_top_vec_, prop_down, diff_top_vec_);
       
-      if(this->layer_param_.l1_loss_param().plateau() > 0) {
-        KillMaskedAcrossChannels<Dtype><<<CAFFE_GET_BLOCKS(diffptr->count()), CAFFE_CUDA_NUM_THREADS>>>(
-          diffptr->count(), diffptr->width() * diffptr->height(), plateau_l2_.gpu_data(), diffptr->mutable_gpu_diff());
-        CUDA_POST_KERNEL_CHECK;
-      }
     
     }
     else {    
