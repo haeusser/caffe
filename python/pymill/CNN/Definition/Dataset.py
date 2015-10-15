@@ -268,7 +268,7 @@ def get(name=None, rendertype=None, phase=None):
 
 def getDatasetNames(task):
     '''
-    @brief List available datasets for a given task
+    @brief List available _TEST_ datasets for a given task
     
     @param task One of 'disp' (disparity), 'flow' (optical flow), 'sceneflow' (scene flow: disparity, disparity change, optical flow)
     

@@ -414,6 +414,7 @@ message LayerParameter {
   optional InfogainLossParameter infogain_loss_param = 116;
   optional InnerProductParameter inner_product_param = 117;
   optional L1LossParameter l1_loss_param = 3001;
+  optional HuberL1LossParameter huber_l1_loss_param = 4007;
   optional LogParameter log_param = 134;
   optional LRNParameter lrn_param = 118;
   optional MemoryDataParameter memory_data_param = 119;
@@ -1025,6 +1026,15 @@ message L1LossParameter {
   optional bool normalize_by_num_entries = 3 [default = false]; // if we want to normalize not by batch size, but by the number of non-NaN entries
   optional float epsilon = 4 [default = 1e-2]; // constant for smoothing near zero
   optional float plateau = 3001 [default = 0]; // L1 Errors smaller than plateau-value will result in zero loss and no gradient
+}
+
+// Message that stores parameters used by L1LossLayer
+message HuberL1LossParameter {
+  optional bool l2_per_location = 4002 [default = false];
+  optional bool l2_prescale_by_channels = 4003 [default = false]; // Old style
+  optional bool normalize_by_num_entries = 4004 [default = false]; // if we want to normalize not by batch size, but by the number of non-NaN entries
+  optional float epsilon = 4005 [default = 1e-2]; // constant for smoothing near zero
+  optional float plateau = 4006 [default = 0]; // L1 Errors smaller than plateau-value will result in zero loss and no gradient
 }
 
 // Message that stores parameters used by LogLayer
