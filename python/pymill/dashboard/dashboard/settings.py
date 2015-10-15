@@ -1,6 +1,6 @@
 # coding: utf-8
 # import django_tables2
-from os.path import dirname, join, abspath, isfile
+from os.path import dirname, join, abspath, isfile, abspath
 import sys
 
 ROOT = dirname(abspath(__file__))
@@ -15,7 +15,8 @@ ADMINS = (
 MANAGERS = ADMINS
 
 db_path = '/misc/lmbraid17/sceneflownet/common/results/db.sqlite'
-db_path = db_path if isfile(db_path) else '/home/haeusser/libs/hackathon-caffe2/python/pymill/test/results/db.sqlite'
+db_path_fallback = abspath(join(dirname( __file__ ), '../../test/results/db.sqlite'))
+db_path = db_path if isfile(db_path) else db_path_fallback
 
 DATABASES = {
     'default': {
