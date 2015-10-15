@@ -145,7 +145,12 @@ void BinaryDataLayer<Dtype>::LayerSetUp(const Container& bottom,
   DLOG(INFO) << "Prefetch initialized.";
 
   if(this->phase_ == TEST)
-      this->GetNet()->set_test_iter_count(reader_.get_num_samples());
+  {
+      if (reader_.get_num_samples() % batch_size)
+          LOG(FATAL) << "Number of samples (" << reader_.get_num_samples() << ") of TEST set is not divisible by batch size (" << batch_size << ")";
+
+      this->GetNet()->set_test_iter_count(reader_.get_num_samples()/batch_size);
+  }
 
   if(this->layer_param().data_param().error_based_sampling())
   {

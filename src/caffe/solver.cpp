@@ -128,7 +128,7 @@ void Solver<Dtype>::InitTestNets() {
   const int num_test_net_files = param_.test_net_size();
   const int num_test_nets = num_test_net_params + num_test_net_files;
   if (num_generic_nets) {
-      CHECK_GE(param_.test_iter_size(), num_test_nets)
+    CHECK_GE(param_.test_iter_size(), num_test_nets)
           << "test_iter must be specified for each test network.";
   } else {
       CHECK_EQ(param_.test_iter_size(), num_test_nets)
@@ -400,7 +400,22 @@ void Solver<Dtype>::Test(const int test_net_id) {
   vector<Blob<Dtype>*> bottom_vec;
   const shared_ptr<Net<Dtype> >& test_net = test_nets_[test_net_id];
   Dtype loss = 0;
-  for (int i = 0; i < param_.test_iter(test_net_id); ++i) {
+
+  int test_iterations = test_net->test_iter_count();
+  if(test_iterations<=0)
+  {
+      if(!param_.test_iter_size()>test_net_id)
+          LOG(FATAL) << "Test net iterations not given by dataset and not specified by test_iter in solver. Please specify test iterations for test net " << test_net_id << ".";
+
+      test_iterations = param_.test_iter(test_net_id);
+      LOG(INFO) << "Running " << test_iterations << " test iterations (given by SOLVER DEFINITION).";
+  }
+  else
+  {
+      LOG(INFO) << "Running " << test_iterations << " test iterations (given bys DATA LAYER).";
+  }
+
+  for (int i = 0; i < test_iterations; ++i) {
     SolverAction::Enum request = GetRequestedAction();
     // Check to see if stoppage of testing/training has been requested.
     while (request != SolverAction::NONE) {
@@ -445,7 +460,7 @@ void Solver<Dtype>::Test(const int test_net_id) {
     return;
   }
   if (param_.test_compute_loss()) {
-    loss /= param_.test_iter(test_net_id);
+    loss /= test_iterations;
     LOG(INFO) << "Test loss: " << loss;
   }
   for (int i = 0; i < test_score.size(); ++i) {
@@ -454,7 +469,7 @@ void Solver<Dtype>::Test(const int test_net_id) {
     const string& output_name = test_net->blob_names()[output_blob_index];
     const Dtype loss_weight = test_net->blob_loss_weights()[output_blob_index];
     ostringstream loss_msg_stream;
-    const Dtype mean_score = test_score[i] / param_.test_iter(test_net_id);
+    const Dtype mean_score = test_score[i] / test_iterations;
     if (loss_weight) {
       loss_msg_stream << " (* " << loss_weight
                       << " = " << loss_weight * mean_score << " loss)";

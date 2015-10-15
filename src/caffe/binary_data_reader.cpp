@@ -203,7 +203,7 @@ void BinaryDataReader<Dtype>::Body::sample_next_index(int &index)
             if(accum >= scaled_index)
             {
                 index = i;
-                //LOG(INFO) << "Drawing from error based distribution, index = " << index << " (error = " << sample_errors_[i] << ")";
+                LOG(INFO) << "Drawing from error based distribution, index = " << index << " (error = " << sample_errors_[i] << ")";
                 counter_++;
                 if(counter_ >= db_->get_num_samples())
                 {
