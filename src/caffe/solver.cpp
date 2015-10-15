@@ -412,7 +412,7 @@ void Solver<Dtype>::Test(const int test_net_id) {
   }
   else
   {
-      LOG(INFO) << "Running " << test_iterations << " test iterations (given bys DATA LAYER).";
+      LOG(INFO) << "Running " << test_iterations << " test iterations (given by DATA LAYER).";
   }
 
   for (int i = 0; i < test_iterations; ++i) {
