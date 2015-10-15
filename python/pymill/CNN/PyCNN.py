@@ -34,8 +34,10 @@ import re
 from Environment import Environment
 from Environment import PythonBackend
 from Environment import BinaryBackend
+from Environment import caffeBin
 import time
 import signal
+import caffe
 
 def sigusr1(signum, stack):
     print 'pycnn: got signal SIGUSR1'
@@ -72,6 +74,10 @@ def runOnCluster(env, node, gpus, background,insertLocal=True, trackJob=True):
         sysargs.insert(1,'--execute')
     cmd = ' '.join(sysargs)
     home = os.environ['HOME']
+
+    if args.backend == 'python':
+        training = os.path.abspath('training')
+        cmd = 'LD_LIBRARY_PATH=%s:$LD_LIBRARY_PATH PYTHONPATH=%s:$PYTHONPATH %s' % (training, training, cmd)
 
     qsubCommandFile = '%s/%s-%s.sh' % (env.jobDir(), env.name().replace('/','_'), time.strftime('%d.%m.%Y-%H:%M:%S'))
 
@@ -144,7 +150,7 @@ parser.add_argument('--verbose',       help='verbose', action='store_true')
 parser.add_argument('--path',          help='model path (default=.)', default='.')
 parser.add_argument('--unattended',    help='always assume Y as answer (dangerous)', action='store_true')
 parser.add_argument('--yes',           help='same as unattended', action='store_true')
-parser.add_argument('--backend',       help='backend to use (default=python)', choices=('binary','python'), default='python')
+parser.add_argument('--backend',       help='backend to use (default=python)', choices=('binary','python'), default='binary')
 parser.add_argument('--local',         help='run on local machine', action='store_true')
 parser.add_argument('--background',    help='run on cluster in background', action='store_true')
 parser.add_argument('--node',          help='run on a specific node', default=None)
@@ -229,7 +235,7 @@ sub_parser.add_argument('--iter', help='iteration of snapshot (default=last)', d
 sub_parser = subparsers.add_parser('snapshot', help='connect to current process and request snapshot')
 
 # autocomplete very slow for some reason
-argcomplete.autocomplete(parser)
+#argcomplete.autocomplete(parser)
 
 if len(sys.argv) == 1:
     parser.print_help()
@@ -241,14 +247,31 @@ tb.verbose = args.verbose
 args.unattended = args.yes
 
 if args.background: args.unattended = True
-if args.execute: args.local=True
+if args.execute: args.local = True
 
 gpuIds = ''
 for i in range(0, args.gpus):
     gpuIds += ',%d' % i
 gpuIds = gpuIds[1:]
-if args.backend == 'binary': backend = BinaryBackend(gpuIds, args.quiet, args.silent)
-else:                        backend = PythonBackend(gpuIds, args.quiet, args.silent)
+if args.backend == 'binary':
+    backend = BinaryBackend(gpuIds, args.quiet, args.silent)
+else:
+    backend = PythonBackend(gpuIds, args.quiet, args.silent)
+    if args.execute:
+        print 'using caffe module from: %s' % caffe.__file__
+        print 'using caffe._caffe module from: %s' % caffe._caffe.__file__
+
+        ldd = tb.run('ldd %s' % caffe._caffe.__file__)
+        caffeLib = None
+        for line in ldd.split('\n'):
+            match = re.match('\\s*libcaffe.so => (.*\.so)', line)
+            if match:
+                caffeLib = match.group(1)
+                break
+        if caffeLib is None:
+            raise Exception('cannot find libcaffe.so dependency')
+        print 'using caffe from %s' % caffeLib
+
 
 env = Environment(args.path, backend, args.unattended, args.silent)
 if args.command != 'copy' and args.command != 'compare': env.init()
@@ -263,6 +286,13 @@ def checkNoJob():
     currentId = '%s/current_id' % env.jobDir()
     if os.path.exists(currentId):
         raise Exception('%s exists, there seems to be a job running' % currentId)
+
+def preparePythonBackend():
+    os.system('mkdir -p training')
+    folder = os.path.dirname(caffe.__file__)
+    print 'copying %s to training' % folder
+    os.system('cp %s training -r' % folder)
+
 
 # local operations
 if   args.command == 'clean':
@@ -305,12 +335,14 @@ elif args.command == 'snapshot':
 # gpu operations
 if   args.command == 'train':
     if not args.execute: checkNoJob()
+    if args.backend == 'python' and not args.execute: preparePythonBackend()
     if args.local:
         env.train(args.weights)
         sys.exit(0)
     else:
         runOnCluster(env, args.node, args.gpus, args.background)
 elif args.command == 'test':
+    if args.backend == 'python' and not args.execute: preparePythonBackend()
     if args.local:
         env.test(args.iter, args.output, getattr(args,'def'), parseParameters(args.param), args.num_iter)
         sys.exit(0)
