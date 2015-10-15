@@ -48,7 +48,7 @@ void Correlation1DLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 
   int bottomchannels = bottom[0]->channels();
   
-  int paddedbottomheight = bottom[0]->height()+2*pad_size_;
+  int paddedbottomheight = bottom[0]->height();
   int paddedbottomwidth = bottom[0]->width()+2*pad_size_;  
   
   // Size computation

@@ -109,8 +109,8 @@ void Correlation1DLayerTest<TypeParam>::ReferenceCorrelationForward(
   Blob<Dtype> padded_blob_bottom_1;
   Blob<Dtype> padded_blob_bottom_2;
 
-  padded_blob_bottom_1.Reshape(1,blob_bottom_1.channels(), blob_bottom_1.height() + 2 * pad_size, blob_bottom_1.width() + 2 * pad_size);
-  padded_blob_bottom_2.Reshape(1,blob_bottom_1.channels(), blob_bottom_1.height() + 2 * pad_size, blob_bottom_1.width() + 2 * pad_size);
+  padded_blob_bottom_1.Reshape(1,blob_bottom_1.channels(), blob_bottom_1.height(), blob_bottom_1.width() + 2 * pad_size);
+  padded_blob_bottom_2.Reshape(1,blob_bottom_1.channels(), blob_bottom_1.height(), blob_bottom_1.width() + 2 * pad_size);
 
   //LOG(INFO) << "Padded Blob YSize: " << padded_blob_bottom_1.height();
   //LOG(INFO) << "Padded Blob XSize: " << padded_blob_bottom_1.width();
@@ -133,12 +133,12 @@ void Correlation1DLayerTest<TypeParam>::ReferenceCorrelationForward(
  
   // Assign the blobs to padded blobs (centered on the padded blobs)
   for(int pC = 0; pC < blob_bottom_1.channels(); pC++){
-    for(int pIndy = pad_size; pIndy < blob_bottom_1.height() + pad_size ; pIndy++ ){
+    for(int pIndy = 0; pIndy < blob_bottom_1.height(); pIndy++ ){
       for(int pIndx = pad_size; pIndx < blob_bottom_1.width() + pad_size; pIndx++ ){
          padded_blob_bottom_data_1[padded_blob_bottom_1.offset(0, pC, pIndy, pIndx)] = 
-                           bottom_data_1[blob_bottom_1.offset(0, pC, pIndy-pad_size, pIndx-pad_size)];
+                           bottom_data_1[blob_bottom_1.offset(0, pC, pIndy, pIndx-pad_size)];
          padded_blob_bottom_data_2[padded_blob_bottom_2.offset(0, pC, pIndy, pIndx)] = 
-                           bottom_data_2[blob_bottom_2.offset(0, pC, pIndy-pad_size, pIndx-pad_size)];
+                           bottom_data_2[blob_bottom_2.offset(0, pC, pIndy, pIndx-pad_size)];
       }
     }
   }
@@ -321,15 +321,15 @@ TYPED_TEST(Correlation1DLayerTest, TestForward) {
         
         this->runFwdTest("PaddingA", 1, 1, 1, 1,  1, 1, 0, 1, 1, ctype);
         this->runFwdTest("PaddingB", 1, 1, 1, 1,  1, 2, 0, 1, 1, ctype);
-        this->runFwdTest("PaddingC", 1, 1, 1, 1,  3, 1, 0, 1, 1, ctype);
+        this->runFwdTest("PaddingC", 1, 1, 3, 1,  3, 1, 0, 1, 1, ctype);
 
-        this->runFwdTest("UselessStride1A", 1, 1, 1, 1,  3, 1, 0, 2, 1, ctype);
-        this->runFwdTest("UselessStride1B", 1, 1, 1, 1,  3, 1, 0, 3, 1, ctype);
-        this->runFwdTest("UselessStride1C", 1, 1, 1, 1,  3, 1, 0, 4, 1, ctype);
-        this->runFwdTest("UselessStride2A", 1, 1, 1, 1,  3, 1, 0, 1, 2, ctype);
-        this->runFwdTest("UselessStride2B", 1, 1, 1, 1,  3, 1, 0, 1, 3, ctype);
-        this->runFwdTest("UselessStride2C", 1, 1, 1, 1,  3, 1, 0, 1, 4, ctype);
-        this->runFwdTest("UselessStride3", 1, 1, 1, 1,  3, 1, 0, 2, 3, ctype);
+        this->runFwdTest("UselessStride1A", 1, 1, 3, 1,  3, 1, 0, 2, 1, ctype);
+        this->runFwdTest("UselessStride1B", 1, 1, 3, 1,  3, 1, 0, 3, 1, ctype);
+        this->runFwdTest("UselessStride1C", 1, 1, 3, 1,  3, 1, 0, 4, 1, ctype);
+        this->runFwdTest("UselessStride2A", 1, 1, 3, 1,  3, 1, 0, 1, 2, ctype);
+        this->runFwdTest("UselessStride2B", 1, 1, 3, 1,  3, 1, 0, 1, 3, ctype);
+        this->runFwdTest("UselessStride2C", 1, 1, 3, 1,  3, 1, 0, 1, 4, ctype);
+        this->runFwdTest("UselessStride3", 1, 1, 3, 1,  3, 1, 0, 2, 3, ctype);
 
         this->runFwdTest("Stride1A", 1, 1, 3, 3,  1, 1, 0, 2, 1, ctype);
         this->runFwdTest("Stride1B", 1, 1, 3, 3,  1, 0, 0, 2, 1, ctype);
@@ -349,15 +349,15 @@ TYPED_TEST(Correlation1DLayerTest, TestForward) {
         
         this->runFwdTest("PaddingA", 1, 1, 1, 1,  1, 1, 0, 1, 1, ctype);
         this->runFwdTest("PaddingB", 1, 1, 1, 1,  1, 2, 0, 1, 1, ctype);
-        this->runFwdTest("PaddingC", 1, 1, 1, 1,  3, 1, 0, 1, 1, ctype);
+        this->runFwdTest("PaddingC", 1, 1, 3, 1,  3, 1, 0, 1, 1, ctype);
 
-        this->runFwdTest("UselessStride1A", 1, 1, 1, 1,  3, 1, 0, 2, 1, ctype);
-        this->runFwdTest("UselessStride1B", 1, 1, 1, 1,  3, 1, 0, 3, 1, ctype);
-        this->runFwdTest("UselessStride1C", 1, 1, 1, 1,  3, 1, 0, 4, 1, ctype);
-        this->runFwdTest("UselessStride2A", 1, 1, 1, 1,  3, 1, 0, 1, 2, ctype);
-        this->runFwdTest("UselessStride2B", 1, 1, 1, 1,  3, 1, 0, 1, 3, ctype);
-        this->runFwdTest("UselessStride2C", 1, 1, 1, 1,  3, 1, 0, 1, 4, ctype);
-        this->runFwdTest("UselessStride3", 1, 1, 1, 1,  3, 1, 0, 2, 3, ctype);
+        this->runFwdTest("UselessStride1A", 1, 1, 3, 1,  3, 1, 0, 2, 1, ctype);
+        this->runFwdTest("UselessStride1B", 1, 1, 3, 1,  3, 1, 0, 3, 1, ctype);
+        this->runFwdTest("UselessStride1C", 1, 1, 3, 1,  3, 1, 0, 4, 1, ctype);
+        this->runFwdTest("UselessStride2A", 1, 1, 3, 1,  3, 1, 0, 1, 2, ctype);
+        this->runFwdTest("UselessStride2B", 1, 1, 3, 1,  3, 1, 0, 1, 3, ctype);
+        this->runFwdTest("UselessStride2C", 1, 1, 3, 1,  3, 1, 0, 1, 4, ctype);
+        this->runFwdTest("UselessStride3", 1, 1, 3, 1,  3, 1, 0, 2, 3, ctype);
 
         this->runFwdTest("Stride1A", 1, 1, 3, 3,  1, 1, 0, 2, 1, ctype);
         this->runFwdTest("Stride1B", 1, 1, 3, 3,  1, 0, 0, 2, 1, ctype);
@@ -439,15 +439,15 @@ TYPED_TEST(Correlation1DLayerTest, TestGradient) {
         
         this->runGradTest("PaddingA", 1, 1, 1, 1,  1, 1, 0, 1, 1, ctype);
         this->runGradTest("PaddingB", 1, 1, 1, 1,  1, 2, 0, 1, 1, ctype);
-        this->runGradTest("PaddingC", 1, 1, 1, 1,  3, 1, 0, 1, 1, ctype);
+        this->runGradTest("PaddingC", 1, 1, 3, 1,  3, 1, 0, 1, 1, ctype);
 
-        this->runGradTest("UselessStride1A", 1, 1, 1, 1,  3, 1, 0, 2, 1, ctype);
-        this->runGradTest("UselessStride1B", 1, 1, 1, 1,  3, 1, 0, 3, 1, ctype);
-        this->runGradTest("UselessStride1C", 1, 1, 1, 1,  3, 1, 0, 4, 1, ctype);
-        this->runGradTest("UselessStride2A", 1, 1, 1, 1,  3, 1, 0, 1, 2, ctype);
-        this->runGradTest("UselessStride2B", 1, 1, 1, 1,  3, 1, 0, 1, 3, ctype);
-        this->runGradTest("UselessStride2C", 1, 1, 1, 1,  3, 1, 0, 1, 4, ctype);
-        this->runGradTest("UselessStride3", 1, 1, 1, 1,  3, 1, 0, 2, 3, ctype);
+        this->runGradTest("UselessStride1A", 1, 1, 3, 1,  3, 1, 0, 2, 1, ctype);
+        this->runGradTest("UselessStride1B", 1, 1, 3, 1,  3, 1, 0, 3, 1, ctype);
+        this->runGradTest("UselessStride1C", 1, 1, 3, 1,  3, 1, 0, 4, 1, ctype);
+        this->runGradTest("UselessStride2A", 1, 1, 3, 1,  3, 1, 0, 1, 2, ctype);
+        this->runGradTest("UselessStride2B", 1, 1, 3, 1,  3, 1, 0, 1, 3, ctype);
+        this->runGradTest("UselessStride2C", 1, 1, 3, 1,  3, 1, 0, 1, 4, ctype);
+        this->runGradTest("UselessStride3", 1, 1, 3, 1,  3, 1, 0, 2, 3, ctype);
 
         this->runGradTest("Stride1A", 1, 1, 3, 3,  1, 1, 0, 2, 1, ctype);
         this->runGradTest("Stride1B", 1, 1, 3, 3,  1, 0, 0, 2, 1, ctype);
@@ -466,15 +466,15 @@ TYPED_TEST(Correlation1DLayerTest, TestGradient) {
         
         this->runGradTest("PaddingA", 1, 1, 1, 1,  1, 1, 0, 1, 1, ctype);
         this->runGradTest("PaddingB", 1, 1, 1, 1,  1, 2, 0, 1, 1, ctype);
-        this->runGradTest("PaddingC", 1, 1, 1, 1,  3, 1, 0, 1, 1, ctype);
+        this->runGradTest("PaddingC", 1, 1, 3, 1,  3, 1, 0, 1, 1, ctype);
 
-        this->runGradTest("UselessStride1A", 1, 1, 1, 1,  3, 1, 0, 2, 1, ctype);
-        this->runGradTest("UselessStride1B", 1, 1, 1, 1,  3, 1, 0, 3, 1, ctype);
-        this->runGradTest("UselessStride1C", 1, 1, 1, 1,  3, 1, 0, 4, 1, ctype);
-        this->runGradTest("UselessStride2A", 1, 1, 1, 1,  3, 1, 0, 1, 2, ctype);
-        this->runGradTest("UselessStride2B", 1, 1, 1, 1,  3, 1, 0, 1, 3, ctype);
-        this->runGradTest("UselessStride2C", 1, 1, 1, 1,  3, 1, 0, 1, 4, ctype);
-        this->runGradTest("UselessStride3", 1, 1, 1, 1,  3, 1, 0, 2, 3, ctype);
+        this->runGradTest("UselessStride1A", 1, 1, 3, 1,  3, 1, 0, 2, 1, ctype);
+        this->runGradTest("UselessStride1B", 1, 1, 3, 1,  3, 1, 0, 3, 1, ctype);
+        this->runGradTest("UselessStride1C", 1, 1, 3, 1,  3, 1, 0, 4, 1, ctype);
+        this->runGradTest("UselessStride2A", 1, 1, 3, 1,  3, 1, 0, 1, 2, ctype);
+        this->runGradTest("UselessStride2B", 1, 1, 3, 1,  3, 1, 0, 1, 3, ctype);
+        this->runGradTest("UselessStride2C", 1, 1, 3, 1,  3, 1, 0, 1, 4, ctype);
+        this->runGradTest("UselessStride3", 1, 1, 3, 1,  3, 1, 0, 2, 3, ctype);
 
         this->runGradTest("Stride1A", 1, 1, 3, 3,  1, 1, 0, 2, 1, ctype);
         this->runGradTest("Stride1B", 1, 1, 3, 3,  1, 0, 0, 2, 1, ctype);
