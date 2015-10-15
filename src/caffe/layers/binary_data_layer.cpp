@@ -147,7 +147,7 @@ void BinaryDataLayer<Dtype>::LayerSetUp(const Container& bottom,
   if(this->phase_ == TEST)
   {
       if (reader_.get_num_samples() % batch_size)
-          LOG(FATAL) << "Number of samples (" << reader_.get_num_samples() << ") of TEST set is not divisible by batch size (" << batch_size << ")";
+          LOG(WARNING) << "Number of samples (" << reader_.get_num_samples() << ") of TEST set is not divisible by batch size (" << batch_size << ")";
 
       this->GetNet()->set_test_iter_count(reader_.get_num_samples()/batch_size);
   }
