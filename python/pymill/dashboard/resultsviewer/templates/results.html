@@ -15,14 +15,14 @@
 
 <form action="/" method="post">
     {% csrf_token %}
-    {{ measure_selector_form }}
+    {{ filter_form }}
     <input type="submit" value="go" />
 </form>
 
 {% render_table table %}
 
 <p>Support: Philip <code>Haeusser@cs.tum.edu</code></p>
-Debug Info: {{ filter_params }}
+<p>Debug Info: <code>{{ filter_params }}</code></p>
 
     
     

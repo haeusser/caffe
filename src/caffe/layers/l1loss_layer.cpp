@@ -77,6 +77,8 @@ void L1LossLayer<Dtype>::Reshape(
  
   mask_.Reshape(bottom[0]->num(), bottom[0]->channels(),
                 bottom[0]->height(), bottom[0]->width());
+
+  plateau_l2_.ReshapeLike(sum_output_);
   
   if (this->layer_param_.l1_loss_param().l2_per_location()) {
     square_layer_->Reshape(diff_top_vec_, square_top_vec_);

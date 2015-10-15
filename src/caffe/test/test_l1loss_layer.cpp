@@ -24,7 +24,6 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
       : blob_bottom_data_(new Blob<Dtype>(5, 4, 3, 2)),
         blob_bottom_label_(new Blob<Dtype>(5, 4, 3, 2)),
         blob_top_loss_(new Blob<Dtype>()) {
-          
     // fill the values
     FillerParameter filler_param;
     GaussianFiller<Dtype> filler(filler_param);
@@ -40,7 +39,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     // So lets avoid that:
     for(int i=0; i<this->blob_bottom_data_->count(); i++) {
         Dtype dist = fabs(bot0[i] - bot1[i]);
-        if(dist < 3e-2) bot0[i] += 4e-2;
+        if(dist < 2e-2) bot0[i] += 2e-2;
     }
         
     
@@ -70,37 +69,33 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     layer_weight_2.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
     const Dtype loss_weight_2 =
         layer_weight_2.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-    const Dtype kErrorMargin = 2e-5;
+    const Dtype kErrorMargin = 1e-5;
     EXPECT_NEAR(loss_weight_1 * kLossWeight, loss_weight_2, kErrorMargin);
     // Make sure the loss is non-trivial.
     const Dtype kNonTrivialAbsThresh = 1e-1;
     EXPECT_GE(fabs(loss_weight_1), kNonTrivialAbsThresh);
   }
   
-  void TestForward_values(float plateau) {
+  void TestForward_values() {
     LayerParameter layer_param;
 
     const Dtype kLossWeight = 0.00345;
     layer_param.add_loss_weight(kLossWeight);
     layer_param.mutable_l1_loss_param()->set_l2_per_location(false);
-    layer_param.mutable_l1_loss_param()->set_plateau(plateau);
-
+    
     L1LossLayer<Dtype> layer_weight_2(layer_param);
     layer_weight_2.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
     
     const Dtype loss_weight_2 =
         layer_weight_2.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-    const Dtype kErrorMargin = 2e-5;
-
+    const Dtype kErrorMargin = 1e-5;
+    
     //Compute reference
     Dtype refloss = 0;
     const Dtype *bot0 = blob_bottom_data_->cpu_data();
     const Dtype *bot1 = blob_bottom_label_->cpu_data();
     for(int c = 0; c < blob_bottom_data_->count(); c++) {
-      float absdifference = fabs(bot0[c] - bot1[c]);
-      if(absdifference >= plateau) {
-        refloss += absdifference;
-      }
+        refloss += fabs(bot0[c] - bot1[c]);
     }
     refloss /= (Dtype)blob_bottom_data_->num();
     
@@ -111,7 +106,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     EXPECT_GE(fabs(refloss), kNonTrivialAbsThresh);
   }
   
-  void TestForward_values_l2() {
+  void TestForward_values_l2(float plateau) {
     LayerParameter layer_param;
 
     const Dtype kLossWeight = 5.67;
@@ -119,13 +114,14 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     layer_param.mutable_l1_loss_param()->set_l2_per_location(true);
     layer_param.mutable_l1_loss_param()->set_l2_prescale_by_channels(true);
     layer_param.mutable_l1_loss_param()->set_epsilon(1e-3);
+    layer_param.mutable_l1_loss_param()->set_plateau(plateau);
     
     L1LossLayer<Dtype> layer_weight_2(layer_param);
     layer_weight_2.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
     
     const Dtype loss_weight_2 =
         layer_weight_2.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-    const Dtype kErrorMargin = 2e-5;
+    const Dtype kErrorMargin = 1e-5;
     
     //Compute reference
     Dtype refloss = 0;
@@ -143,7 +139,11 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
                 int off = (n*channels + c)*height*width + xy;
                 per_location_loss += (bot0[off]-bot1[off]) * (bot0[off]-bot1[off]);
             }
-            refloss += sqrt(per_location_loss / (channels) + 1e-3);
+            float summed_scaled  = per_location_loss / channels;
+            
+            if(summed_scaled < plateau*plateau) summed_scaled = 0;
+            
+            refloss += sqrt(summed_scaled + 1e-3);
         }
     }
     refloss /= (Dtype)num;
@@ -174,7 +174,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     
     const Dtype loss_weight_2 =
         layer_weight_2.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-    const Dtype kErrorMargin = 2e-5;
+    const Dtype kErrorMargin = 1e-5;
     
     //Compute reference
     Dtype refloss = 0;
@@ -211,7 +211,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     bot_data[17] = tmp_val;
   }
   
-  void TestForward_values_singleblob(float plateau) {
+  void TestForward_values_singleblob() {
     LayerParameter layer_param;
 
     vector<Blob<Dtype>*> mybottom; // Only one blob
@@ -220,22 +220,19 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     const Dtype kLossWeight = 0.02345;
     layer_param.add_loss_weight(kLossWeight);
     layer_param.mutable_l1_loss_param()->set_l2_per_location(false);
-    layer_param.mutable_l1_loss_param()->set_plateau(plateau);
     
     L1LossLayer<Dtype> layer_weight_2(layer_param);
     layer_weight_2.SetUp(mybottom, this->blob_top_vec_);
     
     const Dtype loss_weight_2 =
         layer_weight_2.Forward(mybottom, this->blob_top_vec_);
-    const Dtype kErrorMargin = 2e-5;
+    const Dtype kErrorMargin = 1e-5;
     
     //Compute reference
     Dtype refloss = 0;
     const Dtype *bot0 = blob_bottom_data_->cpu_data();
     for(int c = 0; c < blob_bottom_data_->count(); c++) {
-        if(fabs(bot0[c]) >= plateau) {
-          refloss += fabs(bot0[c]);
-        }
+        refloss += fabs(bot0[c]);
     }
     refloss /= (Dtype)blob_bottom_data_->num();
     
@@ -264,7 +261,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     layer_weight_2.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
     const Dtype loss_weight_2 =
         layer_weight_2.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-    const Dtype kErrorMargin = 2e-5;
+    const Dtype kErrorMargin = 1e-5;
     EXPECT_NEAR(loss_weight_1 * kLossWeight, loss_weight_2, kErrorMargin);
     // Make sure the loss is non-trivial.
     const Dtype kNonTrivialAbsThresh = 1e-1;
@@ -295,22 +292,8 @@ TYPED_TEST(L1LossLayerTest, TestForward_values) {
       LOG(INFO) << "Skipping CPU test";
       return;
   }
-  this->TestForward_values(0);
-  this->TestForward_values_singleblob(0);
-}
-
-TYPED_TEST(L1LossLayerTest, TestForward_plateau) {
-  if(Caffe::mode()==Caffe::CPU)
-  {
-      LOG(INFO) << "Skipping CPU test";
-      return;
-  }
-  this->TestForward_values(0.5);
-  this->TestForward_values(1.0);
-  this->TestForward_values(2.5);
-  this->TestForward_values_singleblob(1.0);
-  this->TestForward_values_singleblob(1.3);
-  this->TestForward_values_singleblob(2.5);
+  this->TestForward_values();
+  this->TestForward_values_singleblob();
 }
 
 TYPED_TEST(L1LossLayerTest, TestForward_values_l2) {
@@ -319,7 +302,16 @@ TYPED_TEST(L1LossLayerTest, TestForward_values_l2) {
       LOG(INFO) << "Skipping CPU test";
       return;
   }
-  this->TestForward_values_l2();
+  this->TestForward_values_l2(0);
+}
+
+TYPED_TEST(L1LossLayerTest, TestForward_values_l2_plateau) {
+  if(Caffe::mode()==Caffe::CPU)
+  {
+      LOG(INFO) << "Skipping CPU test";
+      return;
+  }
+  this->TestForward_values_l2(1.0);
 }
 
 TYPED_TEST(L1LossLayerTest, TestForward_l2_per_location) {
@@ -359,6 +351,25 @@ TYPED_TEST(L1LossLayerTest, TestGradient_l2_per_location) {
   typedef typename TypeParam::Dtype Dtype;
   LayerParameter layer_param;
   layer_param.mutable_l1_loss_param()->set_l2_per_location(true);
+  const Dtype kLossWeight = 3.7;
+  layer_param.add_loss_weight(kLossWeight);
+  L1LossLayer<Dtype> layer(layer_param);
+  layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+  GradientChecker<Dtype> checker(1e-2, 1e-3, 1701);
+  checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
+      this->blob_top_vec_);
+}
+
+TYPED_TEST(L1LossLayerTest, TestGradient_l2_per_location_plateau) {
+  if(Caffe::mode()==Caffe::CPU)
+  {
+      LOG(INFO) << "Skipping CPU test";
+      return;
+  }
+  typedef typename TypeParam::Dtype Dtype;
+  LayerParameter layer_param;
+  layer_param.mutable_l1_loss_param()->set_l2_per_location(true);
+  layer_param.mutable_l1_loss_param()->set_plateau(1.0);
   const Dtype kLossWeight = 3.7;
   layer_param.add_loss_weight(kLossWeight);
   L1LossLayer<Dtype> layer(layer_param);

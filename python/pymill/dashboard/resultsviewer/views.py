@@ -1,25 +1,25 @@
 from django.shortcuts import render
-from django_tables2   import RequestConfig
-from resultsviewer.models  import Results
-from resultsviewer.tables  import ResultsTable
+from django_tables2 import RequestConfig
+from resultsviewer.models import Results
+from resultsviewer.tables import ResultsTable
 from .forms import OptionsForm
 import json
+
 
 def results(request):
     queryset = Results.objects.using('results')
 
     measures = [x.values() for x in queryset.all().values('measure').distinct()]
+    positions = [x.values() for x in queryset.all().values('position').distinct()]
 
     filter_params = dict()
 
-    if request.method == 'GET':
-        measure_selector_form = OptionsForm(measures=measures)
-        selected_measure = 'none'
-        if 'sort' in request.GET:
-            filter_params['order_by'] = request.GET['sort']
 
     cookie_set = True if 'filter_params' in request.COOKIES else False  # TODO check age of cookie!
     new_cookie_necessary = False
+
+    if cookie_set and 'order_by' in json.loads(request.COOKIES.get('filter_params')):
+        filter_params['order_by'] = json.loads(request.COOKIES.get('filter_params'))['order_by']
 
     if request.method == 'POST' or cookie_set:
         if request.method == 'POST':
@@ -33,31 +33,50 @@ def results(request):
 
         if 'selected_measure' in filter_params:
             selected_measure = filter_params['selected_measure']
-            measure_selector_form = OptionsForm(filter_params, measures=measures)
-            if not filter_params['selected_measure'] == 'all':
+            if not filter_params['selected_measure'] == '':
                 queryset = queryset.filter(measure=selected_measure)
-                #table.exclude += ('measure',)
+                # table.exclude += ('measure',)
+
+        if 'selected_position' in filter_params:
+            selected_position = filter_params['selected_position']
+            if not filter_params['selected_position'] == '':
+                queryset = queryset.filter(position=selected_position)
 
         if 'only_last_iteration' in filter_params and filter_params['only_last_iteration'] == 'on':
             ids = []
             nets = [x.values() for x in queryset.all().values('networkname').distinct()]
+            datasets = [x.values() for x in queryset.all().values('dataset').distinct()]
             for net in nets:
-                ids.append(queryset.filter(networkname=net[0]).order_by('-iteration').values()[0]['id'])
+                for ds in datasets:
+                    q = queryset.filter(networkname=net[0]).filter(dataset=ds[0]).order_by('-iteration').values()
+                    if len(q) > 0:
+                        ids.append(q[0]['id'])
+
             queryset = queryset.filter(id__in=ids)
+
+    if request.method == 'GET':
+        selected_measure = 'none'
+        if 'sort' in request.GET:
+            filter_params['order_by'] = request.GET['sort']
+            new_cookie_necessary = True
 
     sorting = filter_params['order_by'] if 'order_by' in filter_params else 'value'
     table = ResultsTable(queryset.all(), order_by=sorting)
     RequestConfig(request, paginate=False).configure(table)
     table.exclude += ('id',)
-    #table.order_by = 'value'
 
-    best = queryset.order_by('value')[0]
-    best_net = best.networkname
-    best_dataset = best.dataset
-    best_value = best.value
-    best_measure = best.measure
-    
-    response = render(request, 'results.html', locals()) # {'table': table})
+    try:  # possibly, the queryset is empty
+        best = queryset.order_by('value')[0]
+        best_net = best.networkname
+        best_dataset = best.dataset
+        best_value = best.value
+        best_measure = best.measure
+    except:
+        pass
+
+    filter_form = OptionsForm(filter_params, measures=measures, positions=positions)
+
+    response = render(request, 'results.html', locals())
     if new_cookie_necessary:
         response.set_cookie(key='filter_params', value=json.dumps(filter_params))
     return response
