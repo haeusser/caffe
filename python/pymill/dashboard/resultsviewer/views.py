@@ -124,16 +124,16 @@ def reorganize_queryset(queryset):
 
                     for d in datasets:
                         result_sum = q.filter(networkname=net, dataset=d, iteration=i, measure=m, position=p).aggregate(dataset_sum=Sum('value'))
-                        try:
-                            record[d] = round(result_sum['dataset_sum'], 2)
-                        except:
-                            record[d] = result_sum['dataset_sum']
+                        record[d] = result_sum['dataset_sum']
 
                     records.append(record)
 
     for record in records:
         for key in record:
-            record[key.replace('.', '')] = record.pop(key)
+            if '.' in key:
+                value = record[key]
+                record[key] = format(float(record[key]), '.2f') if value else None
+                record[key.replace('.', '')] = record.pop(key)
 
     return records
 
