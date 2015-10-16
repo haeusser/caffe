@@ -36,7 +36,7 @@ __global__ void blob_rearrange_kernel2(const Dtype* in, Dtype* out, int num, int
     __syncthreads();
 
     int xpad  = (xy % width + padding);
-    int ypad  = (xy / width + padding);
+    int ypad  = (xy / width + 0);
     int xypad = ypad * (width+2*padding) + xpad;
 
     out[(n*pwidthheight+xypad)*channels + ch] = value;
@@ -122,7 +122,7 @@ __global__ void CorrelateDataBackward0(const int nthreads, int num, int item, in
   CUDA_KERNEL_LOOP(index, nthreads) {
     int n = index % bottomchannels; //channels
     int l = (index / bottomchannels) % bottomwidth + pad_size; //w-pos
-    int m = (index / bottomchannels / bottomwidth) % bottomheight + pad_size; //h-pos
+    int m = (index / bottomchannels / bottomwidth) % bottomheight; //h-pos
 
     //Get X,Y ranges and clamp
     // round_off is a trick to enable integer division with ceil, even for negative numbers
@@ -172,7 +172,7 @@ __global__ void CorrelateDataBackward0(const int nthreads, int num, int item, in
         }
     }
     const int sumelems = (kernel_radius*2+1)*(kernel_radius*2+1)*bottomchannels;
-		const int bot0index = ((n * bottomheight) + (m-pad_size)) * bottomwidth + (l-pad_size);
+		const int bot0index = ((n * bottomheight) + m) * bottomwidth + (l-pad_size);
     bottom0diff[bot0index + item*bottomcount] = sum / (float)sumelems;
   }
 
@@ -193,7 +193,7 @@ __global__ void CorrelateDataBackward1(const int nthreads, int num, int item, in
     //int n = (index / bottomwidth / bottomheight) % bottomchannels; //channels
     int n = index % bottomchannels; //channels
     int l = (index / bottomchannels) % bottomwidth + pad_size; //w-pos
-    int m = (index / bottomchannels / bottomwidth) % bottomheight + pad_size; //h-pos
+    int m = (index / bottomchannels / bottomwidth) % bottomheight; //h-pos
     
     // round_off is a trick to enable integer division with ceil, even for negative numbers
     // We use a large offset, for the inner part not to become negative.
@@ -242,7 +242,7 @@ __global__ void CorrelateDataBackward1(const int nthreads, int num, int item, in
       }
     }
     const int sumelems = (kernel_radius*2+1)*(kernel_radius*2+1)*bottomchannels;
-		const int bot1index = ((n * bottomheight) + (m-pad_size)) * bottomwidth + (l-pad_size);
+		const int bot1index = ((n * bottomheight) + m) * bottomwidth + (l-pad_size);
 		bottom1diff[bot1index + item*bottomcount] = sum / (float)sumelems;
   }
 
@@ -302,7 +302,7 @@ __global__ void CorrelateDataBackward0Subtract(const int nthreads, int num, int 
 {
   CUDA_KERNEL_LOOP(index, nthreads) {
     int l = index % bottomwidth + pad_size; //w-pos
-    int m = (index / bottomwidth) % bottomheight + pad_size; //h-pos
+    int m = (index / bottomwidth) % bottomheight; //h-pos
     int n = (index / bottomwidth / bottomheight) % bottomchannels; //channels
 
     //Get X,Y ranges and clamp
@@ -368,7 +368,7 @@ __global__ void CorrelateDataBackward1Subtract(const int nthreads, int num, int 
 {
   CUDA_KERNEL_LOOP(index, nthreads) {
     int l = index % bottomwidth + pad_size; //w-pos
-    int m = (index / bottomwidth) % bottomheight + pad_size; //h-pos
+    int m = (index / bottomwidth) % bottomheight; //h-pos
     int n = (index / bottomwidth / bottomheight) % bottomchannels; //channels
     
     // round_off is a trick to enable integer division with ceil, even for negative numbers
@@ -450,7 +450,7 @@ void Correlation1DLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     
     int threads_per_block=16;
     dim3 totalBlocksRearr((bwidthheight-1)/threads_per_block+1, bchannels, bnum);
-    const int pwidthheight = (bwidth + 2 * pad_size_) * (bheight + 2 * pad_size_);
+    const int pwidthheight = (bwidth + 2 * pad_size_) * (bheight);
     
     corr1d::blob_rearrange_kernel2<Dtype><<<totalBlocksRearr,threads_per_block>>>
             (bottom[0]->gpu_data(),rbot1_->mutable_gpu_data(),bnum,bchannels,bwidth,bheight,bwidthheight,pad_size_,pwidthheight);
@@ -460,7 +460,7 @@ void Correlation1DLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     
     const int num = bnum;
     const int channels = bchannels;
-    const int height = bheight + 2*pad_size_;
+    const int height = bheight;
     const int width = bwidth + 2*pad_size_;
     
     const int shared_memory_per_block = (kernel_size_*kernel_size_)*bchannels;
@@ -524,7 +524,7 @@ void Correlation1DLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     const int height = bottom[0]->height();
     const int width = bottom[0]->width();
 
-    const int paddedheight = height + 2*pad_size_;
+    const int paddedheight = height;
     const int paddedwidth = width + 2*pad_size_;
 
     const int bottomcount = channels * height * width;
