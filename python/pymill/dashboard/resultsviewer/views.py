@@ -50,9 +50,10 @@ def results(request):
             ids = []
             for net in nets:
                 for ds in datasets:
-                    q = queryset.filter(networkname=net[0]).filter(dataset=ds[0]).order_by('-iteration').values()
-                    if len(q) > 0:
-                        ids.append(q[0]['id'])
+                    for m in measures:
+                        q = queryset.filter(networkname=net[0]).filter(dataset=ds[0]).filter(measure=m[0]).order_by('-iteration').values()
+                        if len(q) > 0:
+                            ids.append(q[0]['id'])
 
             queryset = queryset.filter(id__in=ids)
 
