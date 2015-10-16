@@ -205,9 +205,10 @@ class NamedBlobs(object):
 
 
 class DataStruct(object):
-    def __init__(self):
+    def __init__(self, prefix = ''):
         super(DataStruct, self).__setattr__('_namedBlobs', OrderedDict())
         super(DataStruct, self).__setattr__('_suffixes', OrderedDict())
+        super(DataStruct, self).__setattr__('_prefix', prefix)
 
         for setName, namedBlobs in self._namedBlobs.iteritems():
             super(DataStruct, self).__setattr__(setName, namedBlobs)
@@ -229,7 +230,7 @@ class DataStruct(object):
         dict = {}
         for setName, namedBlobs in self._namedBlobs:
             for name, blob in namedBlobs:
-                dict[name + self._suffixes[setName]] = blob
+                dict[name + self._suffixes[setName]] = self._prefix + blob
         return dict
 
     def __iter__(self):
@@ -244,7 +245,7 @@ class DataStruct(object):
 
         for setName, namedBlobs in self._namedBlobs.iteritems():
             for name, blob in namedBlobs.iteritems():
-                other[name + self._suffixes[setName]] = blob
+                other[self._prefix + name + self._suffixes[setName]] = blob
 
     def __getattr__(self, item):
         for setName, namedBlobs in self._namedBlobs.iteritems():
