@@ -106,17 +106,6 @@ def reorganize_queryset(queryset):
                 'chairs.val'
                 ]
 
-    datasets_fields = [
-                'sinteltrainclean',
-                'sinteltrainfinal',
-                'monkaatestclean',
-                'monkaatestfinal',
-                'FlyingStuff3Dtestclean',
-                'FlyingStuff3Dtestfinal',
-                'kitti2012train',
-                'kitti2015train',
-                'chairsval'
-]
     for net in nets_set:
         iterations = set(q.filter(networkname=net).values_list('iteration', flat=True))
         measures = set(q.filter(networkname=net).values_list('measure', flat=True))
@@ -126,7 +115,7 @@ def reorganize_queryset(queryset):
             for m in measures:
                 for p in positions:
 
-                    net_info = {
+                    record = {
                         'networkname': net,
                         'iteration': i,
                         'measure': m,
@@ -135,9 +124,12 @@ def reorganize_queryset(queryset):
 
                     for d in datasets:
                         result_sum = q.filter(networkname=net, dataset=d, iteration=i, measure=m, position=p).aggregate(dataset_sum=Sum('value'))
-                        net_info[d] = result_sum['dataset_sum']
+                        try:
+                            record[d] = round(result_sum['dataset_sum'], 2)
+                        except:
+                            record[d] = result_sum['dataset_sum']
 
-                    records.append(net_info)
+                    records.append(record)
 
     for record in records:
         for key in record:
