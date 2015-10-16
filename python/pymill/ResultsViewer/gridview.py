@@ -16,7 +16,7 @@ import sys
 import re
 import platform
 from PyQt5 import QtCore, QtGui, QtWidgets
-import gridview_c_interface
+import gridview_c_interface as c_interface
 
 __version__ = '0.2.0'
 
@@ -47,6 +47,37 @@ floatMax = 1.0
 updateStatus = None
 
 
+def processSuffix(s):
+  '''Special suffix syntax for flow difference or EPE images'''
+  if s.startswith('DIFF'):
+    RE = re.compile(r'DIFF\((?P<a>.*),(?P<b>.*)\)')
+    m = RE.match(s)
+    if m is None:
+      raise Exception('Wrong DIFF format in: >>%s<<'%(s))
+    import convert
+    a = m.groupdict()['a']
+    b = m.groupdict()['b']
+    testfile = filename_template_batch%(0,0,s)
+    batch = os.path.isfile(os.path.join(dir, testfile))
+    print('Creating flow difference images...')
+    convert.make_diff_images(dir, a, b, '-diff.flo', batch)
+    return '-diff.flo'
+  elif s.startswith('EPE'):
+    RE = re.compile(r'EPE\((?P<a>.*),(?P<b>.*)\)')
+    m = RE.match(s)
+    if m is None:
+      raise Exception('Wrong EPE format in: >>%s<<'%(s))
+    import convert
+    a = m.groupdict()['a']
+    b = m.groupdict()['b']
+    testfile = filename_template_batch%(0,0,s)
+    batch = os.path.isfile(os.path.join(dir, testfile))
+    print('Creating EPE images...')
+    convert.make_EPE_images(dir, a, b, '-epe.float', batch)
+    return '-epe.float'
+  else:
+    return s
+
 
 ## Configuration
 configuration = None
@@ -65,7 +96,7 @@ def parseConfig(lines):
     ## Grid cells
     else:
       xstr,ystr,suffix = line.split(' ')
-      cells['%s %s'%(xstr,ystr)] = suffix
+      cells['%s %s'%(xstr,ystr)] = processSuffix(suffix)
   grid = []
   for x in range(configuration['X']):
     col = []
@@ -405,7 +436,7 @@ class FlowCell(Cell):
         raw_flow_data = self.raw_data[idx],
       else:
         raw_flow_data = readFlow(self.filenames[idx])
-      flow_image = gridview_c_interface.Flow(flowStyle, 
+      flow_image = c_interface.Flow(flowStyle, 
                                              raw_flow_data,
                                              flowScale)
       self.label.setPixmap(QtGui.QPixmap.fromImage(\

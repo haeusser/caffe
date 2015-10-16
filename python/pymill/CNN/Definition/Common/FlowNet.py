@@ -47,11 +47,13 @@ def standardTest(DeployBlock, generateNet=True):
             
             ## Write configuration file for viewer tool
             f = open('%s/viewer.cfg' % out_path, 'w')
-            f.write('2 2\n')
+            f.write('3 2\n')
             f.write('0 0 -img0.ppm\n')
             f.write('1 0 -img1.ppm\n')
+            f.write('2 0 EPE(-flow.flo,-gt.flo)\n')
             f.write('0 1 -flow.flo\n')
             f.write('1 1 -gt.flo\n')
+            f.write('2 1 DIFF(-flow.flo,-gt.flo)\n')
             f.close()
             
             ## Create network file outputs
