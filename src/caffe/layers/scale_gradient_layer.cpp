@@ -36,10 +36,22 @@ void ScaleGradientLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
       coeff = 0;
     else
       discount_coeff_schedule_.set_initial_coeff(1e-10);
-  } else  
+  } else {
+    /**
+     * c  = coeff
+     * c0 = coefficient's scheduled initial value
+     * c1 = coefficient's scheduled final value
+     * ch = coefficient's scheduled half-life
+     * i  = current iteration index
+     * 
+     *                                       -1.0986 * i / ch
+     *             log(c1 / c0) * (2 / (1 + e                ) - 1)
+     * c = c0  * e
+     */
     coeff = discount_coeff_schedule_.initial_coeff() *
                 exp(( log(discount_coeff_schedule_.final_coeff() /discount_coeff_schedule_.initial_coeff()) ) *
                 (Dtype(2) / (Dtype(1) + exp(- 1.0986 * iter_ / discount_coeff_schedule_.half_life())) - Dtype(1)));
+  }
                 
   caffe_cpu_axpby<Dtype>(top[0]->count(), coeff, top[0]->cpu_diff(),
     Dtype(0), bottom[0]->mutable_cpu_diff());

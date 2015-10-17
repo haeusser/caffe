@@ -415,6 +415,7 @@ message LayerParameter {
   optional InnerProductParameter inner_product_param = 117;
   optional L1LossParameter l1_loss_param = 3001;
   optional HuberL1LossParameter huber_l1_loss_param = 4007;
+  optional LpqLossParameter lpq_loss_param = 4008;
   optional LogParameter log_param = 134;
   optional LRNParameter lrn_param = 118;
   optional MemoryDataParameter memory_data_param = 119;
@@ -1029,13 +1030,38 @@ message L1LossParameter {
   optional float plateau = 3001 [default = 0]; // L1 Errors smaller than plateau-value will result in zero loss and no gradient
 }
 
-// Message that stores parameters used by L1LossLayer
+// Message that stores parameters used by HuberL1LossLayer
 message HuberL1LossParameter {
   optional bool l2_per_location = 4002 [default = false];
   optional bool l2_prescale_by_channels = 4003 [default = false]; // Old style
   optional bool normalize_by_num_entries = 4004 [default = false]; // if we want to normalize not by batch size, but by the number of non-NaN entries
   optional float epsilon = 4005 [default = 1e-2]; // constant for smoothing near zero
   optional float plateau = 4006 [default = 0]; // L1 Errors smaller than plateau-value will result in zero loss and no gradient
+}
+
+// Message that stores parameters used by LpqLossLayer
+message LpqLossParameter {
+  /// if we want to normalize not by batch size, but by the number of non-NaN entries
+  optional bool normalize_by_num_entries = 4009 [default = false]; 
+  
+  /****************************
+   * If one of each of the following is given, p/q are constant and the entry
+   * in "pq_episode_starts_at_frame" must be 0 (else the first entry must be 0).
+   * 
+   * If multiple values are given (the number of values must be the same for 
+   * each parameter), then p/q will jump at each iteration number given in
+   * "pq_episode_starts_at_frame".
+   ****************************
+   * Example: pq_episode_starts_at_frame = {0, 1000, 500000}
+   *                                   p = {1.0, 2.0, 2.0}
+   *                                   q = {1.0, 1.0, 2.0}
+   *
+   * With these values, p/q will be 1.0/1.0 from iteration 0 to 1000, then
+   * 2.0/1.0 until iteration 500000, and 2.0/2.0 afterwards.
+   ****************************/
+  repeated int pq_episode_starts_at_frame = 4010;
+  repeated float p = 4011;
+  repeated float q = 4012;
 }
 
 // Message that stores parameters used by LogLayer
