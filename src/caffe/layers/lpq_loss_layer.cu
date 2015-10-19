@@ -84,6 +84,7 @@ namespace caffe {
       {
         schedule_.pop();
       }
+      
       /// If there is a schedule step left, check if we have reached it
       if (schedule_.size() > 0 and 
           current_iteration == schedule_.front().start_iter) 
@@ -99,6 +100,7 @@ namespace caffe {
         p_param.mutable_power_param()->set_power(schedule_.front().p);
         p_layer_.reset(new PowerLayer<Dtype>(p_param));
         p_layer_->SetUp(diff_top_vec_, p_top_vec_);
+        
         /// Reset q-power layer
         q_top_vec_.clear();
         q_top_vec_.push_back(&q_output_);
@@ -108,10 +110,12 @@ namespace caffe {
             this->layer_param_.l1_loss_param().epsilon());
         q_layer_.reset(new PowerLayer<Dtype>(q_param));
         q_layer_->SetUp(sum_top_vec_, q_top_vec_);
-        /// Discard schedule step
+        
+        /// Discard used schedule step
         schedule_.pop();
       }
     }
+    /// <-- Check and reset p/q parameters
     
     
     Blob<Dtype> *diffptr = diff_top_vec_[0];
