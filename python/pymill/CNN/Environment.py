@@ -447,7 +447,11 @@ class Environment:
         self.makeTrainingPrototxt(self._trainProto)
         return self.makeTrainingPrototxt(self._solverProto)
 
-    def train(self, weights=None):
+    def displayBlobSummary(self, logfile):
+        log = Log(self._name, logfile)
+        log.displayBlobSummary()
+
+    def train(self, weights=None, blobSummary=False):
         if self.existingData() and not self._unattended:
             if not tb.queryYesNo('Existing data found. Do you want to delete it and start from scratch?'):
                 return
@@ -461,6 +465,9 @@ class Environment:
             self._backend.train(solverFilename=solverFilename, logFile=self._logFile, weights=weights)
         else:
             self._backend.train(solverFilename=solverFilename, logFile=self._logFile)
+
+        if blobSummary:
+            self.displayBlobSummary(self._logFile)
 
     def resume(self, iter=-1):
         if not len(self._stateFiles):

@@ -165,6 +165,7 @@ subparsers = parser.add_subparsers(dest='command', prog='pycnn')
 # train
 subparser = subparsers.add_parser('train', help='train a network from scratch')
 subparser.add_argument('--weights',    help='caffe model file to initialize from', default='')
+subparser.add_argument('--blob-sum',   help='display blob summary at the end', action='store_true')
 
 # test
 subparser = subparsers.add_parser('test', help='test a network')
@@ -337,7 +338,7 @@ if   args.command == 'train':
     if not args.execute: checkNoJob()
     if args.backend == 'python' and not args.execute: preparePythonBackend()
     if args.local:
-        env.train(args.weights)
+        env.train(args.weights, args.blob_sum)
         sys.exit(0)
     else:
         runOnCluster(env, args.node, args.gpus, args.background)
