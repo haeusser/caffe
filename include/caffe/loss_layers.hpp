@@ -1,6 +1,7 @@
 #ifndef CAFFE_LOSS_LAYERS_HPP_
 #define CAFFE_LOSS_LAYERS_HPP_
 
+#include <queue>
 #include <string>
 #include <utility>
 #include <vector>
@@ -417,13 +418,16 @@ class LpqLossLayer : public LossLayer<Dtype> {
   /**
    * See "LpqLossParameter" in caffe.proto
    */
-  struct ScheduleStep 
+  struct ScheduleStep_
   {
-    int start_frame;
-    float p;
-    float q;
+    ScheduleStep_(unsigned int i, Dtype p, Dtype q)
+      : start_iter(i), p(p), q(q) {}
+    
+    unsigned int start_iter;
+    Dtype p;
+    Dtype q;
   };
-  vector<ScheduleStep> schedule;
+  std::queue<ScheduleStep_> schedule_;
   
   Blob<Dtype> sign_, mask_, plateau_l2_;
   float scale_;

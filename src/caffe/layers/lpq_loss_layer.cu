@@ -1,6 +1,7 @@
 #include <vector>
 
 #include "caffe/layer.hpp"
+#include "caffe/net.hpp"
 #include "caffe/util/io.hpp"
 #include "caffe/util/math_functions.hpp"
 #include "caffe/vision_layers.hpp"
@@ -71,6 +72,47 @@ namespace caffe {
   void LpqLossLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
         const vector<Blob<Dtype>*>& top)
   {
+    /// Check and reset p/q parameters
+    {
+      /// Get current iteration
+      Net<Dtype> *net = this->GetNet();
+      unsigned int current_iteration = net->iter();
+      
+      /// Discard all old schedule steps
+      while (schedule_.size() > 0 and 
+             current_iteration > schedule_.front().start_iter)
+      {
+        schedule_.pop();
+      }
+      /// If there is a schedule step left, check if we have reached it
+      if (schedule_.size() > 0 and 
+          current_iteration == schedule_.front().start_iter) 
+      {
+        LOG(INFO) << "Lpq loss layer: Iteration " << current_iteration
+                  << ", switching to p=" << schedule_.front().p
+                  << ", q=" << schedule_.front().q;
+        
+        /// Reset p-power layer
+        p_top_vec_.clear();
+        p_top_vec_.push_back(&p_output_);
+        LayerParameter p_param;
+        p_param.mutable_power_param()->set_power(schedule_.front().p);
+        p_layer_.reset(new PowerLayer<Dtype>(p_param));
+        p_layer_->SetUp(diff_top_vec_, p_top_vec_);
+        /// Reset q-power layer
+        q_top_vec_.clear();
+        q_top_vec_.push_back(&q_output_);
+        LayerParameter q_param;
+        q_param.mutable_power_param()->set_power(schedule_.front().q);
+        q_param.mutable_power_param()->set_shift(
+            this->layer_param_.l1_loss_param().epsilon());
+        q_layer_.reset(new PowerLayer<Dtype>(q_param));
+        q_layer_->SetUp(sum_top_vec_, q_top_vec_);
+        /// Discard schedule step
+        schedule_.pop();
+      }
+    }
+    
     
     Blob<Dtype> *diffptr = diff_top_vec_[0];
     

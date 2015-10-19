@@ -1,3 +1,4 @@
+#include <sstream>
 #include <vector>
 
 #include "caffe/layer.hpp"
@@ -13,28 +14,60 @@ namespace caffe {
   {
     LossLayer<Dtype>::LayerSetUp(bottom, top);
     
-    /// Parameter schedule
+    /// P/Q parameters schedule
     {
-      const std::vector<int>& start_frames =
-        this->layer_param_.lpq_loss_param().pq_episode_starts_at_frame();
-      const std::vector<float>& ps =
+      const google::protobuf::RepeatedField<unsigned int>& start_iters =
+        this->layer_param_.lpq_loss_param().pq_episode_starts_at_iter();
+      const google::protobuf::RepeatedField<float>& ps =
         this->layer_param_.lpq_loss_param().p();
-        const std::vector<float>& qs =
+      const google::protobuf::RepeatedField<float>& qs =
         this->layer_param_.lpq_loss_param().q();
-      /// Ensure that all three vectors are the same size
-      if (start_frames.size() != ps.size() or  ps.size() != qs.size()) {
-        LOG(FATAL) << "Incompatible sizes: ("
-                   << "pq_episode_starts_at_frame -> " 
-                   << start_frames.size() << ", "
-                   << "p -> " << ps.size() << ", "
-                   << "q -> " << qs.size() << ")";
+      /// Special case: If one of each p and q is given, it's okay to not 
+      /// specify a start frame
+      if (start_iters.size() == 0 and
+          ps.size() == 0 and
+          qs.size() == 0 ) 
+      {
+        ScheduleStep_ next_step(0, ps.Get(0), qs.Get(0));
+        schedule_.push(next_step);
       }
-      /// Make schedule
-      schedule.resize(start_frames.size());
-      for (unsigned int i = 0; i < start_frames.size(); ++i) {
-        schedule[i].start_frame = start_frames[i];
-        schedule[i].p = ps[i];
-        schedule[i].q = qs[i];
+      else
+      {
+        /// Ensure that all three vectors are the same size...
+        if (start_iters.size() != ps.size() or  ps.size() != qs.size()) {
+          LOG(FATAL) << "Incompatible sizes: ("
+                    << "pq_episode_starts_at_iter -> " 
+                    << start_iters.size() << ", "
+                    << "p -> " << ps.size() << ", "
+                    << "q -> " << qs.size() << ")";
+        }
+        /// ...and are not empty
+        if (start_iters.size() < 1) {
+          LOG(FATAL) << "Lpq schedule parameters must not be empty";
+        }
+        /// The start frames must also be ordered and not contain duplicates
+        if (start_iters.size() > 1) {
+          for (unsigned int i = 0; i < start_iters.size()-1; ++i) {
+            if (start_iters.Get(i) >= start_iters.Get(i+1)) {
+              std::ostringstream oss;
+              for (unsigned int j = 0; j < start_iters.size(); ++j) {
+                oss << " " << start_iters.Get(j);
+              }
+              LOG(FATAL) << "pq_episode_starts_at_frame is not ordered "
+                         << "or contains duplicates:" << oss.str();
+            }
+          }
+        }
+        /// Also it is probably a mistake if the first start frame is NOT zero
+        if (start_iters.Get(0) != 0) {
+          LOG(FATAL) << "First entry in pq_episode_starts_at_frame is not 0, "
+                     << "this is probably a mistake.";
+        }
+        /// Make schedule
+        for (unsigned int i = 0; i < start_iters.size(); ++i) {
+          ScheduleStep_ next_step(start_iters.Get(i), ps.Get(i), qs.Get(i));
+          schedule_.push(next_step);
+        }
       }
     }
     
@@ -60,7 +93,7 @@ namespace caffe {
       p_top_vec_.clear();
       p_top_vec_.push_back(&p_output_);
       LayerParameter p_param;
-      p_param.mutable_power_param()->set_power(Dtype(2));
+      p_param.mutable_power_param()->set_power(schedule_.front().p);
       p_layer_.reset(new PowerLayer<Dtype>(p_param));
       p_layer_->SetUp(diff_top_vec_, p_top_vec_);
       // Set up convolutional layer to sum all channels
@@ -81,10 +114,14 @@ namespace caffe {
       q_top_vec_.clear();
       q_top_vec_.push_back(&q_output_);
       LayerParameter q_param;
-      q_param.mutable_power_param()->set_power(0.5);
-      q_param.mutable_power_param()->set_shift(this->layer_param_.l1_loss_param().epsilon());
+      q_param.mutable_power_param()->set_power(schedule_.front().q);
+      q_param.mutable_power_param()->set_shift(
+          this->layer_param_.l1_loss_param().epsilon());
       q_layer_.reset(new PowerLayer<Dtype>(q_param));
       q_layer_->SetUp(sum_top_vec_, q_top_vec_);
+      
+      /// Discard first parameter schedule step
+      schedule_.pop();
     }
   }
 

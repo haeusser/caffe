@@ -1043,20 +1043,20 @@ message HuberL1LossParameter {
 message LpqLossParameter {
   /****************************
    * If one of each of the following is given, p/q are constant and the entry
-   * in "pq_episode_starts_at_frame" must be 0 (else the first entry must be 0).
+   * in "pq_episode_starts_at_iter" must be 0 (else the first entry must be 0).
    * 
    * If multiple values are given (the number of values must be the same for 
    * each parameter), then p/q will jump at each iteration number given in
-   * "pq_episode_starts_at_frame".
+   * "pq_episode_starts_at_iter".
    ****************************
-   * Example: pq_episode_starts_at_frame = {0, 1000, 500000}
-   *                                   p = {1.0, 2.0, 2.0}
-   *                                   q = {1.0, 1.0, 2.0}
+   * Example: pq_episode_starts_at_iter = {0, 1000, 500000}
+   *                                  p = {1.0, 2.0, 2.0}
+   *                                  q = {1.0, 1.0, 2.0}
    *
    * With these values, p/q will be 1.0/1.0 from iteration 0 to 1000, then
    * 2.0/1.0 until iteration 500000, and 2.0/2.0 afterwards.
    ****************************/
-  repeated int pq_episode_starts_at_frame = 4010;
+  repeated uint32 pq_episode_starts_at_iter = 4010;
   repeated float p = 4011;
   repeated float q = 4012;
 }
