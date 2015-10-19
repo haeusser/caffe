@@ -161,6 +161,8 @@ def BinaryData_OpticalFlow_Single(net, **kwargs):
 def _dataStructFromSceneFlow(list):
     struct = DataStruct()
 
+    struct.add('inp', '')
+
     struct.inp.img0L      = list[0]
     struct.inp.img0R      = list[1]
     struct.inp.img1L      = list[2]
