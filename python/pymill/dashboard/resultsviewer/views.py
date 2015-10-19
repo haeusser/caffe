@@ -76,6 +76,13 @@ def results(request):
 
     formatted_queryset = reorganize_queryset(queryset)
     table = FormattedResultsTable(formatted_queryset, order_by=sorting)
+
+    for c in table.columns.items():
+        cname = c[0]
+        if cname.endswith(tuple(['clean', 'final', 'train', 'val', 'test'])):
+            col = table.columns[cname]
+            col.attrs['td'].update({'align': 'right'})
+
     RequestConfig(request, paginate=False).configure(table)
 
     table.exclude += ('id',)
@@ -132,7 +139,7 @@ def reorganize_queryset(queryset):
         for key in record:
             if '.' in key:
                 value = record[key]
-                record[key] = format(float(record[key]), '.2f') if value else None
+                #record[key] = format(float(record[key]), '.2f') if value else None
                 record[key.replace('.', '')] = record.pop(key)
 
     return records
