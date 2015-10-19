@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class Results(models.Model):
     networkname = models.TextField(db_column='networkName', blank=True, null=True, verbose_name="Network Name")  # Field name made lowercase.
     iteration = models.IntegerField(verbose_name="Iteration")
@@ -18,7 +19,6 @@ class Results(models.Model):
 
 
 class FormattedResults(models.Model):
-
     networkname = models.TextField(db_column='networkName', blank=True, null=True, verbose_name="Network Name")  # Field name made lowercase.
     iteration = models.IntegerField(verbose_name="Iteration")
     measure = models.TextField(blank=True, null=True, verbose_name="Error Measure")

@@ -13,3 +13,4 @@ class FormattedResultsTable(tables.Table):
     class Meta:
         model = FormattedResults
         attrs = {"class": "paleblue"}
+        template = 'formatted_table.html'

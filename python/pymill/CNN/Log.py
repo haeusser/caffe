@@ -11,6 +11,8 @@ from math import sqrt
 from matplotlib.font_manager import FontProperties
 import matplotlib
 from pymill import Config
+from collections import OrderedDict
+
 
 def smooth(x,window_len=11,window='hanning'):
     """smooth the data using a window with requested size.
@@ -167,6 +169,22 @@ class Log:
             self._lines.append((iter, l))
 
         self._measureList = tb.unique(self._measureList)
+
+    def displayBlobSummary(self):
+        blobs = OrderedDict()
+
+        assignments = OrderedDict()
+        for iter, line in self._lines:
+            if ']' in line:
+                msg = l.split(']')[1].strip()
+                match = re.compile('([a-zA-Z0-9_-]+) -> ([a-zA-Z0-9_-]+)').match(msg)
+                if match:
+                    assignments[match.group(1)]=match.group(2)
+                else:
+                    match = re.compile('Top shape: ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) .*').match(msg)
+                    if match:
+                        key, value = assignments.popitem()
+                        print '%30s: %d %d %d %d' % (value, int(match.group(1)), int(match.group(2)), int(match.group(3)), int(match.group(4)))
 
     def networkName(self): return self._networkName
     def measures(self): return self._measures
