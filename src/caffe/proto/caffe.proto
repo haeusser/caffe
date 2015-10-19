@@ -1041,9 +1041,6 @@ message HuberL1LossParameter {
 
 // Message that stores parameters used by LpqLossLayer
 message LpqLossParameter {
-  /// if we want to normalize not by batch size, but by the number of non-NaN entries
-  optional bool normalize_by_num_entries = 4009 [default = false]; 
-  
   /****************************
    * If one of each of the following is given, p/q are constant and the entry
    * in "pq_episode_starts_at_frame" must be 0 (else the first entry must be 0).
