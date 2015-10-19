@@ -1,6 +1,7 @@
 {% spaceless %}
 {% load django_tables2 %}
 {% load i18n %}
+{% load humanize %}
 {% if table.page %}
 <div class="table-container">
 {% endif %}
@@ -28,12 +29,12 @@
             {% for column, cell in row.items %}
 	        
                 <td {{ column.attrs.td.as_html }}>
-                {% if '.' in column.header %}
+                {% if '.' in column.header or column.header == "Iteration"%}
 		  <div style="text-align: right; font-family: Courier; font-size: 14px; font-weight: bold;">
-		    {{ cell|floatformat:"2" }}
+		    {% if '.' in column.header %}{{ cell|floatformat:"2" }}{% else %}{{ cell | intcomma}}{% endif %}
 		  </div>
 		{% else %}
-		{% if column.localize == None %}{{ cell }}{% else %}{% if column.localize %}{{ cell|localize }}{% else %}{{ cell|unlocalize }}{% endif %}{% endif %}
+		{% if column.header == "Iteration" %}{{ cell | intcomma}}{% else %}{{ cell|localize }}{% endif %}
 		{% endif %}
 				    
                 </td>

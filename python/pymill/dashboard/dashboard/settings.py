@@ -146,6 +146,7 @@ INSTALLED_APPS = (
     'resultsviewer',
     'django_tables2',
     'debug_toolbar',
+    'django.contrib.humanize',
 )
 
 INTERNAL_IPS = (
