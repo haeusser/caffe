@@ -31,7 +31,15 @@
                 <td {{ column.attrs.td.as_html }}>
                 {% if '.' in column.header or column.header == "Iteration"%}
 		  <div style="text-align: right; font-family: Courier; font-size: 14px; font-weight: bold;">
-		    {% if '.' in column.header %}{{ cell|floatformat:"2" }}{% else %}{{ cell | intcomma}}{% endif %}
+		    {% if '.' in column.header %}
+		      {% if cell == best_value %}<div style="background: rgba(44, 255, 13, 0.4);">{% else %}<div>{% endif %}
+		    
+			{{ cell|floatformat:"2" }}
+			</div>
+		      </div>
+		    {% else %}
+		      {{ cell | intcomma}}
+		    {% endif %}
 		  </div>
 		{% else %}
 		{% if column.header == "Iteration" %}{{ cell | intcomma}}{% else %}{{ cell|localize }}{% endif %}
