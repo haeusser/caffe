@@ -170,49 +170,6 @@ class Layer(object):
         return layer
 
 
-# class NamedBlobs(object):
-#     def __init__(self):
-#         super(NamedBlobs, self).__setattr__('members', OrderedDict())
-#
-#     def dict(self): return self.members
-#
-#     def blobs(self): return self.members.values()
-#
-#     def __setattr__(self, key, value):
-#         if isinstance(key, int):
-#             key = '_%d' % key
-#
-#         if key in self.members:
-#             value.makeSibling(self.members[key])
-#         else:
-#             self.members[key] = value
-#
-#     def __getattr__(self, item):
-#         if isinstance(item, int):
-#             item = '_%s' % item
-#
-#         return self.members[item]
-#
-#     def copyNamesTo(self, other):
-#         if isinstance(other, Network):
-#             other = other.namedBlobs()
-#
-#         for key, value in self.members.iteritems():
-#             setattr(other, key, value)
-#
-#     def __iter__(self):
-#         return iter(self.members.keys())
-#
-#     def iteritems(self):
-#         return self.dict().iteritems()
-#
-#     def __getitem__(self, index):
-#         return self.__getattr__(index)
-#
-#     def __setitem__(self, index, value):
-#         return self.__setattr__(index, value)
-
-
 class DataStruct(object):
     def __init__(self, prefix = ''):
         super(DataStruct, self).__setattr__('_members', OrderedDict())
@@ -278,9 +235,8 @@ class DataStruct(object):
         self._suffixes[index] = '_' + index
 
     def makeSibling(self, other):
-        for name, members in other._members.iteritems():
-            for subName, blob in members.iteritems():
-                self._members[name][subName].makeSibling(blob)
+        for name, member in other._members.iteritems():
+            self._members[name].makeSibling(member)
 
     def __iter__(self):
         return iter(self.dict().keys())
@@ -294,6 +250,7 @@ class DataStruct(object):
     def __setitem__(self, index, value):
         return self.__setattr__(index, value)
 
+NamedBlobs = DataStruct
 
 class Network(object):
     """A NetSpec contains a set of Tops (assigned directly as attributes).
@@ -408,3 +365,46 @@ _param_names['Correlation1D'] = 'correlation'
 Layers = LayerCreator()
 Params = ParameterCreator()
 
+
+
+# class NamedBlobs(object):
+#     def __init__(self):
+#         super(NamedBlobs, self).__setattr__('members', OrderedDict())
+#
+#     def dict(self): return self.members
+#
+#     def blobs(self): return self.members.values()
+#
+#     def __setattr__(self, key, value):
+#         if isinstance(key, int):
+#             key = '_%d' % key
+#
+#         if key in self.members:
+#             value.makeSibling(self.members[key])
+#         else:
+#             self.members[key] = value
+#
+#     def __getattr__(self, item):
+#         if isinstance(item, int):
+#             item = '_%s' % item
+#
+#         return self.members[item]
+#
+#     def copyNamesTo(self, other):
+#         if isinstance(other, Network):
+#             other = other.namedBlobs()
+#
+#         for key, value in self.members.iteritems():
+#             setattr(other, key, value)
+#
+#     def __iter__(self):
+#         return iter(self.members.keys())
+#
+#     def iteritems(self):
+#         return self.dict().iteritems()
+#
+#     def __getitem__(self, index):
+#         return self.__getattr__(index)
+#
+#     def __setitem__(self, index, value):
+#         return self.__setattr__(index, value)
