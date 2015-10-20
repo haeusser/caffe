@@ -235,6 +235,9 @@ sub_parser.add_argument('--iter', help='iteration of snapshot (default=last)', d
 # snapshot
 sub_parser = subparsers.add_parser('snapshot', help='connect to current process and request snapshot')
 
+# snapshot
+sub_parser = subparsers.add_parser('blob-sum', help='blob summary of current trainig log')
+
 # autocomplete very slow for some reason
 #argcomplete.autocomplete(parser)
 
@@ -331,6 +334,9 @@ elif args.command == 'draw':
 elif args.command == 'snapshot':
     id = checkJob()
     os.system('ssh lmbtorque "qsig -s SIGHUP %s"' % id)
+    sys.exit(0)
+elif args.command == 'blob-sum':
+    env.blobSummary()
     sys.exit(0)
 
 # gpu operations
