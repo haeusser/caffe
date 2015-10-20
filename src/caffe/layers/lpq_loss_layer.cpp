@@ -1,3 +1,4 @@
+#include <iomanip>
 #include <sstream>
 #include <vector>
 
@@ -25,11 +26,13 @@ namespace caffe {
       /// Special case: If one of each p and q is given, it's okay to not 
       /// specify a start frame
       if (start_iters.size() == 0 and
-          ps.size() == 0 and
-          qs.size() == 0 ) 
+          ps.size() == 1 and
+          qs.size() == 1)
       {
-        ScheduleStep_ next_step(0, ps.Get(0), qs.Get(0));
-        schedule_.push(next_step);
+        schedule_.push(new ScheduleStep_(0, ps.Get(0), qs.Get(0)));
+        LOG(INFO) << "Lpq loss layer: Constant parameters"
+                  << " p = "  << schedule_.front()->p
+                  << ", q = " << schedule_.front()->q;
       }
       else
       {
@@ -65,8 +68,14 @@ namespace caffe {
         }
         /// Make schedule
         for (unsigned int i = 0; i < start_iters.size(); ++i) {
-          ScheduleStep_ next_step(start_iters.Get(i), ps.Get(i), qs.Get(i));
-          schedule_.push(next_step);
+          schedule_.push(new ScheduleStep_(start_iters.Get(i), 
+                                           ps.Get(i), 
+                                           qs.Get(i)));
+          LOG(INFO) << "Lpq loss layer: Starting at iteration "
+                    << std::setw(7) << std::setfill(' ')
+                    << schedule_.back()->start_iter
+                    << ": p = " << schedule_.back()->p
+                    << ", q = " << schedule_.back()->q;
         }
       }
     }
@@ -93,7 +102,7 @@ namespace caffe {
       p_top_vec_.clear();
       p_top_vec_.push_back(&p_output_);
       LayerParameter p_param;
-      p_param.mutable_power_param()->set_power(schedule_.front().p);
+      p_param.mutable_power_param()->set_power(schedule_.front()->p);
       p_layer_.reset(new PowerLayer<Dtype>(p_param));
       p_layer_->SetUp(diff_top_vec_, p_top_vec_);
       // Set up convolutional layer to sum all channels
@@ -114,7 +123,7 @@ namespace caffe {
       q_top_vec_.clear();
       q_top_vec_.push_back(&q_output_);
       LayerParameter q_param;
-      q_param.mutable_power_param()->set_power(schedule_.front().q);
+      q_param.mutable_power_param()->set_power(schedule_.front()->q);
       q_param.mutable_power_param()->set_shift(
           this->layer_param_.l1_loss_param().epsilon());
       q_layer_.reset(new PowerLayer<Dtype>(q_param));

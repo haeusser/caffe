@@ -73,31 +73,39 @@ namespace caffe {
         const vector<Blob<Dtype>*>& top)
   {
     /// Check and reset p/q parameters
-    {
+    if (schedule_.size() > 0) {
       /// Get current iteration
       Net<Dtype> *net = this->GetNet();
       unsigned int current_iteration = net->iter();
       
-      /// Discard all old schedule steps
+      ScheduleStep_* step_ptr = 0;
+      
+      /// Discard old schedule steps
       while (schedule_.size() > 0 and 
-             current_iteration > schedule_.front().start_iter)
+             current_iteration >= schedule_.front()->start_iter)
       {
+        if (step_ptr) {
+          delete step_ptr;
+        }
+        step_ptr = schedule_.front();
+        LOG(INFO) << "Lpq loss layer: Pop'ing schedule step: "
+                  << "start_iter = " << step_ptr->start_iter
+                  << ", p = " << step_ptr->p
+                  << ", q = " << step_ptr->q;
         schedule_.pop();
       }
       
-      /// If there is a schedule step left, check if we have reached it
-      if (schedule_.size() > 0 and 
-          current_iteration == schedule_.front().start_iter) 
-      {
+      /// Use retrieved schedule step and reinitialize p/q layers
+      if (step_ptr) {
         LOG(INFO) << "Lpq loss layer: Iteration " << current_iteration
-                  << ", switching to p=" << schedule_.front().p
-                  << ", q=" << schedule_.front().q;
+                  << ", switching to p=" << step_ptr->p
+                  << ", q=" << step_ptr->q;
         
         /// Reset p-power layer
         p_top_vec_.clear();
         p_top_vec_.push_back(&p_output_);
         LayerParameter p_param;
-        p_param.mutable_power_param()->set_power(schedule_.front().p);
+        p_param.mutable_power_param()->set_power(step_ptr->p);
         p_layer_.reset(new PowerLayer<Dtype>(p_param));
         p_layer_->SetUp(diff_top_vec_, p_top_vec_);
         
@@ -105,14 +113,14 @@ namespace caffe {
         q_top_vec_.clear();
         q_top_vec_.push_back(&q_output_);
         LayerParameter q_param;
-        q_param.mutable_power_param()->set_power(schedule_.front().q);
+        q_param.mutable_power_param()->set_power(step_ptr->q);
         q_param.mutable_power_param()->set_shift(
             this->layer_param_.l1_loss_param().epsilon());
         q_layer_.reset(new PowerLayer<Dtype>(q_param));
         q_layer_->SetUp(sum_top_vec_, q_top_vec_);
         
         /// Discard used schedule step
-        schedule_.pop();
+        delete step_ptr;
       }
     }
     /// <-- Check and reset p/q parameters
