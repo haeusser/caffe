@@ -85,7 +85,7 @@ class SintelTrain(Dataset):
 class FlyingStuff3DTest(Dataset):
     '''@brief FlyingStuff3D testing dataset (disparity, optical flow, scene flow)'''
     def __init__(self, rendertype, phase):
-        Dataset.__init__(self, 'sintel', rendertype, phase)
+        Dataset.__init__(self, 'FlyingStuff3D', rendertype, phase)
 
     def width(self): return 960
     def height(self): return 540
@@ -119,6 +119,43 @@ class FlyingStuff3DTest(Dataset):
         kwargs['rand_permute']    = False
         return Data.BinaryData(net, **kwargs)
 
+
+class FlyingStuff3DNewTest(Dataset):
+    '''@brief FlyingStuff3D testing dataset (disparity, optical flow, scene flow)'''
+    def __init__(self, rendertype, phase):
+        Dataset.__init__(self, 'FlyingStuff3D_new', rendertype, phase)
+
+    def width(self): return 960
+    def height(self): return 540
+    def meanColors(self):               # FIX ME FIX ME FIX ME FIX ME FIX ME FIX ME!!!
+        if self._rendertype == 'CLEAN':
+            return (76.4783107737, 69.4660111681, 58.0279756163)
+        else:
+            return (91.2236713645, 82.6859238723, 69.5627393708)
+
+    def dispLayer(self, net, **kwargs):
+        kwargs['setting']         = 'DISPARITY_SINGLE'
+        kwargs['rendertype']      = self._rendertype
+        kwargs['phase']           = self._phase
+        kwargs['collection_list'] = COLL_LISTS_DIR+'/v1/FlyingStuff3D_new_test.txt'
+        kwargs['rand_permute']    = False
+        return Data.BinaryData(net, **kwargs)
+
+    def flowLayer(self, net, **kwargs):
+        kwargs['setting']         = 'OPTICAL_FLOW_SINGLE'
+        kwargs['rendertype']      = self._rendertype
+        kwargs['phase']           = self._phase
+        kwargs['collection_list'] = COLL_LISTS_DIR+'/v1/FlyingStuff3D_new_test.txt'
+        kwargs['rand_permute']    = False
+        return Data.BinaryData(net, **kwargs)
+
+    def sceneFlowLayer(self, net, **kwargs):
+        kwargs['setting']         = 'SCENE_FLOW_SINGLE'
+        kwargs['rendertype']      = self._rendertype
+        kwargs['phase']           = self._phase
+        kwargs['collection_list'] = COLL_LISTS_DIR+'/v1/FlyingStuff3D_new_test.txt'
+        kwargs['rand_permute']    = False
+        return Data.BinaryData(net, **kwargs)
 
 class MonkaaTest(Dataset):
     '''@brief Monkaa testing dataset (disparity, optical flow, scene flow)'''
@@ -259,6 +296,8 @@ def get(name=None, rendertype=None, phase=None):
     elif name.startswith('kitti2015.train'):  return Kitti2015Train(phase)
     elif name == 'FlyingStuff3D.test.clean':  return FlyingStuff3DTest('CLEAN', phase)
     elif name == 'FlyingStuff3D.test.final':  return FlyingStuff3DTest('FINAL', phase)
+    elif name == 'FlyingStuff3D_new.test.clean':  return FlyingStuff3DNewTest('CLEAN', phase)
+    elif name == 'FlyingStuff3D_new.test.final':  return FlyingStuff3DNewTest('FINAL', phase)
     elif name == 'monkaa.test.clean':         return MonkaaTest('CLEAN', phase)
     elif name == 'monkaa.test.final':         return MonkaaTest('FINAL', phase)
     elif name == 'chairs.val':                return FlyingChairsValidation(phase)
@@ -282,6 +321,8 @@ def getDatasetNames(task):
                 'monkaa.test.final',
                 'FlyingStuff3D.test.clean',
                 'FlyingStuff3D.test.final',
+                'FlyingStuff3DNew.test.clean',
+                'FlyingStuff3DNew.test.final',
                 'kitti2012.train',
                 'kitti2015.train',)
     ## Optical flow
@@ -292,6 +333,8 @@ def getDatasetNames(task):
                 'monkaa.test.final',
                 'FlyingStuff3D.test.clean',
                 'FlyingStuff3D.test.final',
+                'FlyingStuff3D_new.test.clean',
+                'FlyingStuff3D_new.test.final',
                 'kitti2012.train',
                 'kitti2015.train',
                 'chairs.val',)
