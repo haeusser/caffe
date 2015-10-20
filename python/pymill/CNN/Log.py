@@ -171,20 +171,57 @@ class Log:
         self._measureList = tb.unique(self._measureList)
 
     def displayBlobSummary(self):
-        blobs = OrderedDict()
+        sizes = OrderedDict()
 
-        assignments = OrderedDict()
+        assignments = []
         for iter, line in self._lines:
             if ']' in line:
-                msg = l.split(']')[1].strip()
-                match = re.compile('([a-zA-Z0-9_-]+) -> ([a-zA-Z0-9_-]+)').match(msg)
+                msg = line.split(']')[1].strip()
+                match = re.compile('([a-zA-Z0-9_-]+) -> ([a-zA-Z0-9_-]+).*').match(msg)
                 if match:
-                    assignments[match.group(1)]=match.group(2)
+                    assignments.append(match.group(2))
                 else:
-                    match = re.compile('Top shape: ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) .*').match(msg)
+                    match = re.compile('Top shape: ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+).*').match(msg)
                     if match:
-                        key, value = assignments.popitem()
-                        print '%30s: %d %d %d %d' % (value, int(match.group(1)), int(match.group(2)), int(match.group(3)), int(match.group(4)))
+                        value = assignments.pop(0)
+                        sizes[value]=(int(match.group(1)), int(match.group(2)), int(match.group(3)), int(match.group(4)))
+                        #print '%50s: %d %d %d %d' % (value, int(match.group(1)), int(match.group(2)), int(match.group(3)), int(match.group(4)))
+                    match = re.compile('Top shape: \(([0-9]+)\).*').match(msg)
+                    if match:
+                        value = assignments.pop(0)
+                        sizes[value]=int(match.group(1))
+                        #print '%50s: %d ' % (value, int(match.group(1)))
+
+        for ass in assignments:
+            sizes[ass] = (-1, -1, -1, -1)
+
+        def printMapping(layer, s, dir):
+            if isinstance(s, int):
+                print '%70s %s (%4d)' % (blob, dir,  s)
+            else:
+                print '%70s %s (%4d %4d %4d %4d)' % (blob, dir, s[0], s[1], s[2], s[3])
+
+        layer = None
+        for iter, line in self._lines:
+            if ']' in line:
+                msg = line.split(']')[1].strip()
+
+                match = re.compile('Creating Layer ([a-zA-Z0-9_-]+)').match(msg)
+                if match:
+                    layer = match.group(1).strip()
+                    print '%70s ------------------------' % ('Layer %s' % layer)
+
+                match = re.compile('([a-zA-Z0-9_-]+) -> ([a-zA-Z0-9_-]+).*').match(msg)
+                if match:
+                    blob = match.group(2)
+                    printMapping(layer, sizes[blob], '->')
+
+                match = re.compile('([a-zA-Z0-9_-]+) <- ([a-zA-Z0-9_-]+).*').match(msg)
+                if match:
+                    blob = match.group(2)
+                    printMapping(layer, sizes[blob], '<-')
+
+
 
     def networkName(self): return self._networkName
     def measures(self): return self._measures

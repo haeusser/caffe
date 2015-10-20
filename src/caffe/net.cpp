@@ -849,6 +849,7 @@ void Net<Dtype>::Reshape() {
 template <typename Dtype>
 void Net<Dtype>::CopyTrainedLayersFrom(const NetParameter& param) {
   int num_source_layers = param.layer_size();
+  LOG(INFO) << "----- Copying parameters: ";
   for (int i = 0; i < num_source_layers; ++i) {
     const LayerParameter& source_layer = param.layer(i);
     const string& source_layer_name = source_layer.name();
@@ -858,10 +859,10 @@ void Net<Dtype>::CopyTrainedLayersFrom(const NetParameter& param) {
       ++target_layer_id;
     }
     if (target_layer_id == layer_names_.size()) {
-      LOG(INFO) << "Ignoring source layer " << source_layer_name;
+      if (source_layer.blobs_size()>0) LOG(INFO) << "Ignoring source layer " << source_layer_name;
       continue;
     }
-    LOG(INFO) << "Copying source layer " << source_layer_name;
+    if (source_layer.blobs_size()>0) LOG(INFO) << "Copying source layer " << source_layer_name;
     vector<shared_ptr<Blob<Dtype> > >& target_blobs =
         layers_[target_layer_id]->blobs();
 

@@ -451,6 +451,10 @@ class Environment:
         log = Log(self._name, logfile)
         log.displayBlobSummary()
 
+    def blobSummary(self):
+        log = Log(self._name, self._logFile)
+        log.displayBlobSummary()
+
     def train(self, weights=None, blobSummary=False):
         if self.existingData() and not self._unattended:
             if not tb.queryYesNo('Existing data found. Do you want to delete it and start from scratch?'):
