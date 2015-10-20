@@ -51,6 +51,16 @@ def standardTest(DeployBlock, generateNet=True):
                 os.makedirs(out_path)
 
             ## Write configuration file for viewer tool
+            #  ┌───────────┬───────────┬────────────┬─────────────┐
+            #  │    L_t    │    R_t    │ disp0L_gt  │ disp0L_pred │
+            #  ├───────────┼───────────┼────────────┼─────────────┤
+            #  │   L_t+1   │   R_t+1   │ disp1L_gt  │ disp1L_pred │
+            #  ├───────────┼───────────┼────────────┼─────────────┤
+            #  │ flowL_gt  │ flowR_gt  │ dispChL_gt │     ---     │
+            #  ├───────────┼───────────┼────────────┼─────────────┤
+            #  │flowL_pred │flowR_pred │dispChL_pred│     ---     │
+            #  └───────────┴───────────┴────────────┴─────────────┘
+            ##
             f = open('%s/viewer.cfg' % out_path, 'w')
             f.write('4 4\n')
             f.write('0 0 -img0L.ppm\n')

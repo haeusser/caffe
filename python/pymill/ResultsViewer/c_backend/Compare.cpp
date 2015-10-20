@@ -55,3 +55,21 @@ void FlowDelta(const float* in_a,
 }
 
 
+void FloatDelta(const float* in_a, 
+                const float* in_b,
+                float* out,
+                int width,
+                int height)
+{
+  for (int y = 0; y < height; ++y) {
+    for (int x = 0; x < width; ++x) {
+      const float& inpixel_a = in_a[y*width+x];
+      const float& inpixel_b = in_b[y*width+x];
+      float& outpixel        =  out[y*width+x];
+
+      outpixel = std::abs(inpixel_a - inpixel_b);
+    }
+  }
+}
+
+

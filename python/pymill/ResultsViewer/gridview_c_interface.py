@@ -80,3 +80,20 @@ def FlowDelta(a, b):
   return output
 
 
+## Float difference image
+cFloatDelta = lib.FloatDelta
+cFloatDelta.restype = None
+cFloatDelta.argtypes = [ndpointer(ctypes.c_float, flags='C_CONTIGUOUS'),
+                        ndpointer(ctypes.c_float, flags='C_CONTIGUOUS'),
+                        ndpointer(ctypes.c_float, flags='C_CONTIGUOUS'),
+                        ctypes.c_int,
+                        ctypes.c_int]
+
+def FloatDelta(a, b):
+  shape = a.shape
+  output = np.zeros(shape, dtype=np.float32)
+  cFloatDelta(a, b, output, shape[0], shape[1])
+  output = output.transpose()
+  return output
+
+

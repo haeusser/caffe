@@ -49,6 +49,11 @@ updateStatus = None
 
 def processSuffix(s):
   '''Special suffix syntax for flow difference or EPE images'''
+  def consistency_check(a, b):
+    if (a.endswith('flo') and not b.endswith('flo')) or \
+       (b.endswith('flo') and not a.endswith('flo')):
+      raise Exception('>%s< and >%s< are not of the same type'%(a, b))
+
   if s.startswith('DIFF'):
     RE = re.compile(r'DIFF\((?P<a>.*),(?P<b>.*)\)')
     m = RE.match(s)
@@ -57,11 +62,19 @@ def processSuffix(s):
     import convert
     a = m.groupdict()['a']
     b = m.groupdict()['b']
+    consistency_check(a, b)
     testfile = filename_template_batch%(0,0,s)
     batch = os.path.isfile(os.path.join(dir, testfile))
-    print('Creating flow difference images...')
-    convert.make_diff_images(dir, a, b, '-diff.flo', batch)
-    return '-diff.flo'
+    if a.endswith('flo'):
+      convert.make_diff_images(dir, a, b, '-diff.flo', batch)
+      return '-diff.flo'
+    elif a.endswith('float') or a.endswith('float3'):
+      ending = a.split('.')[-1]
+      new_suffix = '-diff.%s'%(ending)
+      convert.make_float_diff_images(dir, a, b, new_suffix, batch)
+      return new_suffix
+    else:
+      raise Exception('Unsupported suffix in >%s<'%(a))
   elif s.startswith('EPE'):
     RE = re.compile(r'EPE\((?P<a>.*),(?P<b>.*)\)')
     m = RE.match(s)
@@ -70,9 +83,9 @@ def processSuffix(s):
     import convert
     a = m.groupdict()['a']
     b = m.groupdict()['b']
+    consistency_check(a, b)
     testfile = filename_template_batch%(0,0,s)
     batch = os.path.isfile(os.path.join(dir, testfile))
-    print('Creating EPE images...')
     convert.make_EPE_images(dir, a, b, '-epe.float', batch)
     return '-epe.float'
   else:

@@ -17,11 +17,13 @@ def standardTest(DeployBlock, generateNet=True):
             os.system('mkdir -p %s' % out_path)
 
             f = open('%s/viewer.cfg' % out_path, 'w')
-            f.write('2 2\n')
+            f.write('3 2\n')
             f.write('0 0 -imgL.ppm\n')
             f.write('1 0 -imgR.ppm\n')
+            f.write('1 0 DIFF(-dispL.float3,-gt.float3)\n')
             f.write('0 1 -dispL.float3\n')
             f.write('1 1 -gt.float3\n')
+            f.write('2 1 none\n')
             f.close()
 
             net.writeImage(img0, folder=out_path, prefix='', suffix='-imgL')

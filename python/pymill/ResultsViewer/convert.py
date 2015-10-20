@@ -150,6 +150,12 @@ def FlowDelta(a, b):
   return result
 
 
+def FloatDelta(a, b):
+  '''Absolute difference image'''
+  result = c_interface.FloatDelta(a, b)
+  return result
+
+
 def EPE(a, b):
   '''Pixelwise scalar end-point-error'''
   result = c_interface.PixelwiseEPE(a, b)
@@ -175,7 +181,9 @@ def make_diff_images(dir, template_a, template_b, template_c, batch):
                         files(dir, template_c, batch)):
     if not os.path.isfile(a) or not os.path.isfile(b):
       break
-    print(diff)
+    if os.path.isfile(diff):
+      continue
+    print('Generating: %s'%(diff))
     a_img    = readFlow(a)
     b_img    = readFlow(b)
     diff_img = FlowDelta(a_img, b_img)
@@ -189,10 +197,28 @@ def make_EPE_images(dir, template_a, template_b, template_c, batch):
                         files(dir, template_c, batch)):
     if not os.path.isfile(a) or not os.path.isfile(b):
       break
-    print(diff)
+    if os.path.isfile(diff):
+      continue
+    print('Generating: %s'%(diff))
     a_img    = readFlow(a)
     b_img    = readFlow(b)
     diff_img = EPE(a_img, b_img)
+    writeFloat(diff, diff_img)
+
+
+
+def make_float_diff_images(dir, template_a, template_b, template_c, batch):
+  for (a,b,diff) in zip(files(dir, template_a, batch), 
+                        files(dir, template_b, batch), 
+                        files(dir, template_c, batch)):
+    if not os.path.isfile(a) or not os.path.isfile(b):
+      break
+    if os.path.isfile(diff):
+      continue
+    print('Generating: %s'%(diff))
+    a_img    = readFloat(a)
+    b_img    = readFloat(b)
+    diff_img = FloatDelta(a_img, b_img)
     writeFloat(diff, diff_img)
 
 
