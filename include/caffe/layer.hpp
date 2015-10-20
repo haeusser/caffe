@@ -40,7 +40,7 @@ class Layer {
    * layer.
    */
   explicit Layer(const LayerParameter& param)
-    : layer_param_(param), is_shared_(false), net_(NULL) {
+    : layer_param_(param), is_shared_(false), net_(NULL), next_weightloss_change_at_iter_(-1) {
       // Set phase and copy blobs (if there are any).
       phase_ = param.phase();
       if (layer_param_.blobs_size() > 0) {
@@ -70,6 +70,7 @@ class Layer {
       const vector<Blob<Dtype>*>& top) {
     InitMutex();
     CheckBlobCounts(bottom, top);
+    CheckLossSchedule(top);
     LayerSetUp(bottom, top);
     Reshape(bottom, top);
     SetLossWeights(top);
@@ -426,6 +427,25 @@ class Layer {
   }
 
   /**
+   * Checks if the loss schedule is valid (if there is one)
+   */
+  virtual void CheckLossSchedule(const vector<Blob<Dtype>*>& top) {
+    if(this->layer_param_.has_loss_param()) {
+      int loss_schedule_iters = this->layer_param_.loss_param().loss_schedule_iter_size();
+      int loss_schedule_size = this->layer_param_.loss_param().loss_schedule_lossweight_size();
+      if(loss_schedule_iters > 0 || loss_schedule_size > 0) {
+        CHECK_EQ(loss_schedule_iters, loss_schedule_size) << "Loss Weight Schedule must have same amount iter and values";
+        next_weightloss_change_at_iter_ = 0;
+      }
+      
+      CHECK_EQ(top.size(), 1) << "Loss Weight Schedule currently only supports one output loss.";
+    }
+    
+  }
+  
+  void ApplyLossWeightSchedule(const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top);
+  
+  /**
    * Called by SetUp to initialize the weights associated with any top blobs in
    * the loss function. Store non-zero loss weights in the diff blob.
    */
@@ -461,6 +481,10 @@ class Layer {
   void Lock();
   /** Unlock forward_mutex_ if this layer is shared */
   void Unlock();
+  
+  /** Loss weight schedule: At which iteration will the weight change next? */
+  int next_weightloss_change_at_iter_;
+  
 
   DISABLE_COPY_AND_ASSIGN(Layer);
 };  // class Layer
@@ -476,6 +500,9 @@ inline Dtype Layer<Dtype>::Forward(const vector<Blob<Dtype>*>& bottom,
   Dtype loss = 0;
   if (this->layer_param_.reshape_every_iter())
     Reshape(bottom, top);
+  
+  ApplyLossWeightSchedule(bottom, top);
+  
   switch (Caffe::mode()) {
   case Caffe::CPU:
     Forward_cpu(bottom, top);
