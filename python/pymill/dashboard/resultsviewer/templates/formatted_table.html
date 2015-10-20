@@ -38,11 +38,15 @@
 			</div>
 		      </div>
 		    {% else %}
+		    
 		      {{ cell | intcomma}}
+		      
 		    {% endif %}
 		  </div>
 		{% else %}
-		{% if column.header == "Iteration" %}{{ cell | intcomma}}{% else %}{{ cell|localize }}{% endif %}
+		  {% if cell == best_net%}<div style="background: rgba(44, 255, 13, 0.4);">{% else %}<div>{% endif %}
+		  {% if column.header == "Iteration" %}{{ cell | intcomma}}{% else %}{{ cell|localize }}{% endif %}
+		  </div>
 		{% endif %}
 				    
                 </td>
