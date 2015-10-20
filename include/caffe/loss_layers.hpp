@@ -429,7 +429,7 @@ class LpqLossLayer : public LossLayer<Dtype> {
   };
   std::queue<ScheduleStep_*> schedule_;
   
-  Blob<Dtype> sign_, mask_, plateau_l2_;
+  Blob<Dtype> sign_, mask_, plateau_l2_, ones_;
   float scale_;
   Dtype normalize_coeff_;
   

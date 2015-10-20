@@ -21,9 +21,10 @@ class LpqLossLayerTest : public MultiDeviceTest<TypeParam> {
 
  protected:
   LpqLossLayerTest()
-      : blob_bottom_data_(new Blob<Dtype>(5, 4, 3, 2)),
-        blob_bottom_label_(new Blob<Dtype>(5, 4, 3, 2)),
-        blob_top_loss_(new Blob<Dtype>()) {
+    : blob_bottom_data_(new Blob<Dtype>(5, 4, 3, 2)),
+      blob_bottom_label_(new Blob<Dtype>(5, 4, 3, 2)),
+      blob_top_loss_(new Blob<Dtype>()) 
+  {
     // fill the values
     FillerParameter filler_param;
     GaussianFiller<Dtype> filler(filler_param);
@@ -38,18 +39,18 @@ class LpqLossLayerTest : public MultiDeviceTest<TypeParam> {
     // non-differentiable part of L1, which is bad for gradient checking.
     // So lets avoid that:
     for(int i=0; i<this->blob_bottom_data_->count(); i++) {
-        Dtype dist = fabs(bot0[i] - bot1[i]);
-        if(dist < 2e-2) bot0[i] += 2e-2;
+      Dtype dist = std::abs(bot0[i] - bot1[i]);
+      if(dist < 2e-2) bot0[i] += 4e-2;
     }
-        
     
     blob_bottom_vec_.push_back(blob_bottom_label_);
     blob_top_vec_.push_back(blob_top_loss_);
   }
+  
   virtual ~LpqLossLayerTest() {
-    delete blob_bottom_data_;
-    delete blob_bottom_label_;
-    delete blob_top_loss_;
+    if (blob_bottom_data_)  delete blob_bottom_data_;
+    if (blob_bottom_label_) delete blob_bottom_label_;
+    if (blob_top_loss_)     delete blob_top_loss_;
   }
   
   void TestForward_simple() {
@@ -57,53 +58,57 @@ class LpqLossLayerTest : public MultiDeviceTest<TypeParam> {
     // equivalent to explicitly specifiying a weight of 1.
     LayerParameter layer_param;
     
+    //layer_param.mutable_l1_loss_param()->set_l2_per_location(true);
+    
     layer_param.mutable_lpq_loss_param()->add_pq_episode_starts_at_iter(0);
-    layer_param.mutable_lpq_loss_param()->add_p((Dtype)2);
-    layer_param.mutable_lpq_loss_param()->add_q((Dtype)1);
-    layer_param.mutable_lpq_loss_param()->add_pq_episode_starts_at_iter(10);
     layer_param.mutable_lpq_loss_param()->add_p((Dtype)1);
-    layer_param.mutable_lpq_loss_param()->add_q((Dtype)2);
+    layer_param.mutable_lpq_loss_param()->add_q((Dtype)1);
     
     LpqLossLayer<Dtype> layer_weight_1(layer_param);
-    layer_weight_1.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-    const Dtype loss_weight_1 =
-        layer_weight_1.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
+    layer_weight_1.SetUp(this->blob_bottom_vec_, 
+                         this->blob_top_vec_);
+    const Dtype loss_weight_1 = layer_weight_1.Forward(this->blob_bottom_vec_, 
+                                                       this->blob_top_vec_);
 
     // Get the loss again with a different objective weight; check that it is
     // scaled appropriately.
-    const Dtype kLossWeight = 3.7;
+    const Dtype kLossWeight = (Dtype)3.7;
     layer_param.add_loss_weight(kLossWeight);
     LpqLossLayer<Dtype> layer_weight_2(layer_param);
-    layer_weight_2.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-    const Dtype loss_weight_2 =
-        layer_weight_2.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-    const Dtype kErrorMargin = 1e-5;
+    layer_weight_2.SetUp(this->blob_bottom_vec_, 
+                         this->blob_top_vec_);
+    const Dtype loss_weight_2 = layer_weight_2.Forward(this->blob_bottom_vec_, 
+                                                       this->blob_top_vec_);
+    const Dtype kErrorMargin = (Dtype)1e-5;
     EXPECT_NEAR(loss_weight_1 * kLossWeight, loss_weight_2, kErrorMargin);
     // Make sure the loss is non-trivial.
-    const Dtype kNonTrivialAbsThresh = 1e-1;
+    const Dtype kNonTrivialAbsThresh = (Dtype)1e-1;
     EXPECT_GE(fabs(loss_weight_1), kNonTrivialAbsThresh);
   }
   
   void TestForward_values() {
     LayerParameter layer_param;
+    
+    layer_param.mutable_lpq_loss_param()->add_p((Dtype)1);
+    layer_param.mutable_lpq_loss_param()->add_q((Dtype)1);
+    Dtype epsilon = layer_param.l1_loss_param().epsilon();
 
-    const Dtype kLossWeight = 0.00345;
+    const Dtype kLossWeight = (Dtype)0.00345;
     layer_param.add_loss_weight(kLossWeight);
-    layer_param.mutable_l1_loss_param()->set_l2_per_location(false);
     
     LpqLossLayer<Dtype> layer_weight_2(layer_param);
-    layer_weight_2.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-    
-    const Dtype loss_weight_2 =
-        layer_weight_2.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-    const Dtype kErrorMargin = 1e-5;
+    layer_weight_2.SetUp(this->blob_bottom_vec_, 
+                         this->blob_top_vec_);
+    const Dtype loss_weight_2 = layer_weight_2.Forward(this->blob_bottom_vec_, 
+                                                       this->blob_top_vec_);
+    const Dtype kErrorMargin = (Dtype)1e-5;
     
     //Compute reference
-    Dtype refloss = 0;
+    Dtype refloss = (Dtype)0;
     const Dtype *bot0 = blob_bottom_data_->cpu_data();
     const Dtype *bot1 = blob_bottom_label_->cpu_data();
     for(int c = 0; c < blob_bottom_data_->count(); c++) {
-        refloss += fabs(bot0[c] - bot1[c]);
+      refloss += std::abs(bot0[c] - bot1[c]);
     }
     refloss /= (Dtype)blob_bottom_data_->num();
     
