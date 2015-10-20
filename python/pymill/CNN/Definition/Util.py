@@ -239,6 +239,12 @@ def concat(net, *args, **kwargs):
 
 Network.concat = concat
 
+def warp(net, input, flow):
+    return Layers.ApplyFlow(net, (input, flow), nout=1)
+
+Network.warp = warp
+
+
 def dummy_zeros(net, num, channels, height, width):
     return Layers.DummyData(net, (), nout=1, 
                               dummy_data_param={

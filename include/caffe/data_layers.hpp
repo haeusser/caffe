@@ -115,6 +115,8 @@ class ApplyFlowLayer : public Layer<Dtype> {
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
 
+  virtual inline bool AllowBackward() const { LOG(WARNING) << "ApplyFlowLayer does not do backward."; return false; }
+
  protected:  
   virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);

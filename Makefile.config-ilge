@@ -23,6 +23,7 @@ CUDA_DIR := /misc/software-lin/lmbsoft/cuda-7.0.28
 # CUDA architecture setting: going with all of them.
 # For CUDA < 6.0, comment the *_50 lines for compatibility.
 CUDA_ARCH := -gencode arch=compute_20,code=sm_20 \
+    -gencode arch=compute_35,code=sm_35 \
     -gencode arch=compute_50,code=sm_50 \
     -gencode arch=compute_50,code=compute_50
 
