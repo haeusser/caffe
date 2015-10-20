@@ -138,63 +138,6 @@ def reorganize_queryset(queryset):
     for record in records:
         for key in record:
             if '.' in key:
-                value = record[key]
-                #record[key] = format(float(record[key]), '.2f') if value else None
                 record[key.replace('.', '')] = record.pop(key)
 
     return records
-
-
-##### NOT IN USE CURRENTLY ####
-"""
-def create_model(name, fields=None, app_label='', module='', options=None, parent=models.Model):
-
-    from django.db import models
-    class Meta:
-        # Using type('Meta', ...) gives a dictproxy error during model creation
-        pass
-
-    if app_label:
-        # app_label must be set using the Meta inner class
-        setattr(Meta, 'app_label', app_label)
-
-    # Update Meta with any options that were provided
-    if options is not None:
-        for key, value in options.iteritems():
-            setattr(Meta, key, value)
-
-    # Set up a dictionary to simulate declarations within a class
-    attrs = {'__module__': module, 'Meta': Meta}
-
-    # Add in any fields that were provided
-    if fields:
-        attrs.update(fields)
-
-    # Create the class, which automatically triggers ModelBase processing
-    model = type(name, (parent,), attrs)
-
-    return model
-
-
-def make_formatted_model(datasets):
-    from resultsviewer.models import Results
-    from django.db import models
-
-    attrs = dict()
-
-    for d in datasets:
-        attrs[d[0]] = models.TextField(blank=True, null=True)
-
-    return create_model('FormattedResults', fields=attrs, app_label='resultsviewer', parent=Results)
-
-
-def make_formatted_table(model):
-    import django_tables2 as tables
-    options = {
-         = FormattedResults
-        attrs = {"class": "paleblue"}
-        'model': ['last_name', 'first_name'],
-        'verbose_name': 'valued customer',
-    }
-    return create_model('FormattedResultsTable', app_label='resultsviewer', parent=tables.Table)
-"""
