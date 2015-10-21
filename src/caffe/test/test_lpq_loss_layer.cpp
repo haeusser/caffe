@@ -75,8 +75,6 @@ class LpqLossLayerTest : public MultiDeviceTest<TypeParam> {
     // equivalent to explicitly specifiying a weight of 1.
     LayerParameter layer_param;
     
-    //layer_param.mutable_l1_loss_param()->set_l2_per_location(true);
-    
     layer_param.mutable_lpq_loss_param()->add_pq_episode_starts_at_iter(0);
     layer_param.mutable_lpq_loss_param()->add_p((Dtype)1);
     layer_param.mutable_lpq_loss_param()->add_q((Dtype)1);
@@ -129,9 +127,6 @@ class LpqLossLayerTest : public MultiDeviceTest<TypeParam> {
     Dtype refloss = (Dtype)0;
     const Dtype *bot0 = blob_bottom_data_->cpu_data();
     const Dtype *bot1 = blob_bottom_label_->cpu_data();
-    //blob_bottom_data_->print("DATA");
-    //blob_bottom_label_->print("LABEL");
-    //blob_top_loss_->print("LOSS");
     for(int c = 0; c < blob_bottom_data_->count(); ++c) {
       refloss += std::abs(bot0[c] - bot1[c]) + 
                  q_eps / blob_bottom_data_->channels();
@@ -184,8 +179,6 @@ class LpqLossLayerTest : public MultiDeviceTest<TypeParam> {
           per_location_loss += (bot0[off]-bot1[off]) * (bot0[off]-bot1[off]);
         }
         float summed_scaled  = per_location_loss;
-        //summed_scaled += q_eps;
-        //if(summed_scaled < plateau*plateau) summed_scaled = 0;
         refloss += summed_scaled;
       }
     }
@@ -238,7 +231,6 @@ class LpqLossLayerTest : public MultiDeviceTest<TypeParam> {
         }
         float summed_scaled  = per_location_loss;
         summed_scaled += q_eps;
-        //if(summed_scaled < plateau*plateau) summed_scaled = 0;
         refloss += sqrt(summed_scaled);
       }
     }
@@ -310,55 +302,6 @@ class LpqLossLayerTest : public MultiDeviceTest<TypeParam> {
     const Dtype kNonTrivialAbsThresh = 1e-1;
     EXPECT_GE(fabs(refloss), kNonTrivialAbsThresh);
   }
-  
-//   void TestForward_values_l2(float plateau) {
-//     LayerParameter layer_param;
-// 
-//     const Dtype kLossWeight = 5.67;
-//     layer_param.add_loss_weight(kLossWeight);
-//     layer_param.mutable_l1_loss_param()->set_l2_per_location(true);
-//     layer_param.mutable_l1_loss_param()->set_l2_prescale_by_channels(true);
-//     layer_param.mutable_l1_loss_param()->set_epsilon(1e-3);
-//     layer_param.mutable_l1_loss_param()->set_plateau(plateau);
-//     
-//     LpqLossLayer<Dtype> layer_weight_2(layer_param);
-//     layer_weight_2.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-//     
-//     const Dtype loss_weight_2 =
-//         layer_weight_2.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-//     const Dtype kErrorMargin = 1e-5;
-//     
-//     //Compute reference
-//     Dtype refloss = 0;
-//     int width = blob_bottom_data_->width();
-//     int height = blob_bottom_data_->height();
-//     int channels = blob_bottom_data_->channels();
-//     int num = blob_bottom_data_->num();
-//     
-//     const Dtype *bot0 = blob_bottom_data_->cpu_data();
-//     const Dtype *bot1 = blob_bottom_label_->cpu_data();
-//     for(int n = 0; n < num; n++) {
-//         for(int xy = 0; xy < width*height; xy++) {
-//             Dtype per_location_loss = 0;
-//             for(int c = 0; c < channels; c++) {
-//                 int off = (n*channels + c)*height*width + xy;
-//                 per_location_loss += (bot0[off]-bot1[off]) * (bot0[off]-bot1[off]);
-//             }
-//             float summed_scaled  = per_location_loss / channels;
-//             
-//             if(summed_scaled < plateau*plateau) summed_scaled = 0;
-//             
-//             refloss += sqrt(summed_scaled + 1e-3);
-//         }
-//     }
-//     refloss /= (Dtype)num;
-//     
-//     EXPECT_NEAR(refloss * kLossWeight, loss_weight_2, kErrorMargin);
-//     
-//     // Make sure the loss is non-trivial.
-//     const Dtype kNonTrivialAbsThresh = 1e-1;
-//     EXPECT_GE(fabs(refloss), kNonTrivialAbsThresh);
-//   }
   
   void TestForward_values_l1_nans() {
     LayerParameter layer_param;
@@ -593,52 +536,10 @@ TYPED_TEST(LpqLossLayerTest, TestGradient_L2_2) {
   LpqLossLayer<Dtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   
-//   LOG(INFO) << "TEST BODY";
-//   this->blob_bottom_data_->print("DATA");
-//   this->blob_bottom_label_->print("LABEL");
-//   this->blob_top_loss_->print("LOSS");
-
   GradientChecker<Dtype> checker(1e-2, 1e-3, 1702);
   checker.CheckGradientExhaustive(&layer, 
                                   this->blob_bottom_vec_,
                                   this->blob_top_vec_);
 }
-
-// TYPED_TEST(LpqLossLayerTest, TestForward_values_l2_plateau) {
-//   if(Caffe::mode()==Caffe::CPU)
-//   {
-//       LOG(INFO) << "Skipping CPU test";
-//       return;
-//   }
-//   this->TestForward_values_l2(1.0);
-// }
-// 
-// TYPED_TEST(LpqLossLayerTest, TestGradient_l2_per_location_plateau) {
-//   if(Caffe::mode()==Caffe::CPU)
-//   {
-//       LOG(INFO) << "Skipping CPU test";
-//       return;
-//   }
-//   typedef typename TypeParam::Dtype Dtype;
-//   LayerParameter layer_param;
-//   layer_param.mutable_l1_loss_param()->set_l2_per_location(true);
-//   layer_param.mutable_l1_loss_param()->set_plateau(1.0);
-//   const Dtype kLossWeight = 3.7;
-//   layer_param.add_loss_weight(kLossWeight);
-//   LpqLossLayer<Dtype> layer(layer_param);
-//   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-//   GradientChecker<Dtype> checker(1e-2, 1e-3, 1701);
-//   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
-//       this->blob_top_vec_);
-// }
-// 
-// TYPED_TEST(LpqLossLayerTest, TestForward_values_l2_nans) {
-//   if(Caffe::mode()==Caffe::CPU)
-//   {
-//       LOG(INFO) << "Skipping CPU test";
-//       return;
-//   }
-//   this->TestForward_values_l2_nans();
-// }
 
 }  // namespace caffe

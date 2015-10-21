@@ -1041,7 +1041,17 @@ message HuberL1LossParameter {
 
 // Message that stores parameters used by LpqLossLayer
 message LpqLossParameter {
-  optional float p_epsilon = 4013 [default = 1e-2];
+  /** 
+   * "Shift" for p-PowerLayer. Since the Lpq layer uses this parameter
+   * to avoid singularities around 0, and p is usually >=1, this parameter
+   * is normally 0.
+   */
+  optional float p_epsilon = 4013 [default = 0];
+  /** 
+   * "Shift" for q-PowerLayer. Since the Lpq layer uses this parameter
+   * to avoid singularities around 0, and p is usually <=1, this parameter
+   * is usually relevant and positive.
+   */
   optional float q_epsilon = 4014 [default = 1e-2];
   /****************************
    * If one of each of the following is given, p/q are constant and the entry
