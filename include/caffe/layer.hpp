@@ -436,6 +436,10 @@ class Layer {
       if(loss_schedule_iters > 0 || loss_schedule_size > 0) {
         CHECK_EQ(loss_schedule_iters, loss_schedule_size) << "Loss Weight Schedule must have same amount iter and values";
         next_weightloss_change_at_iter_ = 0;
+        
+        if(this->layer_param_.loss_weight_size() < 1 || this->layer_param_.loss_weight(0) == 0) {
+          LOG(FATAL) << "Loss Layer with schedule should specify non-zero loss_weight (which will be overridden by schedule)";
+        }
       }
       
       CHECK_EQ(top.size(), 1) << "Loss Weight Schedule currently only supports one output loss.";
