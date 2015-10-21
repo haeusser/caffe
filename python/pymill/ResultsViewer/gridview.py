@@ -115,6 +115,8 @@ def parseConfig(lines):
     col = []
     for y in range(configuration['Y']):
       index_str = '%s %s'%(x,y)
+      if index_str not in cells:
+        raise Exception('Missing definition for cell (%s)'%(index_str))
       col.append({'suffix': cells[index_str]})
     grid.append(col)
   configuration['grid'] = grid

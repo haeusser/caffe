@@ -1052,7 +1052,7 @@ message LpqLossParameter {
   optional float p_epsilon = 4013 [default = 0];
   /** 
    * "Shift" for q-PowerLayer. Since the Lpq layer uses this parameter
-   * to avoid singularities around 0, and p is usually <=1, this parameter
+   * to avoid singularities around 0, and q is usually <=1, this parameter
    * is usually relevant and positive.
    */
   optional float q_epsilon = 4014 [default = 1e-2];
