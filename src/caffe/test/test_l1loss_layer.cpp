@@ -39,7 +39,7 @@ class L1LossLayerTest : public MultiDeviceTest<TypeParam> {
     // So lets avoid that:
     for(int i=0; i<this->blob_bottom_data_->count(); i++) {
         Dtype dist = fabs(bot0[i] - bot1[i]);
-        if(dist < 2e-2) bot0[i] += 2e-2;
+        if(dist < 2e-2) bot0[i] += 4e-2;
     }
         
     
