@@ -11,10 +11,16 @@ namespace caffe {
   namespace LpqLayer__kernels {
 
     /**
-    * 
-    */
+     * @brief Elementwise sign
+     * @param n Number of data elements
+     * @param in Input data
+     * @param out Output data
+     */
     template <typename Dtype>
-    __global__ void ComputeSign(const int n, const Dtype* in, Dtype* out) {
+    __global__ void ComputeSign(const int n, 
+                                const Dtype* in, 
+                                Dtype* out) 
+    {
       CUDA_KERNEL_LOOP(index, n) {
         out[index] = in[index] > 0 ? Dtype(1) : Dtype(-1);
       }
@@ -23,96 +29,130 @@ namespace caffe {
     // TODO maybe change the way of detecting NaNs
 
     template <typename Dtype>
-    __global__ void FindNotNaNs(const int n, const Dtype* in, Dtype* out) {
+    __global__ void FindNotNaNs(const int n, 
+                                const Dtype* in, 
+                                Dtype* out) 
+    {
       CUDA_KERNEL_LOOP(index, n) {
         out[index] = in[index]==in[index] ? Dtype(1) : Dtype(0);
       }
     } 
 
     template <typename Dtype>
-    __global__ void KillNaNs(const int n, const Dtype* in, Dtype* out) {
+    __global__ void KillNaNs(const int n, 
+                             const Dtype* in, 
+                             Dtype* out) 
+    {
       CUDA_KERNEL_LOOP(index, n) {
         out[index] = in[index]==in[index] ? in[index] : Dtype(0);
       }
     }
 
     template <typename Dtype>
-    __global__ void KillMasked(const int n, const Dtype* in, Dtype* out) {
+    __global__ void KillMasked(const int n, 
+                               const Dtype* in, 
+                               Dtype* out) 
+    {
       CUDA_KERNEL_LOOP(index, n) {
         out[index] = in[index] > Dtype(0.5) ? out[index] : Dtype(0);
       }
     }
 
     template <typename Dtype>
-    __global__ void KillMaskedAcrossChannels(const int n, const int width_height, const Dtype* in, Dtype* out) {
+    __global__ void KillMaskedAcrossChannels(const int n, 
+                                             const int width_height, 
+                                             const Dtype* in, 
+                                             Dtype* out) 
+    {
       CUDA_KERNEL_LOOP(index, n) {
         const int mask_idx = index % width_height;
         out[index] = in[mask_idx] > Dtype(0.5) ? out[index] : Dtype(0);
       }
     }
 
-    template <typename Dtype>
-    __global__ void MaskPlateauValues(const int n, const Dtype* in, Dtype* out, Dtype plateau) {
-      CUDA_KERNEL_LOOP(index, n) {
-        if(fabs(in[index]) < plateau) out[index] = Dtype(0); // Mask out plateau values and keep other as is
-      }
-    } 
+//     template <typename Dtype>
+//     __global__ void MaskPlateauValues(const int n, 
+//                                       const Dtype* in, 
+//                                       Dtype* out, 
+//                                       Dtype plateau) 
+//     {
+//       CUDA_KERNEL_LOOP(index, n) {
+//         /// Mask out plateau values and keep other as is
+//         if(fabs(in[index]) < plateau) out[index] = Dtype(0); 
+//       }
+//     } 
 
+//     template <typename Dtype>
+//     __global__ void MaskPlateauValuesInitial(const int n, 
+//                                              const Dtype* in, 
+//                                              Dtype* out, 
+//                                              Dtype plateau) 
+//     {
+//       CUDA_KERNEL_LOOP(index, n) {
+//         out[index] = (fabs(in[index]) < plateau) ? Dtype(0) : Dtype(1);
+//       }
+//     }
+    
+    /**
+     * @brief Elementwise multiplication
+     * @param n Number of data points
+     * @param data Input/output data
+     * @param factors Factors to be multiplied onto "data" (same size)
+     */
     template <typename Dtype>
-    __global__ void MaskPlateauValuesInitial(const int n, const Dtype* in, Dtype* out, Dtype plateau) {
+    __global__ void EltwiseMult(const int n, 
+                                Dtype* data, 
+                                const Dtype* factors)
+    {
       CUDA_KERNEL_LOOP(index, n) {
-        out[index] = (fabs(in[index]) < plateau) ? Dtype(0) : Dtype(1);
+        data[index] *= factors[index];
       }
-    } 
+    }
 
   }  // namespace LpqLayer__kernels
 
 
+  /**
+   * Forward propagation
+   */
   template <typename Dtype>
   void LpqLossLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-        const vector<Blob<Dtype>*>& top)
+                                        const vector<Blob<Dtype>*>& top)
   {
     /// Check and reset p/q parameters
-    {
+    if (schedule_.size() > 0) {
       /// Get current iteration
       Net<Dtype> *net = this->GetNet();
-      unsigned int current_iteration = net->iter();
+      unsigned int current_iteration = (net) ? net->iter() : 0;
       
-      /// Discard all old schedule steps
+      ScheduleStep_* step_ptr = 0;
+      
+      /// Discard old schedule steps
       while (schedule_.size() > 0 and 
-             current_iteration > schedule_.front().start_iter)
+             current_iteration >= schedule_.front()->start_iter)
       {
+        if (step_ptr) {
+          delete step_ptr;
+        }
+        step_ptr = schedule_.front();
+        LOG(INFO) << "Lpq loss layer: Pop'ing schedule step: "
+                  << "start_iter = " << step_ptr->start_iter
+                  << ", p = " << step_ptr->p
+                  << ", q = " << step_ptr->q;
         schedule_.pop();
       }
       
-      /// If there is a schedule step left, check if we have reached it
-      if (schedule_.size() > 0 and 
-          current_iteration == schedule_.front().start_iter) 
-      {
+      /// Use retrieved schedule step and reinitialize p/q layers
+      if (step_ptr) {
         LOG(INFO) << "Lpq loss layer: Iteration " << current_iteration
-                  << ", switching to p=" << schedule_.front().p
-                  << ", q=" << schedule_.front().q;
+                  << ", switching to p = " << step_ptr->p
+                  << ", q = " << step_ptr->q;
         
-        /// Reset p-power layer
-        p_top_vec_.clear();
-        p_top_vec_.push_back(&p_output_);
-        LayerParameter p_param;
-        p_param.mutable_power_param()->set_power(schedule_.front().p);
-        p_layer_.reset(new PowerLayer<Dtype>(p_param));
-        p_layer_->SetUp(diff_top_vec_, p_top_vec_);
-        
-        /// Reset q-power layer
-        q_top_vec_.clear();
-        q_top_vec_.push_back(&q_output_);
-        LayerParameter q_param;
-        q_param.mutable_power_param()->set_power(schedule_.front().q);
-        q_param.mutable_power_param()->set_shift(
-            this->layer_param_.l1_loss_param().epsilon());
-        q_layer_.reset(new PowerLayer<Dtype>(q_param));
-        q_layer_->SetUp(sum_top_vec_, q_top_vec_);
+        p_layer_->SetPower(step_ptr->p);
+        q_layer_->SetPower(step_ptr->q);
         
         /// Discard used schedule step
-        schedule_.pop();
+        delete step_ptr;
       }
     }
     /// <-- Check and reset p/q parameters
@@ -127,10 +167,13 @@ namespace caffe {
     
     // if necessary, compute the number of not-NaNs
     int count = bottom[0]->count();
-    int num = bottom[0]->num();
-    LpqLayer__kernels::FindNotNaNs<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-          count, diffptr->gpu_data(), mask_.mutable_gpu_data());
-    cudaDeviceSynchronize();
+    int num   = bottom[0]->num();
+    LpqLayer__kernels::FindNotNaNs<Dtype>
+                                <<<CAFFE_GET_BLOCKS(count), 
+                                   CAFFE_CUDA_NUM_THREADS>>>(
+                                      count, 
+                                      diffptr->gpu_data(), 
+                                      mask_.mutable_gpu_data());
     CUDA_POST_KERNEL_CHECK;
     
     if (this->layer_param_.l1_loss_param().normalize_by_num_entries()) {    
@@ -140,62 +183,78 @@ namespace caffe {
       normalize_coeff_ = num;
     }
     
-    if (this->layer_param_.l1_loss_param().l2_per_location()) {
-      // set masked (NaNs only) to zero
-      LpqLayer__kernels::KillMasked<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-            count, mask_.gpu_data(), diffptr->mutable_gpu_data());
-      cudaDeviceSynchronize();
-      CUDA_POST_KERNEL_CHECK;
+    /// set masked (NaNs only) to zero
+    LpqLayer__kernels::KillMasked<Dtype><<<CAFFE_GET_BLOCKS(count),
+                                           CAFFE_CUDA_NUM_THREADS>>>(
+                                              count, 
+                                              mask_.gpu_data(), 
+                                              diffptr->mutable_gpu_data());
+    CUDA_POST_KERNEL_CHECK;
+    
+    /// Compute sign of data
+    LpqLayer__kernels::ComputeSign<Dtype><<<CAFFE_GET_BLOCKS(count),
+                                            CAFFE_CUDA_NUM_THREADS>>>(
+                                              count, 
+                                              diffptr->gpu_data(),
+                                              sign_.mutable_gpu_data());
+    CUDA_POST_KERNEL_CHECK;
+    
+    /// Convert data to absolute (elementwise product with sign)
+    LpqLayer__kernels::EltwiseMult<Dtype>
+                                <<<CAFFE_GET_BLOCKS(count),
+                                   CAFFE_CUDA_NUM_THREADS>>>(
+                                      count, 
+                                      diffptr->mutable_gpu_data(),
+                                      sign_.gpu_data());
+    CUDA_POST_KERNEL_CHECK;
+    
+    p_layer_->Forward(diff_top_vec_, p_top_vec_);
+    sum_layer_->Forward(p_top_vec_, sum_top_vec_);
+    
+//     /// Mask plateau in summed blob (only one channel):
+//     if(this->layer_param_.l1_loss_param().plateau() > 0) {
+//       float plateau_val_squared = this->layer_param_.l1_loss_param().plateau() *
+//                                   this->layer_param_.l1_loss_param().plateau();
+//       LpqLayer__kernels::MaskPlateauValuesInitial<Dtype>
+//                                 <<<CAFFE_GET_BLOCKS(sum_output_.count()),
+//                                    CAFFE_CUDA_NUM_THREADS>>>(
+//                                       sum_output_.count(), 
+//                                       sum_output_.gpu_data(),
+//                                       plateau_l2_.mutable_gpu_data(),
+//                                       plateau_val_squared);
+//       CUDA_POST_KERNEL_CHECK;
+//       
+//       LpqLayer__kernels::KillMasked<Dtype>
+//                                 <<<CAFFE_GET_BLOCKS(sum_output_.count()),
+//                                    CAFFE_CUDA_NUM_THREADS>>>(
+//                                     sum_output_.count(), 
+//                                     plateau_l2_.gpu_data(),
+//                                     sum_output_.mutable_gpu_data());
+//       CUDA_POST_KERNEL_CHECK;
+//     }
+    
+    q_layer_->Forward(sum_top_vec_, q_top_vec_);
+    
+    /// Sum up all loss values
+    caffe_gpu_dot(q_output_.count(), q_output_.gpu_data(), ones_.gpu_data(), &dot);
       
-      p_layer_->Forward(diff_top_vec_, p_top_vec_);
-      sum_layer_->Forward(p_top_vec_, sum_top_vec_);
-      
-      // Mask plateau in summed blob (only one channel):
-      if(this->layer_param_.l1_loss_param().plateau() > 0) {
-        float plateau_val_squared = this->layer_param_.l1_loss_param().plateau() * this->layer_param_.l1_loss_param().plateau();
-        LpqLayer__kernels::MaskPlateauValuesInitial<Dtype><<<CAFFE_GET_BLOCKS(sum_output_.count()), CAFFE_CUDA_NUM_THREADS>>>(
-            sum_output_.count(), sum_output_.gpu_data(), plateau_l2_.mutable_gpu_data(), plateau_val_squared);
-        cudaDeviceSynchronize();
-        CUDA_POST_KERNEL_CHECK;
-        
-        LpqLayer__kernels::KillMasked<Dtype><<<CAFFE_GET_BLOCKS(sum_output_.count()), CAFFE_CUDA_NUM_THREADS>>>(
-              sum_output_.count(), plateau_l2_.gpu_data(), sum_output_.mutable_gpu_data());
-        cudaDeviceSynchronize();
-        CUDA_POST_KERNEL_CHECK;
-      }
-      
-      q_layer_->Forward(sum_top_vec_, q_top_vec_);
-      // Note sign_ is set to all ones in Reshape
-      caffe_gpu_dot(q_output_.count(), q_output_.gpu_data(), sign_.gpu_data(), &dot);
-    }
-    else {    
-      // Mask plateau:
-      if(this->layer_param_.l1_loss_param().plateau() > 0) {
-        LpqLayer__kernels::MaskPlateauValues<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-            count, diffptr->gpu_data(), mask_.mutable_gpu_data(), this->layer_param_.l1_loss_param().plateau());
-        CUDA_POST_KERNEL_CHECK;
-      }
-      
-      //mask_.print("MASK2");
-      
-      // set masked (NaNs, plateau) to zero
-      LpqLayer__kernels::KillMasked<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-            count, mask_.gpu_data(), diffptr->mutable_gpu_data());
-      CUDA_POST_KERNEL_CHECK;
-      
-      LpqLayer__kernels::ComputeSign<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-          count, diffptr->gpu_data(), sign_.mutable_gpu_data());
-      CUDA_POST_KERNEL_CHECK;
-      caffe_gpu_dot(count, diffptr->gpu_data(), sign_.gpu_data(), &dot); 
-    }
     loss = dot / normalize_coeff_; 
     top[0]->mutable_cpu_data()[0] = loss;
+    
+//     LOG(INFO)<<"FORWARD";
+//     for(int i=0;i<bottom.size();++i)bottom[i]->print("BOTTOM");
+//     for(int i=0;i<top.size();++i)   top[i]->print("TOP");
   }
 
+  
+  /**
+   * Backward propagation
+   */
   template <typename Dtype>
   void LpqLossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
-        const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom)
-  {  
+                                         const vector<bool>& propagate_down, 
+                                         const vector<Blob<Dtype>*>& bottom)
+  {
     bool prop_down = propagate_down[0];
     if(bottom.size() > 1) prop_down |= propagate_down[1];
     
@@ -203,35 +262,50 @@ namespace caffe {
     
     if (prop_down) {
       const Dtype alpha = top[0]->cpu_diff()[0] / normalize_coeff_;
-      if (this->layer_param_.l1_loss_param().l2_per_location()) {
-        vector<bool> prop_down(1,true);
-        caffe_gpu_axpby(q_output_.count(), alpha, sign_.gpu_data(),                   
-            Dtype(0), q_output_.mutable_gpu_diff());
-        q_layer_->Backward(q_top_vec_, prop_down, sum_top_vec_);
-        
-        if(this->layer_param_.l1_loss_param().plateau() > 0) {
-          LpqLayer__kernels::KillMasked<Dtype><<<CAFFE_GET_BLOCKS(sum_output_.count()), CAFFE_CUDA_NUM_THREADS>>>(
-                sum_output_.count(), plateau_l2_.gpu_data(), sum_output_.mutable_gpu_diff());
-          cudaDeviceSynchronize();
-          CUDA_POST_KERNEL_CHECK;
-        }
-        
-        sum_layer_->Backward(sum_top_vec_, prop_down, p_top_vec_);
-        p_layer_->Backward(p_top_vec_, prop_down, diff_top_vec_);
-        
+    
+//       LOG(INFO) << "LOSS = " << top[0]->cpu_diff()[0];
+//       LOG(INFO) << "ALPHA = " << alpha;
+//       LOG(INFO) << "NORMALIZE COEFF = " << normalize_coeff_;
       
-      }
-      else {    
-        caffe_gpu_axpby(diffptr->count(), alpha, sign_.gpu_data(), 
-            Dtype(0), diffptr->mutable_gpu_diff());
-      }
+//       LOG(INFO)<<"BACKWARD";
+//       for(int i=0;i<bottom.size();++i)bottom[i]->print("BOTTOM");
+//       for(int i=0;i<top.size();++i)   top[i]->print("TOP");
       
-      LpqLayer__kernels::KillMasked<Dtype><<<CAFFE_GET_BLOCKS(diffptr->count()), CAFFE_CUDA_NUM_THREADS>>>(
-          diffptr->count(), mask_.gpu_data(), diffptr->mutable_gpu_diff());
+      vector<bool> prop_down(1,true);
+      caffe_set(q_output_.count(), alpha, q_output_.mutable_cpu_diff());
+
+      q_layer_->Backward(q_top_vec_, prop_down, sum_top_vec_);
+      
+//       if(this->layer_param_.l1_loss_param().plateau() > 0) {
+//         LpqLayer__kernels::KillMasked<Dtype>
+//                             <<<CAFFE_GET_BLOCKS(sum_output_.count()),
+//                                 CAFFE_CUDA_NUM_THREADS>>>(
+//                                   sum_output_.count(), 
+//                                   plateau_l2_.gpu_data(),
+//                                   sum_output_.mutable_gpu_diff());
+//         CUDA_POST_KERNEL_CHECK;
+//       }
+      
+      sum_layer_->Backward(sum_top_vec_, prop_down, p_top_vec_);
+      p_layer_->Backward(p_top_vec_, prop_down, diff_top_vec_);
+      
+      /// Keep original sign of data
+      LpqLayer__kernels::EltwiseMult<Dtype>
+                                <<<CAFFE_GET_BLOCKS(diffptr->count()),
+                                   CAFFE_CUDA_NUM_THREADS>>>(
+                                      diffptr->count(),
+                                      diffptr->mutable_gpu_diff(),
+                                      sign_.gpu_data());
+      
+      LpqLayer__kernels::KillMasked<Dtype><<<CAFFE_GET_BLOCKS(diffptr->count()),
+                                             CAFFE_CUDA_NUM_THREADS>>>(
+                                                diffptr->count(), 
+                                                mask_.gpu_data(), 
+                                                diffptr->mutable_gpu_diff());
       CUDA_POST_KERNEL_CHECK;
       
       if(bottom.size() > 1) {
-          diff_layer_->Backward(diff_top_vec_, propagate_down, bottom);
+        diff_layer_->Backward(diff_top_vec_, propagate_down, bottom);
       }
     }
     

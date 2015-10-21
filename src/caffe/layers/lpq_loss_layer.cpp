@@ -1,3 +1,4 @@
+#include <iomanip>
 #include <sstream>
 #include <vector>
 
@@ -10,7 +11,7 @@ namespace caffe {
 
   template <typename Dtype>
   void LpqLossLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-                                      const vector<Blob<Dtype>*>& top) 
+                                       const vector<Blob<Dtype>*>& top) 
   {
     LossLayer<Dtype>::LayerSetUp(bottom, top);
     
@@ -25,11 +26,13 @@ namespace caffe {
       /// Special case: If one of each p and q is given, it's okay to not 
       /// specify a start frame
       if (start_iters.size() == 0 and
-          ps.size() == 0 and
-          qs.size() == 0 ) 
+          ps.size() == 1 and
+          qs.size() == 1)
       {
-        ScheduleStep_ next_step(0, ps.Get(0), qs.Get(0));
-        schedule_.push(next_step);
+        schedule_.push(new ScheduleStep_(0, ps.Get(0), qs.Get(0)));
+        LOG(INFO) << "Lpq loss layer: Constant parameters"
+                  << " p = "  << schedule_.front()->p
+                  << ", q = " << schedule_.front()->q;
       }
       else
       {
@@ -65,8 +68,14 @@ namespace caffe {
         }
         /// Make schedule
         for (unsigned int i = 0; i < start_iters.size(); ++i) {
-          ScheduleStep_ next_step(start_iters.Get(i), ps.Get(i), qs.Get(i));
-          schedule_.push(next_step);
+          schedule_.push(new ScheduleStep_(start_iters.Get(i), 
+                                           ps.Get(i), 
+                                           qs.Get(i)));
+          LOG(INFO) << "Lpq loss layer: Starting at iteration "
+                    << std::setw(7) << std::setfill(' ')
+                    << schedule_.back()->start_iter
+                    << ": p = " << schedule_.back()->p
+                    << ", q = " << schedule_.back()->q;
         }
       }
     }
@@ -81,48 +90,55 @@ namespace caffe {
       LayerParameter diff_param;
       diff_param.mutable_eltwise_param()->add_coeff(1.);
       diff_param.mutable_eltwise_param()->add_coeff(-1.);
-      diff_param.mutable_eltwise_param()->set_operation(EltwiseParameter_EltwiseOp_SUM);
+      diff_param.mutable_eltwise_param()->set_operation(
+                                            EltwiseParameter_EltwiseOp_SUM);
       diff_layer_.reset(new EltwiseLayer<Dtype>(diff_param));
       diff_layer_->SetUp(bottom, diff_top_vec_);
     } else {
       LOG(FATAL) << "LpqLossLayer needs one or two input blobs.";
     }
     
-    if (this->layer_param_.l1_loss_param().l2_per_location()) {
-      // Set up power layer to compute elementwise square
-      p_top_vec_.clear();
-      p_top_vec_.push_back(&p_output_);
-      LayerParameter p_param;
-      p_param.mutable_power_param()->set_power(schedule_.front().p);
-      p_layer_.reset(new PowerLayer<Dtype>(p_param));
-      p_layer_->SetUp(diff_top_vec_, p_top_vec_);
-      // Set up convolutional layer to sum all channels
-      sum_top_vec_.clear();
-      sum_top_vec_.push_back(&sum_output_);
-      LayerParameter sum_param;  
-      sum_param.mutable_convolution_param()->set_num_output(1);
-      sum_param.mutable_convolution_param()->set_kernel_size(1);
-      sum_param.mutable_convolution_param()->mutable_weight_filler()->set_type("constant");
-      if(this->layer_param_.l1_loss_param().l2_prescale_by_channels()) {
-          sum_param.mutable_convolution_param()->mutable_weight_filler()->set_value(Dtype(1)/Dtype(bottom[0]->channels()));
-      } else {
-          sum_param.mutable_convolution_param()->mutable_weight_filler()->set_value(Dtype(1));
-      }
-      sum_layer_.reset(new ConvolutionLayer<Dtype>(sum_param));
-      sum_layer_->SetUp(p_top_vec_, sum_top_vec_);
-      // Set up power layer to compute elementwise sqrt
-      q_top_vec_.clear();
-      q_top_vec_.push_back(&q_output_);
-      LayerParameter q_param;
-      q_param.mutable_power_param()->set_power(schedule_.front().q);
-      q_param.mutable_power_param()->set_shift(
-          this->layer_param_.l1_loss_param().epsilon());
-      q_layer_.reset(new PowerLayer<Dtype>(q_param));
-      q_layer_->SetUp(sum_top_vec_, q_top_vec_);
-      
-      /// Discard first parameter schedule step
-      schedule_.pop();
+    /// Set up power layer to compute elementwise p-power
+    p_top_vec_.clear();
+    p_top_vec_.push_back(&p_output_);
+    LayerParameter p_param;
+    p_param.mutable_power_param()->set_power(schedule_.front()->p);
+    p_param.mutable_power_param()->set_shift(
+        this->layer_param_.lpq_loss_param().p_epsilon());
+    p_layer_.reset(new PowerLayer<Dtype>(p_param));
+    p_layer_->SetUp(diff_top_vec_, p_top_vec_);
+    
+    /// Set up convolutional layer to sum all channels
+    sum_top_vec_.clear();
+    sum_top_vec_.push_back(&sum_output_);
+    LayerParameter sum_param;  
+    sum_param.mutable_convolution_param()->set_num_output(1);
+    sum_param.mutable_convolution_param()->set_kernel_size(1);
+    sum_param.mutable_convolution_param()->mutable_weight_filler()
+                                         ->set_type("constant");
+    if(this->layer_param_.l1_loss_param().l2_prescale_by_channels()) {
+      sum_param.mutable_convolution_param()->mutable_weight_filler()
+                                           ->set_value(Dtype(1)/
+                                                       Dtype(bottom[0]->channels()));
+    } else {
+      sum_param.mutable_convolution_param()->mutable_weight_filler()
+                                           ->set_value(Dtype(1));
     }
+    sum_layer_.reset(new ConvolutionLayer<Dtype>(sum_param));
+    sum_layer_->SetUp(p_top_vec_, sum_top_vec_);
+    
+    /// Set up power layer to compute elementwise q-power
+    q_top_vec_.clear();
+    q_top_vec_.push_back(&q_output_);
+    LayerParameter q_param;
+    q_param.mutable_power_param()->set_power(schedule_.front()->q);
+    q_param.mutable_power_param()->set_shift(
+        this->layer_param_.lpq_loss_param().q_epsilon());
+    q_layer_.reset(new PowerLayer<Dtype>(q_param));
+    q_layer_->SetUp(sum_top_vec_, q_top_vec_);
+    
+    /// Discard first parameter schedule step
+    schedule_.pop();
   }
 
   template <typename Dtype>
@@ -142,15 +158,17 @@ namespace caffe {
     mask_.Reshape(bottom[0]->num(), bottom[0]->channels(),
                   bottom[0]->height(), bottom[0]->width());
 
-    plateau_l2_.ReshapeLike(sum_output_);
+//     plateau_l2_.ReshapeLike(sum_output_);
     
-    if (this->layer_param_.l1_loss_param().l2_per_location()) {
-      p_layer_->Reshape(diff_top_vec_, p_top_vec_);
-      sum_layer_->Reshape(p_top_vec_, sum_top_vec_);
-      q_layer_->Reshape(sum_top_vec_, q_top_vec_);    
-      caffe_set(sign_.count()/sign_.channels(), Dtype(1), sign_.mutable_cpu_data());
-    }
+    ones_.Reshape(bottom[0]->num(), bottom[0]->channels(),
+                  bottom[0]->height(), bottom[0]->width());
+    caffe_set(ones_.count()/ones_.channels(), Dtype(1), ones_.mutable_cpu_data());
     
+    p_layer_->Reshape(diff_top_vec_, p_top_vec_);
+    sum_layer_->Reshape(p_top_vec_, sum_top_vec_);
+    q_layer_->Reshape(sum_top_vec_, q_top_vec_);    
+    
+    //caffe_set(sign_.count()/sign_.channels(), Dtype(1), sign_.mutable_cpu_data());
   }
 
   template <typename Dtype>

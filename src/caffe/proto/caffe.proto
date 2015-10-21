@@ -1041,6 +1041,8 @@ message HuberL1LossParameter {
 
 // Message that stores parameters used by LpqLossLayer
 message LpqLossParameter {
+  optional float p_epsilon = 4013 [default = 1e-2];
+  optional float q_epsilon = 4014 [default = 1e-2];
   /****************************
    * If one of each of the following is given, p/q are constant and the entry
    * in "pq_episode_starts_at_iter" must be 0 (else the first entry must be 0).
