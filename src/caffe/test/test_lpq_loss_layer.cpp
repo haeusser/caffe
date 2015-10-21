@@ -146,6 +146,59 @@ class LpqLossLayerTest : public MultiDeviceTest<TypeParam> {
   }
   
   /**
+   * Test loss (forward pass): L2_1
+   */
+  void TestForward_values_l2_squared() 
+  {
+    LayerParameter layer_param;
+    
+    layer_param.mutable_lpq_loss_param()->set_p_epsilon(Dtype(0));
+    layer_param.mutable_lpq_loss_param()->set_q_epsilon(Dtype(0));
+    layer_param.mutable_lpq_loss_param()->add_p((Dtype)2);
+    layer_param.mutable_lpq_loss_param()->add_q((Dtype)1);
+
+    const Dtype kLossWeight = (Dtype)1;
+    layer_param.add_loss_weight(kLossWeight);
+    
+    LpqLossLayer<Dtype> layer_weight_2(layer_param);
+    layer_weight_2.SetUp(this->blob_bottom_vec_, 
+                         this->blob_top_vec_);
+    const Dtype loss_weight_2 = layer_weight_2.Forward(this->blob_bottom_vec_, 
+                                                       this->blob_top_vec_);
+    const Dtype kErrorMargin = (Dtype)1e-5;
+    
+    int width = blob_bottom_data_->width();
+    int height = blob_bottom_data_->height();
+    int channels = blob_bottom_data_->channels();
+    int num = blob_bottom_data_->num();
+    const Dtype *bot0 = blob_bottom_data_->cpu_data();
+    const Dtype *bot1 = blob_bottom_label_->cpu_data();
+
+    /// Compute reference loss
+    Dtype refloss = (Dtype)0;
+    for(int n = 0; n < num; ++n) {
+      for(int xy = 0; xy < width*height; ++xy) {
+        Dtype per_location_loss = 0;
+        for(int c = 0; c < channels; ++c) {
+          int off = (n*channels + c)*height*width + xy;
+          per_location_loss += (bot0[off]-bot1[off]) * (bot0[off]-bot1[off]);
+        }
+        float summed_scaled  = per_location_loss;
+        //summed_scaled += q_eps;
+        //if(summed_scaled < plateau*plateau) summed_scaled = 0;
+        refloss += summed_scaled;
+      }
+    }
+    refloss /= (Dtype)num;
+    
+    EXPECT_NEAR(refloss * kLossWeight, loss_weight_2, kErrorMargin);
+    
+    /// Make sure the loss is non-trivial.
+    const Dtype kNonTrivialAbsThresh = 1e-1;
+    EXPECT_GE(fabs(refloss), kNonTrivialAbsThresh);
+  }
+  
+  /**
    * Test loss (forward pass): L2_2
    */
   void TestForward_values_l2(Dtype q_eps) 
@@ -438,6 +491,15 @@ TYPED_TEST(LpqLossLayerTest, TestForward_values_l2) {
   }
   this->TestForward_values_l2(0);
   this->TestForward_values_l2(1e-1);
+}
+
+TYPED_TEST(LpqLossLayerTest, TestForward_values_l2_squared) {
+  if(Caffe::mode()==Caffe::CPU)
+  {
+      LOG(INFO) << "Skipping CPU test";
+      return;
+  }
+  this->TestForward_values_l2_squared();
 }
 
 TYPED_TEST(LpqLossLayerTest, TestForward_values_l2_normByNumEntries) {
