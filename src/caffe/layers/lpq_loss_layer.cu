@@ -70,28 +70,28 @@ namespace caffe {
       }
     }
 
-    template <typename Dtype>
-    __global__ void MaskPlateauValues(const int n, 
-                                      const Dtype* in, 
-                                      Dtype* out, 
-                                      Dtype plateau) 
-    {
-      CUDA_KERNEL_LOOP(index, n) {
-        /// Mask out plateau values and keep other as is
-        if(fabs(in[index]) < plateau) out[index] = Dtype(0); 
-      }
-    } 
+//     template <typename Dtype>
+//     __global__ void MaskPlateauValues(const int n, 
+//                                       const Dtype* in, 
+//                                       Dtype* out, 
+//                                       Dtype plateau) 
+//     {
+//       CUDA_KERNEL_LOOP(index, n) {
+//         /// Mask out plateau values and keep other as is
+//         if(fabs(in[index]) < plateau) out[index] = Dtype(0); 
+//       }
+//     } 
 
-    template <typename Dtype>
-    __global__ void MaskPlateauValuesInitial(const int n, 
-                                             const Dtype* in, 
-                                             Dtype* out, 
-                                             Dtype plateau) 
-    {
-      CUDA_KERNEL_LOOP(index, n) {
-        out[index] = (fabs(in[index]) < plateau) ? Dtype(0) : Dtype(1);
-      }
-    }
+//     template <typename Dtype>
+//     __global__ void MaskPlateauValuesInitial(const int n, 
+//                                              const Dtype* in, 
+//                                              Dtype* out, 
+//                                              Dtype plateau) 
+//     {
+//       CUDA_KERNEL_LOOP(index, n) {
+//         out[index] = (fabs(in[index]) < plateau) ? Dtype(0) : Dtype(1);
+//       }
+//     }
     
     /**
      * @brief Elementwise multiplication
@@ -211,27 +211,27 @@ namespace caffe {
     p_layer_->Forward(diff_top_vec_, p_top_vec_);
     sum_layer_->Forward(p_top_vec_, sum_top_vec_);
     
-    /// Mask plateau in summed blob (only one channel):
-    if(this->layer_param_.l1_loss_param().plateau() > 0) {
-      float plateau_val_squared = this->layer_param_.l1_loss_param().plateau() *
-                                  this->layer_param_.l1_loss_param().plateau();
-      LpqLayer__kernels::MaskPlateauValuesInitial<Dtype>
-                                <<<CAFFE_GET_BLOCKS(sum_output_.count()),
-                                   CAFFE_CUDA_NUM_THREADS>>>(
-                                      sum_output_.count(), 
-                                      sum_output_.gpu_data(),
-                                      plateau_l2_.mutable_gpu_data(),
-                                      plateau_val_squared);
-      CUDA_POST_KERNEL_CHECK;
-      
-      LpqLayer__kernels::KillMasked<Dtype>
-                                <<<CAFFE_GET_BLOCKS(sum_output_.count()),
-                                   CAFFE_CUDA_NUM_THREADS>>>(
-                                    sum_output_.count(), 
-                                    plateau_l2_.gpu_data(),
-                                    sum_output_.mutable_gpu_data());
-      CUDA_POST_KERNEL_CHECK;
-    }
+//     /// Mask plateau in summed blob (only one channel):
+//     if(this->layer_param_.l1_loss_param().plateau() > 0) {
+//       float plateau_val_squared = this->layer_param_.l1_loss_param().plateau() *
+//                                   this->layer_param_.l1_loss_param().plateau();
+//       LpqLayer__kernels::MaskPlateauValuesInitial<Dtype>
+//                                 <<<CAFFE_GET_BLOCKS(sum_output_.count()),
+//                                    CAFFE_CUDA_NUM_THREADS>>>(
+//                                       sum_output_.count(), 
+//                                       sum_output_.gpu_data(),
+//                                       plateau_l2_.mutable_gpu_data(),
+//                                       plateau_val_squared);
+//       CUDA_POST_KERNEL_CHECK;
+//       
+//       LpqLayer__kernels::KillMasked<Dtype>
+//                                 <<<CAFFE_GET_BLOCKS(sum_output_.count()),
+//                                    CAFFE_CUDA_NUM_THREADS>>>(
+//                                     sum_output_.count(), 
+//                                     plateau_l2_.gpu_data(),
+//                                     sum_output_.mutable_gpu_data());
+//       CUDA_POST_KERNEL_CHECK;
+//     }
     
     q_layer_->Forward(sum_top_vec_, q_top_vec_);
     
@@ -240,6 +240,10 @@ namespace caffe {
       
     loss = dot / normalize_coeff_; 
     top[0]->mutable_cpu_data()[0] = loss;
+    
+//     LOG(INFO)<<"FORWARD";
+//     for(int i=0;i<bottom.size();++i)bottom[i]->print("BOTTOM");
+//     for(int i=0;i<top.size();++i)   top[i]->print("TOP");
   }
 
   
@@ -258,22 +262,29 @@ namespace caffe {
     
     if (prop_down) {
       const Dtype alpha = top[0]->cpu_diff()[0] / normalize_coeff_;
+    
+//       LOG(INFO) << "LOSS = " << top[0]->cpu_diff()[0];
+//       LOG(INFO) << "ALPHA = " << alpha;
+//       LOG(INFO) << "NORMALIZE COEFF = " << normalize_coeff_;
       
-      /// TODO TODO TODO TODO TODO TODO 
+//       LOG(INFO)<<"BACKWARD";
+//       for(int i=0;i<bottom.size();++i)bottom[i]->print("BOTTOM");
+//       for(int i=0;i<top.size();++i)   top[i]->print("TOP");
+      
       vector<bool> prop_down(1,true);
-      caffe_set(q_output_.count(), alpha, q_output_.mutable_cpu_data());
+      caffe_set(q_output_.count(), alpha, q_output_.mutable_cpu_diff());
 
       q_layer_->Backward(q_top_vec_, prop_down, sum_top_vec_);
       
-      if(this->layer_param_.l1_loss_param().plateau() > 0) {
-        LpqLayer__kernels::KillMasked<Dtype>
-                            <<<CAFFE_GET_BLOCKS(sum_output_.count()),
-                                CAFFE_CUDA_NUM_THREADS>>>(
-                                  sum_output_.count(), 
-                                  plateau_l2_.gpu_data(),
-                                  sum_output_.mutable_gpu_diff());
-        CUDA_POST_KERNEL_CHECK;
-      }
+//       if(this->layer_param_.l1_loss_param().plateau() > 0) {
+//         LpqLayer__kernels::KillMasked<Dtype>
+//                             <<<CAFFE_GET_BLOCKS(sum_output_.count()),
+//                                 CAFFE_CUDA_NUM_THREADS>>>(
+//                                   sum_output_.count(), 
+//                                   plateau_l2_.gpu_data(),
+//                                   sum_output_.mutable_gpu_diff());
+//         CUDA_POST_KERNEL_CHECK;
+//       }
       
       sum_layer_->Backward(sum_top_vec_, prop_down, p_top_vec_);
       p_layer_->Backward(p_top_vec_, prop_down, diff_top_vec_);
@@ -283,10 +294,8 @@ namespace caffe {
                                 <<<CAFFE_GET_BLOCKS(diffptr->count()),
                                    CAFFE_CUDA_NUM_THREADS>>>(
                                       diffptr->count(),
-                                      diffptr->mutable_gpu_data(),
+                                      diffptr->mutable_gpu_diff(),
                                       sign_.gpu_data());
-      
-      /// TODO TODO TODO TODO TODO TODO 
       
       LpqLayer__kernels::KillMasked<Dtype><<<CAFFE_GET_BLOCKS(diffptr->count()),
                                              CAFFE_CUDA_NUM_THREADS>>>(
@@ -296,7 +305,7 @@ namespace caffe {
       CUDA_POST_KERNEL_CHECK;
       
       if(bottom.size() > 1) {
-          diff_layer_->Backward(diff_top_vec_, propagate_down, bottom);
+        diff_layer_->Backward(diff_top_vec_, propagate_down, bottom);
       }
     }
     

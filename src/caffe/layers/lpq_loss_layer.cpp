@@ -90,7 +90,8 @@ namespace caffe {
       LayerParameter diff_param;
       diff_param.mutable_eltwise_param()->add_coeff(1.);
       diff_param.mutable_eltwise_param()->add_coeff(-1.);
-      diff_param.mutable_eltwise_param()->set_operation(EltwiseParameter_EltwiseOp_SUM);
+      diff_param.mutable_eltwise_param()->set_operation(
+                                            EltwiseParameter_EltwiseOp_SUM);
       diff_layer_.reset(new EltwiseLayer<Dtype>(diff_param));
       diff_layer_->SetUp(bottom, diff_top_vec_);
     } else {
@@ -102,8 +103,11 @@ namespace caffe {
     p_top_vec_.push_back(&p_output_);
     LayerParameter p_param;
     p_param.mutable_power_param()->set_power(schedule_.front()->p);
+    p_param.mutable_power_param()->set_shift(
+        this->layer_param_.lpq_loss_param().p_epsilon());
     p_layer_.reset(new PowerLayer<Dtype>(p_param));
     p_layer_->SetUp(diff_top_vec_, p_top_vec_);
+    
     /// Set up convolutional layer to sum all channels
     sum_top_vec_.clear();
     sum_top_vec_.push_back(&sum_output_);
@@ -113,22 +117,23 @@ namespace caffe {
     sum_param.mutable_convolution_param()->mutable_weight_filler()
                                          ->set_type("constant");
     if(this->layer_param_.l1_loss_param().l2_prescale_by_channels()) {
-        sum_param.mutable_convolution_param()->mutable_weight_filler()
-                                             ->set_value(Dtype(1)/
-                                                         Dtype(bottom[0]->channels()));
+      sum_param.mutable_convolution_param()->mutable_weight_filler()
+                                           ->set_value(Dtype(1)/
+                                                       Dtype(bottom[0]->channels()));
     } else {
-        sum_param.mutable_convolution_param()->mutable_weight_filler()
-                                             ->set_value(Dtype(1));
+      sum_param.mutable_convolution_param()->mutable_weight_filler()
+                                           ->set_value(Dtype(1));
     }
     sum_layer_.reset(new ConvolutionLayer<Dtype>(sum_param));
     sum_layer_->SetUp(p_top_vec_, sum_top_vec_);
+    
     /// Set up power layer to compute elementwise q-power
     q_top_vec_.clear();
     q_top_vec_.push_back(&q_output_);
     LayerParameter q_param;
     q_param.mutable_power_param()->set_power(schedule_.front()->q);
     q_param.mutable_power_param()->set_shift(
-          this->layer_param_.l1_loss_param().epsilon());
+        this->layer_param_.lpq_loss_param().q_epsilon());
     q_layer_.reset(new PowerLayer<Dtype>(q_param));
     q_layer_->SetUp(sum_top_vec_, q_top_vec_);
     
@@ -153,7 +158,7 @@ namespace caffe {
     mask_.Reshape(bottom[0]->num(), bottom[0]->channels(),
                   bottom[0]->height(), bottom[0]->width());
 
-    plateau_l2_.ReshapeLike(sum_output_);
+//     plateau_l2_.ReshapeLike(sum_output_);
     
     ones_.Reshape(bottom[0]->num(), bottom[0]->channels(),
                   bottom[0]->height(), bottom[0]->width());

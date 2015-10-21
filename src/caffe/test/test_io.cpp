@@ -83,7 +83,7 @@ TEST_F(IOTest, TestReadImageToDatumReference) {
   const string& data = datum.data();
   const string& data_ref = datum.data();
 
-  for (int i = 0; i < datum.data().size(); ++i) {
+  for (unsigned int i = 0; i < datum.data().size(); ++i) {
     EXPECT_TRUE(data[i] == data_ref[i]);
   }
 }
@@ -102,7 +102,7 @@ TEST_F(IOTest, TestReadImageToDatumReferenceResized) {
   const string& data = datum.data();
   const string& data_ref = datum.data();
 
-  for (int i = 0; i < datum.data().size(); ++i) {
+  for (unsigned int i = 0; i < datum.data().size(); ++i) {
     EXPECT_TRUE(data[i] == data_ref[i]);
   }
 }
@@ -252,7 +252,7 @@ TEST_F(IOTest, TestCVMatToDatumContent) {
 
   const string& data = datum.data();
   const string& data_ref = datum_ref.data();
-  for (int i = 0; i < datum.data().size(); ++i) {
+  for (unsigned int i = 0; i < datum.data().size(); ++i) {
     EXPECT_TRUE(data[i] == data_ref[i]);
   }
 }
@@ -271,7 +271,7 @@ TEST_F(IOTest, TestCVMatToDatumReference) {
 
   const string& data = datum.data();
   const string& data_ref = datum_ref.data();
-  for (int i = 0; i < datum.data().size(); ++i) {
+  for (unsigned int i = 0; i < datum.data().size(); ++i) {
     EXPECT_TRUE(data[i] == data_ref[i]);
   }
 }
@@ -300,7 +300,7 @@ TEST_F(IOTest, TestDecodeDatum) {
 
   const string& data = datum.data();
   const string& data_ref = datum_ref.data();
-  for (int i = 0; i < datum.data().size(); ++i) {
+  for (unsigned int i = 0; i < datum.data().size(); ++i) {
     EXPECT_TRUE(data[i] == data_ref[i]);
   }
 }
@@ -354,7 +354,7 @@ TEST_F(IOTest, TestDecodeDatumNative) {
 
   const string& data = datum.data();
   const string& data_ref = datum_ref.data();
-  for (int i = 0; i < datum.data().size(); ++i) {
+  for (unsigned int i = 0; i < datum.data().size(); ++i) {
     EXPECT_TRUE(data[i] == data_ref[i]);
   }
 }
@@ -384,7 +384,7 @@ TEST_F(IOTest, TestDecodeDatumNativeGray) {
 
   const string& data = datum.data();
   const string& data_ref = datum_ref.data();
-  for (int i = 0; i < datum.data().size(); ++i) {
+  for (unsigned int i = 0; i < datum.data().size(); ++i) {
     EXPECT_TRUE(data[i] == data_ref[i]);
   }
 }
