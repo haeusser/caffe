@@ -160,7 +160,7 @@ class Log:
                     appendMeasure('train_'+name, iter, value)
 
             if msg.startswith('Test net output'):
-                match = re.compile('Test net output ..: ([a-zA-Z0-9_-]+) = (([0-9]|\.)+)').match(msg)
+                match = re.compile('Test net output #[a-zA-Z0-9_-]+: ([a-zA-Z0-9_-]+) = (([0-9]|\.)+)').match(msg)
                 if match:
                     name = match.group(1)
                     value = match.group(2)
@@ -308,9 +308,11 @@ class Log:
 
         styles = tb.styleList()
         for log in logs:
-            style = styles.pop()
+            style = styles.pop(0)
+            #lineStyles = tb.lineStyleCycle()
             for name in names:
                 label = '%s for %s' %(name,log.networkName())
+                #style.setLineStyle(lineStyles.get())
                 if name in log.measures():
                     plot.plotList(label, log.measures()[name], style)
 
