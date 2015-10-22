@@ -267,6 +267,9 @@ class PlotStyle:
     def lineWidth(self): return self._lineWidth
     def color(self): return self._color
 
+    def setLineStyle(self, style): self._lineStyle = style
+    def setLineWidth(self, width): self._lineWidth = width
+
     def setColor(self, color):
         if color is str:
             print 'str'
@@ -279,22 +282,99 @@ class PlotStyle:
 
 def styleList():
     return [
-        PlotStyle().setColor('#0000AA'),
-        PlotStyle().setColor('#00AA00'),
-        PlotStyle().setColor('#AA0000'),
-        PlotStyle().setColor('#AA5500'),
-        PlotStyle().setColor('#AAAAAA'),
-        PlotStyle().setColor('#555555'),
-        PlotStyle().setColor('#AA00AA'),
-        PlotStyle().setColor('#5555FF'),
-        PlotStyle().setColor('#55FF55'),
-        PlotStyle().setColor('#55FFFF'),
-        PlotStyle().setColor('#FF5555'),
-        PlotStyle().setColor('#FF55FF'),
-        PlotStyle().setColor('#000000'),
+        PlotStyle().setColor('#1f77b4'),
+        PlotStyle().setColor('#aec7e8'),
+        PlotStyle().setColor('#ff7f0e'),
+        PlotStyle().setColor('#ffbb78'),
+        PlotStyle().setColor('#2ca02c'),
+        PlotStyle().setColor('#98df8a'),
+        PlotStyle().setColor('#d62728'),
+        PlotStyle().setColor('#ff9896'),
+        PlotStyle().setColor('#9467bd'),
+        PlotStyle().setColor('#c5b0d5'),
+        PlotStyle().setColor('#8c564b'),
+        PlotStyle().setColor('#c49c94'),
+        PlotStyle().setColor('#e377c2'),
+        PlotStyle().setColor('#f7b6d2'),
+        PlotStyle().setColor('#7f7f7f'),
+        PlotStyle().setColor('#c7c7c7'),
+        PlotStyle().setColor('#bcbd22'),
+        PlotStyle().setColor('#dbdb8d'),
+        PlotStyle().setColor('#17becf'),
+        PlotStyle().setColor('#9edae5'),
+        PlotStyle().setColor('#393b79'),
+        PlotStyle().setColor('#5254a3'),
+        PlotStyle().setColor('#6b6ecf'),
+        PlotStyle().setColor('#9c9ede'),
+        PlotStyle().setColor('#637939'),
+        PlotStyle().setColor('#8ca252'),
+        PlotStyle().setColor('#b5cf6b'),
+        PlotStyle().setColor('#cedb9c'),
+        PlotStyle().setColor('#8c6d31'),
+        PlotStyle().setColor('#bd9e39'),
+        PlotStyle().setColor('#e7ba52'),
+        PlotStyle().setColor('#e7cb94'),
+        PlotStyle().setColor('#843c39'),
+        PlotStyle().setColor('#ad494a'),
+        PlotStyle().setColor('#d6616b'),
+        PlotStyle().setColor('#e7969c'),
+        PlotStyle().setColor('#7b4173'),
+        PlotStyle().setColor('#a55194'),
+        PlotStyle().setColor('#ce6dbd'),
+        PlotStyle().setColor('#de9ed6'),
+        PlotStyle().setColor('#3182bd'),
+        PlotStyle().setColor('#6baed6'),
+        PlotStyle().setColor('#9ecae1'),
+        PlotStyle().setColor('#c6dbef'),
+        PlotStyle().setColor('#e6550d'),
+        PlotStyle().setColor('#fd8d3c'),
+        PlotStyle().setColor('#fdae6b'),
+        PlotStyle().setColor('#fdd0a2'),
+        PlotStyle().setColor('#31a354'),
+        PlotStyle().setColor('#74c476'),
+        PlotStyle().setColor('#a1d99b'),
+        PlotStyle().setColor('#c7e9c0'),
+        PlotStyle().setColor('#756bb1'),
+        PlotStyle().setColor('#9e9ac8'),
+        PlotStyle().setColor('#bcbddc'),
+        PlotStyle().setColor('#dadaeb'),
+        PlotStyle().setColor('#636363'),
+        PlotStyle().setColor('#969696'),
+        PlotStyle().setColor('#bdbdbd'),
+        PlotStyle().setColor('#d9d9d9'),
+        # PlotStyle().setColor('#0000AA'),
+        # PlotStyle().setColor('#00AA00'),
+        # PlotStyle().setColor('#AA0000'),
+        # PlotStyle().setColor('#AA5500'),
+        # PlotStyle().setColor('#AAAAAA'),
+        # PlotStyle().setColor('#555555'),
+        # PlotStyle().setColor('#AA00AA'),
+        # PlotStyle().setColor('#5555FF'),
+        # PlotStyle().setColor('#55FF55'),
+        # PlotStyle().setColor('#55FFFF'),
+        # PlotStyle().setColor('#FF5555'),
+        # PlotStyle().setColor('#FF55FF'),
+        # PlotStyle().setColor('#000000'),
     ]
 
 from pymill import Config
+
+class Cycle:
+    def __init__(self, values):
+        self._i = 0
+        self._values =values
+
+    def get(self):
+        value = self._values[self._i]
+
+        self._i = self._i + 1
+        if self._i == len(self._values):
+            self._i = 0
+
+        return value
+
+def lineStyleCycle():
+    return Cycle(['-', '--', '-.', ':'])
 
 def evaluateExpressionsInFile(inFile, outFile):
     lines = open(inFile).readlines()
