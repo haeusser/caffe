@@ -104,10 +104,11 @@ def runOnCluster(env, node, gpus, background,insertLocal=True, trackJob=True):
     open(qsubCommandFile,'w').write(script)
     tb.system('chmod a+x "%s"' % qsubCommandFile)
 
-    qsub = 'qsub -l nodes=%s:gpus=%d%s,walltime=240:00:00 %s -q gpujob -d %s %s -N %s -T %s' % (
+    qsub = 'qsub -l nodes=%s:gpus=%d%s,mem=%dmb,walltime=240:00:00 %s -q gpujob -d %s %s -N %s -T %s' % (
         node if node is not None else '1',
         gpus,
         (':' + gpuArch) if gpuArch!='any' else '',
+        env.params().requiredMemory(),
         '-I -x' if not background else '',
         env.path(),
         qsubCommandFile,
@@ -335,8 +336,8 @@ elif args.command == 'snapshot':
     id = checkJob()
     os.system('ssh lmbtorque "qsig -s SIGHUP %s"' % id)
     sys.exit(0)
-elif args.command == 'blob-sum':
-    env.blobSummary()
+elif args.command == 'blobsum':
+    env.blobSum()
     sys.exit(0)
 
 # gpu operations

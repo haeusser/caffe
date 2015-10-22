@@ -171,6 +171,7 @@ class Environment:
             self._task = None
             self._measures = []
             self._nameDepth = 1
+            self._requiredMemory = 5*1024
 
         def read(self, filename):
             self._lines = open(filename).readlines()
@@ -189,6 +190,7 @@ class Environment:
                     measure.parseFrom(value)
                     self._measures.append(measure)
                 elif key == 'name-depth': self._nameDepth = int(value)
+                elif key == 'required-memory': self._requiredMemory = int(value)
                 else:
                     raise Exception('invalid entry in params.txt: %s' % key)
 
@@ -198,6 +200,7 @@ class Environment:
             return self._task
         def measures(self): return self._measures
         def nameDepth(self): return self._nameDepth
+        def requiredMemory(self): return self._requiredMemory
 
     def __init__(self, path='.', backend=BinaryBackend(), unattended=False, silent=False):
         self._path = os.path.abspath(path)
