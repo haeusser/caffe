@@ -385,6 +385,7 @@ def BinaryData(net, setting, **kwargs):
   default('rand_permute',      True)
   default('rand_permute_seed', 77)
   default('collection_list_dir', COLLECTIONLIST_DIR)
+  default('disk_reader_threads', 4)
 
   if setting in ('SCENE_FLOW', 'SCENE_FLOW_SINGLE'):
     default('return_struct', True)
