@@ -48,6 +48,8 @@ void decodeWebP(unsigned char* in_out,
     }
   }
   
+  free(decoded_data);
+  
 //   std::memcpy(out,
 //               reinterpret_cast<unsigned char*>(decoded_data),
 //               960*540*3);
