@@ -95,6 +95,19 @@ class BinaryDBWebP:
     return list.index(utf_str)
 
   def findSamplesInClips(self):
+    
+    parsed_compressed_index_files = {}
+    def compressed_info(idxfilename, index):
+      '''Parse information about compressed data from extra files'''
+      if idxfilename not in parsed_compressed_index_files:
+        with open(idxfilename) as f:
+          offsets_and_sizes = [line.strip().split(' ') for line in f.readlines()]
+        offsets_and_sizes = [[int(offset), int(size)]
+                              for offset, size in offsets_and_sizes]
+        parsed_compressed_index_files[idxfilename] = offsets_and_sizes
+      return parsed_compressed_index_files[idxfilename][index]
+
+    path_is_compressed_bindb = {}
 
     self.all_samples = []
     for clip_folder in self.clips:
@@ -145,17 +158,6 @@ class BinaryDBWebP:
         #print("Num_total: %d" % num_total)
         #print("Start/End off: %d/%d" % (start_off, end_off))
         
-        parsed_compressed_index_files = {}
-        def compressed_info(idxfilename, index):
-          '''Parse information about compressed data from extra files'''
-          if idxfilename not in parsed_compressed_index_files:
-            with open(idxfilename) as f:
-              offsets_and_sizes = [line.strip().split(' ') for line in f.readlines()]
-            offsets_and_sizes = [[int(offset), int(size)]
-                                  for offset, size in offsets_and_sizes]
-            parsed_compressed_index_files[idxfilename] = offsets_and_sizes
-          return parsed_compressed_index_files[idxfilename][index]
-
 
         for index in range(start_off, num_total+end_off):
           for slice_point in slice_points:
@@ -178,7 +180,6 @@ class BinaryDBWebP:
 
               entry_index = (index + entry.offset) * el['num'] + el['index']
               
-              path_is_compressed_bindb = {}
               if abs_file_path not in path_is_compressed_bindb:
                 if os.path.isfile(abs_file_path+'.index'):
                   path_is_compressed_bindb[abs_file_path] = True
