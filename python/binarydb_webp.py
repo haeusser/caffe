@@ -148,14 +148,14 @@ class BinaryDBWebP:
         def compressed_info(idxfilename, index):
           '''Parse information about compressed data from extra files'''
           parsed_files = {}
-          if idxfilename in parsed_files:
-            return parsed_files[idxfilename][index]
-          else:
+          if idxfilename not in parsed_files:
             with open(idxfilename) as f:
-              offsets_and_sizes = [line.strip.split(' ') for line in f.readlines()]
+              offsets_and_sizes = [line.strip().split(' ') for line in f.readlines()]
             offsets_and_sizes = [[int(offset), int(size)]
                                   for offset, size in offsets_and_sizes]
             parsed_files[idxfilename] = offsets_and_sizes
+          return parsed_files[idxfilename][index]
+
 
         for index in range(start_off, num_total+end_off):
           for slice_point in slice_points:
@@ -183,7 +183,7 @@ class BinaryDBWebP:
                     compressed_info(abs_file_path+'.index', entry_index)
                 encoding = cpb.BinaryDBWebP.UINT8WEBP
               else:
-                byte_offset = (dims[0]*dims[1]*dims[2]*self.enc_size(encoding)+4)*
+                byte_offset = (dims[0]*dims[1]*dims[2]*self.enc_size(encoding)+4)*\
                               entry_index
                 compressed_byte_size = 0
                 

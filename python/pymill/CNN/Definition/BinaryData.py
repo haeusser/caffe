@@ -62,7 +62,7 @@ def DataParams(samples, bin_db_dir, collection_list_dir, collection_list, batch_
   '''
   params = {'source'    : bin_db_dir,
             'collection_list' : os.path.join(collection_list_dir, collection_list),
-            'backend'   : Params.Data.BINARYDB,
+            'backend'   : Params.Data.BINARYDBWEBP,
             'batch_size': batch_size,
             'sample'    : samples,
             'verbose'   : verbose,
