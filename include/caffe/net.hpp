@@ -204,6 +204,10 @@ class Net {
   const map<string, int>& param_names_index() const {
     return param_names_index_;
   }
+  inline const vector<bool>& params_spectral_update() const {
+    return params_spectral_update_;
+  }
+  
   inline const vector<int>& param_owners() const { return param_owners_; }
   /// @brief Input and output blob numbers
   inline int num_inputs() const { return net_input_blobs_.size(); }
@@ -335,6 +339,10 @@ class Net {
   /// the weight decay multipliers for learnable_params_
   vector<float> params_weight_decay_;
   vector<bool> has_params_decay_;
+  
+  /// Do a spectral update on this param?
+  vector<bool> params_spectral_update_;
+  
   /// The bytes of memory used by this net
   size_t memory_used_;
   /// Whether to compute and display debug info for the net.
