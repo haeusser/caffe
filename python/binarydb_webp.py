@@ -178,7 +178,7 @@ class BinaryDBWebP:
 
               entry_index = (index + entry.offset) * el['num'] + el['index']
               
-              path_is_compressed_bindb = []
+              path_is_compressed_bindb = {}
               if abs_file_path not in path_is_compressed_bindb:
                 if os.path.isfile(abs_file_path+'.index'):
                   path_is_compressed_bindb[abs_file_path] = True
