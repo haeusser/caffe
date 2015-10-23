@@ -16,6 +16,7 @@
 #include <webp/decode.h>
 /// Caffe/local files
 #include "caffe/util/benchmark.hpp"
+#include "caffe/util/lzo/decompress.hpp"
 
 namespace bp = boost::python;
 
@@ -24,6 +25,11 @@ namespace db {
 
 
 
+/**
+ * @brief Decompress a WebP-encoded image
+ * @param in_out Compressed input data/decompressed output data (must be large enough to hold the decompressed image)
+ * @param compressed_size Number of data bytes in compressed blob
+ */
 void decodeWebP(unsigned char* in_out,
                 unsigned int compressed_size)
 {
@@ -32,13 +38,6 @@ void decodeWebP(unsigned char* in_out,
                                         compressed_size,
                                         &width,
                                         &height);
-  
-//   if (width != expected_width or height != expected_height) {
-//     LOG(FATAL) << "Wrong decompressed image size: "
-//                << "(" << width << "x" << height << "), expected size was "
-//                << "(" << expected_width << "x" << expected_height << ")\n";
-//   }
-  
   /// Reorder bytes (rgbrgbrgbrgb)->(rrrrggggbbbb)
   for (int y = 0; y < height; ++y) {
     for (int x = 0; x < width; ++x) {
@@ -47,12 +46,7 @@ void decodeWebP(unsigned char* in_out,
       }
     }
   }
-  
   free(decoded_data);
-  
-//   std::memcpy(out,
-//               reinterpret_cast<unsigned char*>(decoded_data),
-//               960*540*3);
 }
 
   
@@ -442,6 +436,9 @@ void BinaryDBWebP<Dtype>::worker_thread_loop()
 {
   /// Thread-local buffer
   unsigned char* this_thread_entry_buffer = new unsigned char[entry_buffer_size_];
+  /// Thread-local LZO decompressor instance
+  lzo::LZO_Decompressor* this_thread_lzo_decompressor = 
+      new lzo::LZO_Decompressor(entry_buffer_size_);
   
   while (running) 
   {
@@ -481,6 +478,8 @@ void BinaryDBWebP<Dtype>::worker_thread_loop()
   
   if (this_thread_entry_buffer)
     delete[] this_thread_entry_buffer;
+  if (this_thread_lzo_decompressor)
+    delete this_thread_lzo_decompressor;
 }
 
 
