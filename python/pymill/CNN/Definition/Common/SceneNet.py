@@ -9,7 +9,7 @@ import os
 from pymill.CNN.Definition import *
 from math import ceil
 
-def standardTest(DeployBlock, generateNet=True):
+def standardTest(DeployBlock, generateNet=True, have_flowR=True):
     '''
     @brief Create Testing-mode wrapper for a Deploy-mode net
     
@@ -19,7 +19,7 @@ def standardTest(DeployBlock, generateNet=True):
     @returns Testing-mode Block(..) function that adds a data layer to a Deploy-mode
              net
     '''
-    def Block(net, datasetName, output, prefix=None, use_augmentation_mean=True, have_flowR=True):
+    def Block(net, datasetName, output, prefix=None, use_augmentation_mean=True):
         '''
         @brief Add a data layer for dataset "datasetName" to a network
         
@@ -235,7 +235,7 @@ def standardAugmentationTest(AugmentationBlock, generateNet=True):
     # net.writeFloat(data.pred.dispChangeL, folder=out_path, prefix='', suffix='-dispChangeL_pred')
 
 
-def standardDeploy(NetworkBlock, generateNet=True):
+def standardDeploy(NetworkBlock, generateNet=True, have_flowR=True):
     '''
     @brief Create Deploy-mode wrapper for a raw net
     
@@ -307,7 +307,8 @@ def standardDeploy(NetworkBlock, generateNet=True):
                                                    antialias=True)
 
         data.pred_final['flowL'] = net.scale(data.pred_resized['flowL'], (rescale_coeff_x, rescale_coeff_y))
-        data.pred_final['flowR'] = net.scale(data.pred_resized['flowR'], (rescale_coeff_x, rescale_coeff_y))
+        if have_flowR:
+            data.pred_final['flowR'] = net.scale(data.pred_resized['flowR'], (rescale_coeff_x, rescale_coeff_y))
         data.pred_final['disp0L'] = net.scale(data.pred_resized['disp0L'], (rescale_coeff_x))
         data.pred_final['disp1L'] = net.scale(data.pred_resized['disp1L'], (rescale_coeff_x))
         data.pred_final['dispChangeL'] = net.scale(data.pred_resized['dispChangeL'], (rescale_coeff_x))
@@ -327,7 +328,8 @@ def standardDeploy(NetworkBlock, generateNet=True):
             epe_losses[name].enableOutput()
 
         epe_losses['flowL'].setName('flow_epe:L')
-        epe_losses['flowR'].setName('flow_epe:R')
+        if have_flowR:
+            epe_losses['flowR'].setName('flow_epe:R')
         epe_losses['disp0L'].setName('disp_epe:0L')
         epe_losses['disp1L'].setName('disp_epe:0R')
         epe_losses['dispChangeL'].setName('disp_change_err:L')
