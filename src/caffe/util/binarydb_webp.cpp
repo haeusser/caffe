@@ -378,7 +378,7 @@ void BinaryDBWebP<Dtype>::process_readtask(ReadTask* task_ptr,
       entry_buffer_ += 4;
       
       decodeWebP(entry_buffer_,
-                 entry.compressed_byte_size);
+                 entry.compressed_byte_size-4);
       
       TimingMonitor::addMeasure("raw_data_rate", N * 1000.0 / 
                                 (t1.MilliSeconds() * 1024.0 * 1024.0));
