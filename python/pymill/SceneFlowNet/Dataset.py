@@ -676,6 +676,42 @@ class Entry:
 
 
 
+def createLMDB(rendertype, type, name, clips, entitySize, downsample, skipIfExists=False, overwrite=True):
+    dataPath = '/misc/lmbraid17/sceneflownet/common/data/5_lmdb'
+
+    print '------'
+
+    path = '%s/%s/%s/%s_%d' % (dataPath, name, rendertype, type, entitySize)
+
+    print 'creating lmdb %s in:' % path
+    for clip in clips:
+        print clip
+
+    # if os.path.exists(path):
+    #     if not overwrite and (skipIfExists or not tb.queryYesNo('The LMDB %s/%s already exists. Do you want to delete it and create a new one?' % (type, name))):
+    #         return
+    #     else:
+    #         os.system('rm -rf %s' % path)
+    #
+    # os.system('mkdir -p %s' % path)
+    #
+    # if type == 'flow':
+    #     dataset = FlowDataset(name, rendertype, path, entitySize)
+    #     dataset.addClips(clipList)
+    #     dataset.generateLMDB(downsample)
+    # elif type == 'disparity':
+    #     dataset = DispDataset(name, rendertype, path, entitySize)
+    #     dataset.addClips(clipList)
+    #     dataset.generateLMDB(downsample)
+    # elif type == 'sceneflow':
+    #     dataset = SceneflowDataset(name, rendertype, path, entitySize)
+    #     dataset.addClips(clipList)
+    #     dataset.generateLMDB(downsample)
+    # else:
+    #     raise Exception('unsupported')
+    #
+
+
 
 
 

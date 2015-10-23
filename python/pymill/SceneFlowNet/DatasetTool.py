@@ -55,9 +55,15 @@ subparser = subparsers.add_parser('create-histograms', help='compute histograms'
 subparser.add_argument('--collections', help='list of collections', default = '')
 subparser.add_argument('--skip-if-exists', help='skip if database exists', action='store_true')
 
-# check-flow
-subparser = subparsers.add_parser('check-flow', help='compute histograms')
+# create-lmdb
+subparser = subparsers.add_parser('create-lmdb', help='create LMDB database')
+subparser.add_argument('rendertype', help='rendertype', choices=['clean', 'final'])
+subparser.add_argument('type', help='data type', choices=['flow', 'disparity', 'sceneflow'])
+subparser.add_argument('name', help='collection name')
 subparser.add_argument('--collections', help='list of collections', default = '')
+subparser.add_argument('--entity-size', help='entity size', default = 2, type=int)
+subparser.add_argument('--downsample', help='downsampling factor', default = 1, type = int)
+subparser.add_argument('--skip-if-exists', help='skip if database exists', action='store_true')
 
 args = parser.parse_args()
 tb.verbose = args.verbose
@@ -92,28 +98,59 @@ elif args.command == 'create-histograms':
             skipIfExists=args.skip_if_exists
         )
 
-elif args.command == 'check-flow':
-    rendertype = 'clean'
+elif args.command == 'create-lmdb':
+    selectedCollections = getSelectedCollections()
 
-    clips = getClips(resolution)
-
-    print '%s:' % resolution
-    for clip in clips:
-        print clip
-
-        ds.makeFlowCheck(
-            resolution=resolution,
-            rendertype=rendertype,
-            clip=clip
-        )
+    clips = []
+    for name, collection in selectedCollections.iteritems():
+        print '-----------))))))))))))))))))))))))))))))))))'
+        print collection
+        clips += collection
 
 
+    # ds.createLMDB(
+    #     rendertype=args.rendertype,
+    #     type=args.type,
+    #     name=args.name,
+    #     clips=clips,
+    #     entitySize=args.entity_size,
+    #     downsample=args.downsample,
+    #     skipIfExists=args.skip_if_exists
+    # )
+
+    print clips
 
 
 
 
 
 
+
+
+
+
+
+
+
+# # check-flow
+# subparser = subparsers.add_parser('check-flow', help='compute histograms')
+# subparser.add_argument('--collections', help='list of collections', default = '')
+
+#
+# elif args.command == 'check-flow':
+#     rendertype = 'clean'
+#
+#     clips = getClips(resolution)
+#
+#     print '%s:' % resolution
+#     for clip in clips:
+#         print clip
+#
+#         ds.makeFlowCheck(
+#             resolution=resolution,
+#             rendertype=rendertype,
+#             clip=clip
+#         )
 
 
 
