@@ -298,6 +298,18 @@ def preparePythonBackend():
     print 'copying %s to training' % folder
     os.system('cp %s training -r' % folder)
 
+    ldd = tb.run('ldd %s' % caffe._caffe.__file__)
+    caffeLib = None
+    for line in ldd.split('\n'):
+        match = re.match('\\s*libcaffe.so => (.*\.so)', line)
+        if match:
+            caffeLib = match.group(1)
+            break
+    if caffeLib is None:
+        raise Exception('cannot find libcaffe.so dependency')
+    print 'copying %s to training' % caffeLib
+
+    os.system('cp %s %s' % (caffeLib, env.trainDir()))
 
 # local operations
 if   args.command == 'clean':
@@ -343,7 +355,8 @@ elif args.command == 'blobsum':
 # gpu operations
 if   args.command == 'train':
     if not args.execute: checkNoJob()
-    if args.backend == 'python' and not args.execute: preparePythonBackend()
+    if args.backend == 'python' and not args.execute:
+        preparePythonBackend()
     if args.local:
         env.train(args.weights, args.blob_sum)
         sys.exit(0)

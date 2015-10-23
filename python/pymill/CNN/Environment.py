@@ -208,6 +208,8 @@ class Environment:
         self._unattended = unattended
         self._silent = silent
 
+    def trainDir(self): return self._trainDir
+
     def haveTrainDir(self):
         return os.path.isdir(self._trainDir)
 
