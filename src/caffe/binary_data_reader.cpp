@@ -8,7 +8,7 @@
 #include "caffe/binary_data_reader.hpp"
 #include "caffe/proto/caffe.pb.h"
 
-#include "caffe/util/binarydb.hpp"
+#include "caffe/util/binarydb_webp.hpp"
 #include "caffe/util/benchmark.hpp"
 
 namespace caffe {
@@ -84,7 +84,7 @@ template <typename Dtype>
 BinaryDataReader<Dtype>::Body::Body(const LayerParameter& param)
     : param_(param),
       new_queue_pairs_() {
-  db_ = new db::BinaryDB<Dtype>;
+  db_ = new db::BinaryDBWebP<Dtype>;
   db_->Open(param.data_param().source(), param);
 
   if(db_->get_num_samples() < 1)
@@ -114,7 +114,7 @@ BinaryDataReader<Dtype>::Body::~Body() {
 
 template <typename Dtype>
 void BinaryDataReader<Dtype>::Body::InternalThreadEntry() {
-  CHECK_EQ(param_.data_param().backend(), DataParameter_DB_BINARYDB);
+  CHECK_EQ(param_.data_param().backend(), DataParameter_DB_BINARYDBWEBP);
 
   int index = 0;
   vector<shared_ptr<BinaryQueuePair> > qps;

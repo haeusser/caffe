@@ -177,7 +177,8 @@ ifneq ($(CPU_ONLY), 1)
 endif
 LIBRARIES += glog gflags protobuf leveldb snappy \
 	lmdb boost_system hdf5_hl hdf5 m \
-	opencv_core opencv_highgui opencv_imgproc
+	opencv_core opencv_highgui opencv_imgproc \
+	webp
 PYTHON_LIBRARIES := boost_python python2.7
 WARNINGS := -Wall
 
@@ -350,6 +351,23 @@ LIBRARY_DIRS += $(BLAS_LIB)
 
 LIBRARY_DIRS += $(LIB_BUILD_DIR)
 
+## WebP (mayern)
+webp:
+	cd ./webp;                                 \
+	tar xfz libwebp-0.4.3.tar.gz;               \
+	cd ./libwebp-0.4.3;                        \
+	CFLAGS=-fPIC ./configure --disable-gl      \
+				 --disable-png     \
+				 --disable-jpeg    \
+				 --disable-tiff    \
+				 --disable-gif     \
+				 --disable-wic     \
+				 --disable-shared; \
+	make -j4;                                  \
+	cd ../..
+LIBRARY_DIRS += ./webp/libwebp-0.4.3/src/.libs
+INCLUDE_DIRS += ./webp/libwebp-0.4.3/src
+
 # Automatic dependency generation (nvcc is handled separately)
 CXXFLAGS += -MMD -MP
 
@@ -395,7 +413,8 @@ endif
 ##############################
 .PHONY: all lib test clean docs linecount lint lintclean tools examples $(DIST_ALIASES) \
 	py mat py$(PROJECT) mat$(PROJECT) proto runtest \
-	superclean supercleanlist supercleanfiles warn everything
+	superclean supercleanlist supercleanfiles warn everything \
+	webp
 
 all: lib tools #examples
 
