@@ -9,7 +9,7 @@
 #include "caffe/internal_thread.hpp"
 #include "caffe/util/blocking_queue.hpp"
 #include "caffe/util/db.hpp"
-#include "caffe/util/binarydb.hpp"
+#include "caffe/util/binarydb_webp.hpp"
 
 namespace caffe {
 
@@ -68,7 +68,7 @@ class BinaryDataReader : public InternalThread {
     const LayerParameter param_;
     BlockingQueue<shared_ptr<BinaryQueuePair> > new_queue_pairs_;
 
-    db::BinaryDB<Dtype>* db_;
+    db::BinaryDBWebP<Dtype>* db_;
     friend class BinaryDataReader;
 
    // Error based sampling
