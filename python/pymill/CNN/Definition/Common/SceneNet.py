@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 ##
 # Scene flow
@@ -18,7 +19,7 @@ def standardTest(DeployBlock, generateNet=True):
     @returns Testing-mode Block(..) function that adds a data layer to a Deploy-mode
              net
     '''
-    def Block(net, datasetName, output, prefix=None, use_augmentation_mean=True):
+    def Block(net, datasetName, output, prefix=None, use_augmentation_mean=True, have_flowR=True):
         '''
         @brief Add a data layer for dataset "datasetName" to a network
         
@@ -72,11 +73,13 @@ def standardTest(DeployBlock, generateNet=True):
             f.write('2 1 -disp1L_gt.float3\n')
             f.write('3 1 -disp1L_pred.float3\n')
             f.write('0 2 -flowL_gt.flo\n')
-            f.write('1 2 -flowR_gt.flo\n')
+            if have_flowR: f.write('1 2 -flowR_gt.flo\n')
+            else:          f.write('1 2 none\n')
             f.write('2 2 -dispChangeL_gt.float3\n')
             f.write('3 2 none\n')
             f.write('0 3 -flowL_pred.flo\n')
-            f.write('1 3 -flowR_pred.flo\n')
+            if have_flowR: f.write('1 3 -flowR_pred.flo\n')
+            else:          f.write('1 3 none\n')
             f.write('2 3 -dispChangeL_pred.float3\n')
             f.write('3 3 none\n')
             f.close()
@@ -86,12 +89,14 @@ def standardTest(DeployBlock, generateNet=True):
             net.writeImage(data.inp.img1L,        folder=out_path, prefix='', suffix='-img1L')
             net.writeImage(data.inp.img1R,        folder=out_path, prefix='', suffix='-img1R')
             net.writeFlow(data.gt.flowL,          folder=out_path, prefix='', suffix='-flowL_gt')
-            net.writeFlow(data.gt.flowR,          folder=out_path, prefix='', suffix='-flowR_gt')
+            if have_flowR:
+                net.writeFlow(data.gt.flowR,          folder=out_path, prefix='', suffix='-flowR_gt')
             net.writeFloat(data.gt.disp0L,        folder=out_path, prefix='', suffix='-disp0L_gt')
             net.writeFloat(data.gt.disp1L,        folder=out_path, prefix='', suffix='-disp1L_gt')
             net.writeFloat(data.gt.dispChangeL,   folder=out_path, prefix='', suffix='-dispChangeL_gt')
             net.writeFlow(data.pred.flowL,        folder=out_path, prefix='', suffix='-flowL_pred')
-            net.writeFlow(data.pred.flowR,        folder=out_path, prefix='', suffix='-flowR_pred')
+            if have_flowR:
+                net.writeFlow(data.pred.flowR,        folder=out_path, prefix='', suffix='-flowR_pred')
             net.writeFloat(data.pred.disp0L,      folder=out_path, prefix='', suffix='-disp0L_pred')
             net.writeFloat(data.pred.disp1L,      folder=out_path, prefix='', suffix='-disp1L_pred')
             net.writeFloat(data.pred.dispChangeL, folder=out_path, prefix='', suffix='-dispChangeL_pred')
