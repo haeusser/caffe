@@ -145,16 +145,16 @@ class BinaryDBWebP:
         #print("Num_total: %d" % num_total)
         #print("Start/End off: %d/%d" % (start_off, end_off))
         
+        parsed_compressed_index_files = {}
         def compressed_info(idxfilename, index):
           '''Parse information about compressed data from extra files'''
-          parsed_files = {}
-          if idxfilename not in parsed_files:
+          if idxfilename not in parsed_compressed_index_files:
             with open(idxfilename) as f:
               offsets_and_sizes = [line.strip().split(' ') for line in f.readlines()]
             offsets_and_sizes = [[int(offset), int(size)]
                                   for offset, size in offsets_and_sizes]
-            parsed_files[idxfilename] = offsets_and_sizes
-          return parsed_files[idxfilename][index]
+            parsed_compressed_index_files[idxfilename] = offsets_and_sizes
+          return parsed_compressed_index_files[idxfilename][index]
 
 
         for index in range(start_off, num_total+end_off):
