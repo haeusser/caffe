@@ -178,7 +178,14 @@ class BinaryDBWebP:
 
               entry_index = (index + entry.offset) * el['num'] + el['index']
               
-              if os.path.isfile(abs_file_path+'.index'):
+              path_is_compressed_bindb = []
+              if abs_file_path not in path_is_compressed_bindb:
+                if os.path.isfile(abs_file_path+'.index'):
+                  path_is_compressed_bindb[abs_file_path] = True
+                else:
+                  path_is_compressed_bindb[abs_file_path] = False
+                
+              if path_is_compressed_bindb[abs_file_path]:
                 byte_offset, compressed_byte_size = \
                     compressed_info(abs_file_path+'.index', entry_index)
                 encoding = cpb.BinaryDBWebP.UINT8WEBP
