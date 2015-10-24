@@ -1,3 +1,6 @@
+
+#pragma once
+
 /**
  * @brief Decompress LZO-compressed data
  *
@@ -55,15 +58,14 @@ public:
   void Decompress(unsigned char* in_out,
                   unsigned int compressed_size)
   {
-    int ret_val;
-    lzo_uint inflated_size;
-    
+    /// Copy compressed data to aligned working memory
     lzo_memcpy(m_out, in_out, compressed_size);
     
     /// Decompress data
-    r = lzo1x_decompress(out, compressed_size, m_in, &inflated_size, NULL);
-    if (r != LZO_E_OK) {
-      LOG(FATAL) << "internal error - decompression failed: " << r;
+    lzo_uint inflated_size;
+    int ret_val = lzo1x_decompress(m_out, compressed_size, m_in, &inflated_size, NULL);
+    if (ret_val != LZO_E_OK) {
+      LOG(FATAL) << "internal error - decompression failed: " << ret_val;
     }
     
     /// Retrieve inflated data

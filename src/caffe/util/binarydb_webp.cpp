@@ -270,7 +270,8 @@ void BinaryDBWebP<Dtype>::check_flag(unsigned char* buffer)
 
 template <typename Dtype>
 void BinaryDBWebP<Dtype>::process_readtask(ReadTask* task_ptr,
-                                           unsigned char* entry_buffer_)
+                                           unsigned char* entry_buffer_,
+                                           lzo::LZO_Decompressor* lzo_decompressor)
 {
   task_ptr->n_read=0;
   
@@ -362,8 +363,7 @@ void BinaryDBWebP<Dtype>::process_readtask(ReadTask* task_ptr,
                    << entry_buffer_size_ << ", N+4=" << N+4;
 
       t1.Start(); 
-      binstream->read((char*)entry_buffer_,
-                      entry.compressed_byte_size);
+      binstream->read((char*)entry_buffer_, entry.compressed_byte_size);
       t1.Stop();
       
       if (!binstream->is_open() or !binstream->good()) {
@@ -373,8 +373,7 @@ void BinaryDBWebP<Dtype>::process_readtask(ReadTask* task_ptr,
       check_flag(entry_buffer_);
       entry_buffer_ += 4;
       
-      decodeWebP(entry_buffer_,
-                 entry.compressed_byte_size-4);
+      decodeWebP(entry_buffer_, entry.compressed_byte_size-4);
       
       TimingMonitor::addMeasure("raw_data_rate", N * 1000.0 / 
                                 (t1.MilliSeconds() * 1024.0 * 1024.0));
@@ -401,6 +400,45 @@ void BinaryDBWebP<Dtype>::process_readtask(ReadTask* task_ptr,
       
       check_flag(entry_buffer_);
       entry_buffer_ += 4;
+      
+      TimingMonitor::addMeasure("raw_data_rate", 2*N * 1000.0 / 
+                                (t1.MilliSeconds() * 1024.0 * 1024.0));
+      task_ptr->n_read += 2*N;
+
+      t2.Start();
+      for(int i=0; i<N; i++) {
+        short v = *((short*)(&entry_buffer_[2*i]));
+
+        Dtype value;
+        if(v==std::numeric_limits<short>::max())
+          value = std::numeric_limits<Dtype>::signaling_NaN();
+        else
+          value = ((Dtype)v)/32.0;
+
+        *(out++)=value;
+      }
+      t2.Stop();
+      TimingMonitor::addMeasure("decomp_data_rate", 2*N * 1000.0/ 
+                                (t2.MilliSeconds() * 1024.0 * 1024.0));
+      break;
+      
+    case BinaryDBWebP_DataEncoding_FIXED16DIV32LZO:
+      if(entry_buffer_size_<(2*N+4))
+        LOG(FATAL) << "FIXED16DIV32: entry buffer too small, buffer size=" 
+                   << entry_buffer_size_ << ", 2*N+4=" << 2*N+4;
+
+      t1.Start(); 
+      binstream->read((char*)entry_buffer_, entry.compressed_byte_size); 
+      t1.Stop();
+      
+      if (!binstream->is_open() or !binstream->good()) {
+        LOG(INFO) << "! EOF ! " << binfiles_.at(task_ptr->entry_ref.binfile_idx);
+      }
+
+      check_flag(entry_buffer_);
+      entry_buffer_ += 4;
+      
+      lzo_decompressor->Decompress(entry_buffer_, entry.compressed_byte_size-4);
       
       TimingMonitor::addMeasure("raw_data_rate", 2*N * 1000.0 / 
                                 (t1.MilliSeconds() * 1024.0 * 1024.0));
@@ -457,7 +495,9 @@ void BinaryDBWebP<Dtype>::worker_thread_loop()
       }
       
       /// Process task
-      process_readtask(task_ptr, this_thread_entry_buffer);
+      process_readtask(task_ptr, 
+                       this_thread_entry_buffer, 
+                       this_thread_lzo_decompressor);
       
       /// Mark task as done
       {
