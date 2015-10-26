@@ -83,6 +83,48 @@ SpectralComponentsManager<Dtype>::fillBank(Blob<Dtype>* bank) {
     }
 }
 
+// does the transform both ways, depending on Stransform_direction being SPATIAL_TO_SPECTRAL or SPECTRAL_TO_SPATIAL
+void transform(Brew mode, transform_direction transf_dir, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob) {
+  
+  int H = in_blob->shape()[2];
+  int W = in_blob->shape()[3];
+  
+  Blob<Dtype>* bank_blob = getOrMakeBank(W,H);   
+   
+  // actually do the job
+  if (mode == Caffe::CPU) {
+    const Dtype* in_data = in_blob->cpu_data();
+    const Dtype* bank_data = bank_blob->cpu_data();
+    Dtype* out_data = out_blob->mutable_cpu_data();
+    if (transf_dir == SPATIAL_TO_SPECTRAL) {
+      caffe::caffe_cpu_gemm<float>(CblasNoTrans, CblasTrans, in_blob->shape()[0]*in_blob->shape()[1], W*H, W*H, Dtype(1),
+          in_data, bank_data, (float)0., out_data);
+    } else if (transf_dir == SPECTRAL_TO_SPATIAL) {
+      caffe::caffe_cpu_gemm<float>(CblasNoTrans, CblasNoTrans, in_blob->shape()[0]*in_blob->shape()[1], W*H, W*H, Dtype(1),
+          in_data, bank_data, (float)0., out_data);
+    } else 
+      LOG(FATAL) << "Unknown transform_direction " << transf_dir;
+  } else if (mode == Caffe::GPU) {
+    const Dtype* in_data = in_blob->gpu_data();
+    const Dtype* bank_data = bank_blob->gpu_data();
+    Dtype* out_data = out_blob->mutable_gpu_data();
+    if (transf_dir == SPATIAL_TO_SPECTRAL) {
+      caffe::caffe_gpu_gemm<float>(CblasNoTrans, CblasTrans, in_blob->shape()[0]*in_blob->shape()[1], W*H, W*H, Dtype(1),
+          in_data, bank_data, (float)0., out_data);
+    } else if (transf_dir == SPECTRAL_TO_SPATIAL) {
+      caffe::caffe_gpu_gemm<float>(CblasNoTrans, CblasNoTrans, in_blob->shape()[0]*in_blob->shape()[1], W*H, W*H, Dtype(1),
+          in_data, bank_data, (float)0., out_data);
+    } else 
+      LOG(FATAL) << "Unknown transform_direction " << transf_dir;
+  } else
+    LOG(FATAL) << "Unknown mode " << mode;  
+}
+
+
+void SpectralToSpatial(Brew mode, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob) {
+  transform(mode, SPECTRAL_TO_SPATIAL, in_blob, out_blob);  
+}
+
 
 INSTANTIATE_CLASS(SpectralComponentsManager);
 

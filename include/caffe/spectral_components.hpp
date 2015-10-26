@@ -21,6 +21,8 @@ class SpectralComponentsManager {
  public:
   explicit SpectralComponentsManager(const Solver<Dtype>* solver);
   
+  void transform(Brew mode, transform_direction transf_dir, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob);
+  
   Blob<Dtype>* SpatialToSpectral(Blob<Dtype>*, Brew mode);
   Blob<Dtype>* SpectralToSpatial(Blob<Dtype>*, Brew mode);
   
@@ -28,12 +30,18 @@ class SpectralComponentsManager {
   void SpectralToSpatial(Blob<Dtype>*, Brew mode, Blob<Dtype>*);
 
  protected:
+   
+   enum transform_direction
+   {
+      SPATIAL_TO_SPECTRAL,
+      SPECTRAL_TO_SPATIAL
+   };
 
   const Solver<Dtype>* const solver_;
   
   Dtype real_dft2_get_value(int W, int w, int x, int H, int h, int y);
   
-  Blob<Dtype> *getOrMakeBank(int w, int h);
+  Blob<Dtype> *getOrMakeBank(int W, int H);
   SpectralComponentsManager<Dtype>::fillBank(Blob<Dtype>* bank)
 
   // Maps width/height pair of kernel size to a basis function bank index
