@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "caffe/net.hpp"
+#include "caffe/spectral_components.hpp"
 
 namespace caffe {
 
@@ -269,7 +270,7 @@ class AdamSolver : public SGDSolver<Dtype> {
   explicit AdamSolver(const SolverParameter& param)
       : SGDSolver<Dtype>(param) {
         AdamPreSolve();
-        spec_comp_man_ = new SpectralComponentsManager(this);
+        spec_comp_man_ = new SpectralComponentsManager<Dtype>();
       }
       
   explicit AdamSolver(const string& param_file)
@@ -283,7 +284,7 @@ class AdamSolver : public SGDSolver<Dtype> {
   void AdamPreSolve();
   virtual void ComputeUpdateValue(int param_id, Dtype rate);
 
-  SpectralComponentsManager *spec_comp_man_;
+  SpectralComponentsManager<Dtype> *spec_comp_man_;
   DISABLE_COPY_AND_ASSIGN(AdamSolver);
 };
 

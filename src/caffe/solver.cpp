@@ -1525,19 +1525,19 @@ void AdamSolver<Dtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   Blob<Dtype>* val_v = this->history_[param_id + update_history_offset].get();
   Blob<Dtype>* val_t = this->temp_[param_id].get();
 
-  const Blob<Dtype>* net_param_beforeupdate_spatial = net_params[param_id];
+  Blob<Dtype>* net_param_beforeupdate_spatial = net_params[param_id];
   
   const int t = this->iter_  + 1;
   const Dtype correction = std::sqrt(Dtype(1) - pow(beta2, t)) /
       (Dtype(1.) - pow(beta1, t));
-  const int N = net_param_beforeupdate->count();
+  const int N = net_param_beforeupdate_spatial->count();
   const Dtype eps_hat = this->param_.delta();
 
   
-  const Blob<Dtype>* net_param_beforeupdate = NULL;
+  Blob<Dtype>* net_param_beforeupdate = NULL;
   
   if(net_params_spectral[param_id]) {
-    net_param_beforeupdate = spec_comp_man_->SpatialToSpectral(net_param_beforeupdate_spatial, Caffe::mode());
+    net_param_beforeupdate = spec_comp_man_->SpatialToSpectral(Caffe::mode(), net_param_beforeupdate_spatial);
   } else {
     net_param_beforeupdate = net_param_beforeupdate_spatial;
   }
@@ -1613,7 +1613,7 @@ void AdamSolver<Dtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   }
   
   if(net_params_spectral[param_id]) {
-    spec_comp_man_->SpectralToSpatial(net_param_beforeupdate, Caffe::mode(), net_params[param_id]);
+    spec_comp_man_->SpectralToSpatial(Caffe::mode(), net_param_beforeupdate, net_params[param_id]);
   }
 }
 

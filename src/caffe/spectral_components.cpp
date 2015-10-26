@@ -39,15 +39,9 @@ Dtype SpectralComponentsManager<Dtype>::real_dft2_get_value(int W, int w, int x,
 // ----------------------------------------------------------------------------------------
 
 template <typename Dtype>
-SpectralComponentsManager<Dtype>::SpectralComponentsManager(const Solver<Dtype>* solver)
-    : solver_(solver) {
-  
-}
-
-template <typename Dtype>
 Blob<Dtype> *SpectralComponentsManager<Dtype>::getOrMakeBank(int W, int H) {
   
-  Blob<Dtype> *blob = basis_functions_map_[make_pair(w,h)]; // get or create
+  Blob<Dtype> *blob = basis_functions_map_[make_pair(W,H)]; // get or create
   
   if(blob == NULL) {
     blob = new Blob<Dtype>();
@@ -57,12 +51,13 @@ Blob<Dtype> *SpectralComponentsManager<Dtype>::getOrMakeBank(int W, int H) {
   return blob;
 }
 
-SpectralComponentsManager<Dtype>::fillBank(Blob<Dtype>* bank) {
+template <typename Dtype>
+void SpectralComponentsManager<Dtype>::fillBank(Blob<Dtype>* bank) {
   int W = bank->shape()[3];
   int H = bank->shape()[2];
   CHECK_EQ(bank->shape()[1], W*H) << "Fourier spatial bank should have W*H=" << W*H << " filters, not " << bank->shape()[1];
   CHECK_EQ(bank->shape()[0], 1);
-  Dtype data = bank->mutable_cpu_data();
+  Dtype *data = bank->mutable_cpu_data();
   
   // for all filters in the bank
   for (int w=0; w<W; w++)
@@ -73,7 +68,7 @@ SpectralComponentsManager<Dtype>::fillBank(Blob<Dtype>* bank) {
       for (int y=0; y<H; y++) {
         for (int x=0; x<W; x++) {
           int ind = start_ind + y * W + x;
-          data[ind] = real_dft2(W, w, x, H, h, y);        
+          data[ind] = this->real_dft2_get_value(W, w, x, H, h, y);        
         }        
       }
       // normalize the filter to unit Euclidean norm
@@ -83,8 +78,9 @@ SpectralComponentsManager<Dtype>::fillBank(Blob<Dtype>* bank) {
     }
 }
 
-// does the transform both ways, depending on Stransform_direction being SPATIAL_TO_SPECTRAL or SPECTRAL_TO_SPATIAL
-void transform(Brew mode, transform_direction transf_dir, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob) {
+// does the transform both ways, depending on transform_direction being SPATIAL_TO_SPECTRAL or SPECTRAL_TO_SPATIAL
+template <typename Dtype>
+void SpectralComponentsManager<Dtype>::transform(Caffe::Brew mode, transform_direction transf_dir, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob) {
   
   int H = in_blob->shape()[2];
   int W = in_blob->shape()[3];
@@ -120,9 +116,9 @@ void transform(Brew mode, transform_direction transf_dir, const Blob<Dtype>* in_
     LOG(FATAL) << "Unknown mode " << mode;  
 }
 
-
-void SpectralToSpatial(Brew mode, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob) {
-  transform(mode, SPECTRAL_TO_SPATIAL, in_blob, out_blob);  
+template <typename Dtype>
+void SpectralComponentsManager<Dtype>::SpectralToSpatial(Caffe::Brew mode, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob) {
+  this->transform(mode, SPECTRAL_TO_SPATIAL, in_blob, out_blob);  
 }
 
 

@@ -5,11 +5,9 @@
 #include <string>
 #include <vector>
 
-#include "caffe/net.hpp"
+#include "caffe/blob.hpp"
 
 namespace caffe {
-
-template <typename Dtype> class Solver;
 
 /**
  * @brief Creates and applies spectral basis function transformations to blobs
@@ -19,15 +17,13 @@ template <typename Dtype> class Solver;
 template <typename Dtype>
 class SpectralComponentsManager {
  public:
-  explicit SpectralComponentsManager(const Solver<Dtype>* solver);
+  explicit SpectralComponentsManager() {}
   
-  void transform(Brew mode, transform_direction transf_dir, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob);
+  Blob<Dtype>* SpatialToSpectral(Caffe::Brew mode, const Blob<Dtype>* in_blob);
+  Blob<Dtype>* SpectralToSpatial(Caffe::Brew mode, const Blob<Dtype>* in_blob);
   
-  Blob<Dtype>* SpatialToSpectral(Blob<Dtype>*, Brew mode);
-  Blob<Dtype>* SpectralToSpatial(Blob<Dtype>*, Brew mode);
-  
-  void SpatialToSpectral(Blob<Dtype>*, Brew mode, Blob<Dtype>*);
-  void SpectralToSpatial(Blob<Dtype>*, Brew mode, Blob<Dtype>*);
+  void SpatialToSpectral(Caffe::Brew mode, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob);
+  void SpectralToSpatial(Caffe::Brew mode, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob);
 
  protected:
    
@@ -37,12 +33,11 @@ class SpectralComponentsManager {
       SPECTRAL_TO_SPATIAL
    };
 
-  const Solver<Dtype>* const solver_;
-  
   Dtype real_dft2_get_value(int W, int w, int x, int H, int h, int y);
+  void transform(Caffe::Brew mode, transform_direction transf_dir, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob);
   
   Blob<Dtype> *getOrMakeBank(int W, int H);
-  SpectralComponentsManager<Dtype>::fillBank(Blob<Dtype>* bank)
+  void fillBank(Blob<Dtype>* bank);
 
   // Maps width/height pair of kernel size to a basis function bank index
   map<pair<int,int>, Blob<Dtype>* > basis_functions_map_;
