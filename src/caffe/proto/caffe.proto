@@ -715,6 +715,7 @@ message BinaryDBWebP {
     BOOL1 = 2;
     FIXED16DIV32 = 3;
     UINT8WEBP = 4;
+    FIXED16DIV32LZO = 5;
   }
   
   message EntryFormat {

@@ -180,16 +180,25 @@ class BinaryDBWebP:
 
               entry_index = (index + entry.offset) * el['num'] + el['index']
               
+              ## A BinDB file "FILENAME" is assumed to contain compressed data if
+              #  a file "FILENAME.index" exists in the same folder
               if abs_file_path not in path_is_compressed_bindb:
                 if os.path.isfile(abs_file_path+'.index'):
                   path_is_compressed_bindb[abs_file_path] = True
                 else:
                   path_is_compressed_bindb[abs_file_path] = False
-                
+              
+              ## If data is compressed, read its disk size, else compute its
+              #  known data size
               if path_is_compressed_bindb[abs_file_path]:
                 byte_offset, compressed_byte_size = \
                     compressed_info(abs_file_path+'.index', entry_index)
-                encoding = cpb.BinaryDBWebP.UINT8WEBP
+                if encoding == cpb.BinaryDBWebP.UINT8:
+                  encoding = cpb.BinaryDBWebP.UINT8WEBP
+                elif encoding == cpb.BinaryDBWebP.FIXED16DIV32:
+                  encoding = cpb.BinaryDBWebP.FIXED16DIV32LZO
+                else:
+                  raise Exception('Compression not implemented for this encoding')
               else:
                 byte_offset = (dims[0]*dims[1]*dims[2]*self.enc_size(encoding)+4)*\
                               entry_index

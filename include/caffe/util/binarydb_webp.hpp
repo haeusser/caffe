@@ -18,6 +18,7 @@
 #include "caffe/common.hpp"
 #include "caffe/proto/caffe.pb.h"
 #include "caffe/blob.hpp"
+#include "caffe/util/lzo/decompress.hpp"
 
 namespace caffe { 
 namespace db {
@@ -290,7 +291,8 @@ private:
    */
   void process_readtask(
         ReadTask* task_ptr,
-        unsigned char* entry_buffer_);
+        unsigned char* entry_buffer_,
+        lzo::LZO_Decompressor* lzo_decompressor);
   
   /**
    * @brief Entry point for worker threads; Continuously monitor task queues and process entries until "running" is FALSE
