@@ -156,6 +156,7 @@ parser.add_argument('--local',         help='run on local machine', action='stor
 parser.add_argument('--background',    help='run on cluster in background', action='store_true')
 parser.add_argument('--node',          help='run on a specific node', default=None)
 parser.add_argument('--gpus',          help='gpus to use: N (default=1)', default=1, type=int)
+parser.add_argument('--gpu-id',        help='outside cluster: gpu ID to use (default=0)', default=None, type=int)
 parser.add_argument('--cluster',       help='run on cluster interatively', action='store_true')
 parser.add_argument('--quiet',         help='suppress caffe output', action='store_true')
 parser.add_argument('--silent',        help='suppress all output', action='store_true')
@@ -224,7 +225,6 @@ subparser.add_argument('--iter', help='iteration of .caffemodel (default=last)',
 
 # draw
 subparser = subparsers.add_parser('draw', help='draw model diagram')
-subparser.add_argument('file', help='filename of .prototxt or .prototmp file')
 
 # copy
 sub_parser = subparsers.add_parser('copy', help='copy a model')
@@ -255,9 +255,13 @@ if args.background: args.unattended = True
 if args.execute: args.local = True
 
 gpuIds = ''
-for i in range(0, args.gpus):
-    gpuIds += ',%d' % i
-gpuIds = gpuIds[1:]
+if args.gpu_id is not None:
+    gpuIds = '%d' % args.gpu_id
+else:
+    for i in range(0, args.gpus):
+        gpuIds += ',%d' % i
+    gpuIds = gpuIds[1:]
+
 if args.backend == 'binary':
     backend = BinaryBackend(gpuIds, args.quiet, args.silent)
 else:
@@ -342,14 +346,14 @@ elif args.command == 'copy':
     env.copy(args.source, args.target, args.with_snapshot, args.iter)
     sys.exit(0)
 elif args.command == 'draw':
-    os.system('gwenview %s &' % env.draw(args.file))
+    os.system('gwenview %s &' % env.draw())
     sys.exit(0)
 elif args.command == 'snapshot':
     id = checkJob()
     os.system('ssh lmbtorque "qsig -s SIGHUP %s"' % id)
     sys.exit(0)
-elif args.command == 'blobsum':
-    env.blobSum()
+elif args.command == 'blob-sum':
+    env.blobSummary()
     sys.exit(0)
 
 # gpu operations

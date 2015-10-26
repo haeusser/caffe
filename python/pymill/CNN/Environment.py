@@ -661,16 +661,13 @@ class Environment:
         os.chdir(self._path)
         self._backend.run(finalProto, iter)
 
-    def draw(self, prototmp):
+    def draw(self):
         from google.protobuf import text_format
         import caffe, caffe.draw
         from caffe.proto import caffe_pb2
 
-        if not prototmp.endswith('prototxt'):
-            self.notice('you need to provide a prototxt file (as of now ...)')
-            sys.exit(1)
-        else:
-            prototxt = prototmp
+        self.prepareTraining()
+        prototxt = self._trainDir + '/train.prototxt'
 
         outfile = self._scratchDir + '/%s.png' % os.path.basename(prototxt).replace('.prototxt', '')
         net = caffe_pb2.NetParameter()
