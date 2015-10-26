@@ -8,17 +8,10 @@ using caffe::Blob;
 
 float pi = 3.141592653589793238462643383279;
 
-// float real_dft(int N, int n, int x) {
-//   if (n == 0 || 2*n == N)
-//     return 1.;
-//   if (n <= (N-1)/2)
-//     return cos(2*pi*(float)(n)*(float)(x)/(float)(N));
-//   else
-//     return sin(2*pi*(float)(n-N/2)*(float)(x)/(float)(N));
-//   
-//   return 0.;
-// }
-
+// Compute one pixel of a filter bank of W*H filters with size W*H each
+// (W,H) = width and height of filter
+// (w,h) = position in filter bank ([0,W-1],[0,H-1])
+// (x,y) = pixel position in the filter
 float real_dft2(int W, int w, int x, int H, int h, int y) {
   float fx = (float)(x);
   float fy = (float)(y);
