@@ -1536,14 +1536,14 @@ void AdamSolver<Dtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   
   const Blob<Dtype>* net_param_beforeupdate = NULL;
   
+  if(net_params_spectral[param_id]) {
+    net_param_beforeupdate = spec_comp_man_->SpatialToSpectral(net_param_beforeupdate_spatial, Caffe::mode());
+  } else {
+    net_param_beforeupdate = net_param_beforeupdate_spatial;
+  }
+  
   switch (Caffe::mode()) {
     case Caffe::CPU: {
-    if(net_params_spectral[param_id]) {
-      net_param_beforeupdate = spec_comp_man->SpatialToSpectral(net_param_beforeupdate_spatial, Caffe::GPU);
-    } else {
-      net_param_beforeupdate = net_param_beforeupdate_spatial;
-    }
-      
     // update m <- \beta_1 m_{t-1} + (1-\beta_1)g_t
     caffe_cpu_axpby(N, Dtype(1)-beta1,
         net_param_beforeupdate->cpu_diff(), beta1,
@@ -1575,11 +1575,6 @@ void AdamSolver<Dtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   }
   case Caffe::GPU: {
 #ifndef CPU_ONLY
-    if(net_params_spectral[param_id]) {
-      //TODO: Transform net_param_beforeupdate to net_param_beforeupdate_spectral
-      // and use this for history and computing update. Then transform back
-    }
-    
     // update m <- \beta_1 m_{t-1} + (1-\beta_1)g_t
     caffe_gpu_axpby(N, Dtype(1)-beta1,
         net_param_beforeupdate->gpu_diff(), beta1,
@@ -1618,9 +1613,7 @@ void AdamSolver<Dtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   }
   
   if(net_params_spectral[param_id]) {
-    //TODO: 
-    const Blob<Dtype>* spatial_param = spec_comp_man->SpectralToSpatial(net_param_beforeupdate, Caffe::mode());
-    
+    spec_comp_man_->SpectralToSpatial(net_param_beforeupdate, Caffe::mode(), net_params[param_id]);
   }
 }
 

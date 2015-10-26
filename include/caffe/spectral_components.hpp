@@ -21,8 +21,11 @@ class SpectralComponentsManager {
  public:
   explicit SpectralComponentsManager(const Solver<Dtype>* solver);
   
-  void SpatialToSpectral(Blob<Dtype>*, Brew mode);
-  void SpectralToSpatial(Blob<Dtype>*, Brew mode);
+  Blob<Dtype>* SpatialToSpectral(Blob<Dtype>*, Brew mode);
+  Blob<Dtype>* SpectralToSpatial(Blob<Dtype>*, Brew mode);
+  
+  void SpatialToSpectral(Blob<Dtype>*, Brew mode, Blob<Dtype>*);
+  void SpectralToSpatial(Blob<Dtype>*, Brew mode, Blob<Dtype>*);
 
  protected:
 
