@@ -172,7 +172,6 @@ class Log:
 
     def displayBlobSummary(self):
         sizes = OrderedDict()
-
         assignments = []
         for iter, line in self._lines:
             if ']' in line:
