@@ -31,9 +31,10 @@ class SpectralComponentsManager {
 
   const Solver<Dtype>* const solver_;
   
-  float real_dft2(int W, int w, int x, int H, int h, int y);
+  Dtype real_dft2_get_value(int W, int w, int x, int H, int h, int y);
   
   Blob<Dtype> *getOrMakeBank(int w, int h);
+  SpectralComponentsManager<Dtype>::fillBank(Blob<Dtype>* bank)
 
   // Maps width/height pair of kernel size to a basis function bank index
   map<pair<int,int>, Blob<Dtype>* > basis_functions_map_;
