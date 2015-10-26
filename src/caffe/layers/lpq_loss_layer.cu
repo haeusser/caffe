@@ -153,7 +153,7 @@ namespace caffe {
                                       mask_.mutable_gpu_data());
     CUDA_POST_KERNEL_CHECK;
     
-    if (this->layer_param_.l1_loss_param().normalize_by_num_entries()) {    
+    if (this->layer_param_.lpq_loss_param().normalize_by_num_entries()) {    
       caffe_gpu_dot(count, mask_.gpu_data(), mask_.gpu_data(), &normalize_coeff_);
       normalize_coeff_ /= mask_.channels();
     } else {
