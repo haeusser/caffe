@@ -80,13 +80,17 @@ void SpectralComponentsManager<Dtype>::fillBank(Blob<Dtype>* bank) {
 
 // does the transform both ways, depending on transform_direction being SPATIAL_TO_SPECTRAL or SPECTRAL_TO_SPATIAL
 template <typename Dtype>
-void SpectralComponentsManager<Dtype>::transform(Caffe::Brew mode, transform_direction transf_dir, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob) {
+Blob<Dtype>* SpectralComponentsManager<Dtype>::transform(Caffe::Brew mode, transform_direction transf_dir, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob) {
   
   int H = in_blob->shape()[2];
   int W = in_blob->shape()[3];
   
   Blob<Dtype>* bank_blob = getOrMakeBank(W,H);   
-   
+  
+  if(out_blob == NULL) {
+    //TODO: Get temp blob and set it for out_blob
+  }
+  
   // actually do the job
   if (mode == Caffe::CPU) {
     const Dtype* in_data = in_blob->cpu_data();
@@ -114,11 +118,28 @@ void SpectralComponentsManager<Dtype>::transform(Caffe::Brew mode, transform_dir
       LOG(FATAL) << "Unknown transform_direction " << transf_dir;
   } else
     LOG(FATAL) << "Unknown mode " << mode;  
+  
+  return out_blob;
 }
 
 template <typename Dtype>
 void SpectralComponentsManager<Dtype>::SpectralToSpatial(Caffe::Brew mode, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob) {
   this->transform(mode, SPECTRAL_TO_SPATIAL, in_blob, out_blob);  
+}
+
+template <typename Dtype>
+void SpectralComponentsManager<Dtype>::SpatialToSpectral(Caffe::Brew mode, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob) {
+  this->transform(mode, SPATIAL_TO_SPECTRAL, in_blob, out_blob);  
+}
+
+template <typename Dtype>
+Blob<Dtype>* SpectralComponentsManager<Dtype>::SpectralToSpatial(Caffe::Brew mode, const Blob<Dtype>* in_blob) {
+  return this->transform(mode, SPECTRAL_TO_SPATIAL, in_blob, NULL);  
+}
+
+template <typename Dtype>
+Blob<Dtype>* SpectralComponentsManager<Dtype>::SpatialToSpectral(Caffe::Brew mode, const Blob<Dtype>* in_blob) {
+  return this->transform(mode, SPATIAL_TO_SPECTRAL, in_blob, NULL);  
 }
 
 

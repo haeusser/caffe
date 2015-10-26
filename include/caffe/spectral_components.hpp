@@ -34,7 +34,7 @@ class SpectralComponentsManager {
    };
 
   Dtype real_dft2_get_value(int W, int w, int x, int H, int h, int y);
-  void transform(Caffe::Brew mode, transform_direction transf_dir, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob);
+  Blob<Dtype>* transform(Caffe::Brew mode, transform_direction transf_dir, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob);
   
   Blob<Dtype> *getOrMakeBank(int W, int H);
   void fillBank(Blob<Dtype>* bank);
