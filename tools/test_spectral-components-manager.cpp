@@ -27,22 +27,20 @@ int main(int argc, char** argv) {
   
   FillerParameter filler_param;
   
-  LOG(INFO) << "Random Gaussian blob";
+  LOG(INFO) << "==== Test 1 ====";
   filler_param.set_std(1.);
   GaussianFiller<Dtype> gauss_filler(filler_param);
   gauss_filler.Fill(test_blob);  
-  test_blob->print();
+  test_blob->print("Random Gaussian blob");
   
-  LOG(INFO) << "Converted to spectral";
-  Blob<float>* spectral_blob = man->SpatialToSpectral(Caffe::GPU, test_blob, SpectralComponentsManager::DATA);
-  spectral_blob->print();
+  Blob<float>* spectral_blob = man->SpatialToSpectral(Caffe::GPU, test_blob, SpectralComponentsManager::BLOB_DATA);
+  spectral_blob->print("Converted to spectral");
   
-  LOG(INFO) << "Converted back to spatial";
   Blob<float>* spatial_blob = new Blob<float>(test_blob->shape());   
-  man->SpectralToSpatial(Caffe::GPU, spectral_blob, spatial_blob, SpectralComponentsManager::DATA);  
-  spatial_blob->print();
+  man->SpectralToSpatial(Caffe::GPU, spectral_blob, spatial_blob, SpectralComponentsManager::BLOB_DATA);  
+  spatial_blob->print("Converted back to spatial");
   
-  LOG(INFO) << "Blob with a line";
+  LOG(INFO) << "==== Test 2 ====";
   filler_param.set_value(0.);
   ConstantFiller<Dtype> const_filler(filler_param);
   const_filler.Fill(test_blob);  
@@ -52,15 +50,23 @@ int main(int argc, char** argv) {
       if (x == W/2)
         test_data[W*y + x] = 1.; 
   
-  test_blob->print();
+  test_blob->print("Blob with a line");
   
-  LOG(INFO) << "Converted to spectral";
-  spectral_blob = man->SpatialToSpectral(Caffe::GPU, test_blob, SpectralComponentsManager::DATA);
-  spectral_blob->print();
+  spectral_blob = man->SpatialToSpectral(Caffe::GPU, test_blob, SpectralComponentsManager::BLOB_DATA);
+  spectral_blob->print("Converted to spectral");
   
-  LOG(INFO) << "Converted back to spatial";  
-  man->SpectralToSpatial(Caffe::GPU, spectral_blob, spatial_blob, SpectralComponentsManager::DATA);  
-  spatial_blob->print();
+  man->SpectralToSpatial(Caffe::GPU, spectral_blob, spatial_blob, SpectralComponentsManager::BLOB_DATA);  
+  spatial_blob->print("Converted back to spatial");
+  
+  LOG(INFO) << "==== Test 3 ====";
+  test_blob = man->getOrMakeBank(W,H);
+  test_blob->print("The filter bank");
+  
+  spectral_blob = man->SpatialToSpectral(Caffe::GPU, test_blob, SpectralComponentsManager::BLOB_DATA);
+  spectral_blob->print("Converted to spectral");
+  
+  man->SpectralToSpatial(Caffe::GPU, spectral_blob, spatial_blob, SpectralComponentsManager::BLOB_DATA);  
+  spatial_blob->print("Converted back to spatial");
   
   delete man;
   

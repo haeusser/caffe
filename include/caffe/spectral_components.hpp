@@ -24,6 +24,10 @@ class SpectralComponentsManager {
   
   void SpatialToSpectral(Caffe::Brew mode, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob);
   void SpectralToSpatial(Caffe::Brew mode, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob);
+  
+  Blob<Dtype> *getOrMakeBank(int W, int H);
+  
+  
 
  protected:
    
@@ -36,7 +40,7 @@ class SpectralComponentsManager {
   Dtype real_dft2_get_value(int W, int w, int x, int H, int h, int y);
   Blob<Dtype>* transform(Caffe::Brew mode, transform_direction transf_dir, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob);
   
-  Blob<Dtype> *getOrMakeBank(int W, int H);
+  
   void fillBank(Blob<Dtype>* bank);
 
   // Maps width/height pair of kernel size to a basis function bank index
