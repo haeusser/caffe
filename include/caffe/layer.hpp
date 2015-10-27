@@ -21,6 +21,24 @@ namespace caffe {
 
 template <typename Dtype> class Net;
 
+
+/**
+ * Possible layer activity states:
+ * 
+ * - An ACTIVE layer does all forward and backward passes and updates.
+ * - A layer which is BECOMING_INACTIVE will do some cleanup work (e.g.
+ *   invalidating gradients) but no actual computational work. This is an
+ *   intermediate state, and in the next iteration the layer will either 
+ *   become INACTIVE or switch back to being ACTIVE.
+ * - An INACTIVE layer only monitors for changes in its activity state
+ */
+enum ActivityState_t {
+  ACTIVE = 1,
+  BECOMING_INACTIVE,
+  INACTIVE
+};
+
+
 /**
  * @brief An interface for the units of computation which can be composed into a
  *        Net.
@@ -40,7 +58,11 @@ class Layer {
    * layer.
    */
   explicit Layer(const LayerParameter& param)
-    : layer_param_(param), is_shared_(false), net_(NULL), next_weightloss_change_at_iter_(-1) {
+    : layer_param_(param), 
+      activeness_(ACTIVE),
+      is_shared_(false), 
+      net_(NULL), 
+      next_weightloss_change_at_iter_(-1) {
       // Set phase and copy blobs (if there are any).
       phase_ = param.phase();
       if (layer_param_.blobs_size() > 0) {
@@ -349,6 +371,9 @@ class Layer {
   /** The vector that indicates whether each top blob has a non-zero weight in
    *  the objective function. */
   vector<Dtype> loss_;
+  
+  /** Current activity state of this layer instance */
+  ActivityState_t activeness_;
 
   /** @brief Using the CPU device, compute the layer output. */
   virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
@@ -543,16 +568,89 @@ template <typename Dtype>
 inline void Layer<Dtype>::Backward(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down,
     const vector<Blob<Dtype>*>& bottom) {
-  switch (Caffe::mode()) {
-  case Caffe::CPU:
-    Backward_cpu(top, propagate_down, bottom);
-    break;
-  case Caffe::GPU:
-    Backward_gpu(top, propagate_down, bottom);
-    break;
-  default:
-    LOG(FATAL) << "Unknown caffe mode.";
+  
+  /// Monitor changes in the activeness flags of all top blobs and change
+  /// own activeness if necessary
+  switch (activeness_) {
+    case ACTIVE: {
+      /// Stay active if any top blog is active...
+      bool stay_active = false;
+      for (int top_id = 0; top_id < top.size(); ++top_id)
+        stay_active |= top[top_id]->GetActivenessFlag();
+      /// ...else become inactive
+      if (not stay_active) {
+        activeness_ = BECOMING_INACTIVE;
+        LOG(INFO) << "Preparing layer " << layer_param_.name() << "for inactivity";
+      }
+      break;
+    }
+    case BECOMING_INACTIVE: {
+      /// Cancel this layer's deactivation if any top blob is active...
+      bool cancel_deactivation = false;
+      for (int top_id = 0; top_id < top.size(); ++top_id)
+        cancel_deactivation |= top[top_id]->GetActivenessFlag();
+      /// ...else switch to full inactivity
+      if (cancel_deactivation) {
+        activeness_ = ACTIVE;
+        LOG(INFO) << "Cancelling deactivation of layer " << layer_param_.name();
+      }
+      else {
+        activeness_ = INACTIVE;
+        LOG(INFO) << "Layer " << layer_param_.name() << " is now inactive";
+      }
+      break;
+    }
+    case INACTIVE: {
+      /// Reactivate if any top blob is active, else stay inactive
+      bool reactivate = false;
+      for (int top_id = 0; top_id < top.size(); ++top_id)
+        reactivate |= top[top_id]->GetActivenessFlag();
+      if (reactivate) {
+        activeness_ = ACTIVE;
+        LOG(INFO) << "Reactivating layer " << layer_param_.name();
+      }
+      break;
+    }
+    default: {
+      LOG(ERROR) << "Invalid value (" << activeness_ << ") for activeness_";
+    }
   }
+
+  /// The layer's actions depend on its NEW activeness state
+  switch (activeness_) {
+    case ACTIVE: {
+      /// TODO Set activeness for bottom blobs
+      
+      /// Do back propagation
+      switch (Caffe::mode()) {
+      case Caffe::CPU:
+        Backward_cpu(top, propagate_down, bottom);
+        break;
+      case Caffe::GPU:
+        Backward_gpu(top, propagate_down, bottom);
+        break;
+      default:
+        LOG(FATAL) << "Unknown caffe mode.";
+      }
+      break;
+    }
+    case BECOMING_INACTIVE: {
+      /// TODO Set gradients to zero iff BECOMING_INACTIVE
+      
+      /// TODO Propagate flag from top to bottom layers      
+      
+    }
+    case INACTIVE: {
+      /// TODO Flag bottom blobs for inactiveness
+      
+      return;
+    }
+    default: {
+      LOG(ERROR) << "Invalid value (" << activeness_ << ") for activeness_";
+    }
+  }
+  
+  
 }
 
 // Serialize LayerParameter to protocol buffer

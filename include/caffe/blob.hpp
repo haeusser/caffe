@@ -25,7 +25,7 @@ template <typename Dtype>
 class Blob {
  public:
   Blob()
-       : data_(), diff_(), count_(0), capacity_(0) {}
+       : data_(), diff_(), count_(0), capacity_(0), activeness_flag_(true) {}
 
   /// @brief Deprecated; use <code>Blob(const vector<int>& shape)</code>.
   explicit Blob(const int num, const int channels, const int height,
@@ -281,6 +281,23 @@ class Blob {
   void ShareDiff(const Blob& other);
 
   bool ShapeEquals(const BlobProto& other);
+  
+  /**
+   * @brief Getter for activeness_flag_
+   * @returns Current state of activeness_flag_
+   */
+  bool GetActivenessFlag()
+  {
+    return activeness_flag_;
+  }
+  /**
+   * @brief Setter for activeness_flag_
+   * @param new_activeness New state for activeness_flag_
+   */
+  void SetActivenessFlag(bool new_activeness)
+  {
+    activeness_flag_ = new_activeness;
+  }
 
  protected:
   shared_ptr<SyncedMemory> data_;
@@ -288,6 +305,10 @@ class Blob {
   vector<int> shape_;
   int count_;
   int capacity_;
+  /// When a layer changes its activity state, it sets the activeness_flag_
+  /// of its bottom blobs to propagate this change to its predecessor layers.
+  /// Each layer responds to this flag in its top blobs.
+  bool activeness_flag_;
 
   DISABLE_COPY_AND_ASSIGN(Blob);
 };  // class Blob
