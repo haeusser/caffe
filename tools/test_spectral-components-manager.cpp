@@ -29,20 +29,20 @@ int main(int argc, char** argv) {
   
   LOG(INFO) << "==== Test 1 ====";
   filler_param.set_std(1.);
-  GaussianFiller<Dtype> gauss_filler(filler_param);
+  GaussianFiller<float> gauss_filler(filler_param);
   gauss_filler.Fill(test_blob);  
   test_blob->print("Random Gaussian blob");
   
-  Blob<float>* spectral_blob = man->SpatialToSpectral(Caffe::GPU, test_blob, SpectralComponentsManager::BLOB_DATA);
+  Blob<float>* spectral_blob = man->SpatialToSpectral(Caffe::GPU, test_blob, SpectralComponentsManager<float>::BLOB_DATA);
   spectral_blob->print("Converted to spectral");
   
   Blob<float>* spatial_blob = new Blob<float>(test_blob->shape());   
-  man->SpectralToSpatial(Caffe::GPU, spectral_blob, spatial_blob, SpectralComponentsManager::BLOB_DATA);  
+  man->SpectralToSpatial(Caffe::GPU, spectral_blob, spatial_blob, SpectralComponentsManager<float>::BLOB_DATA);  
   spatial_blob->print("Converted back to spatial");
   
   LOG(INFO) << "==== Test 2 ====";
   filler_param.set_value(0.);
-  ConstantFiller<Dtype> const_filler(filler_param);
+  ConstantFiller<float> const_filler(filler_param);
   const_filler.Fill(test_blob);  
   float* test_data = test_blob->mutable_cpu_data();
   for (int y=0; y<H; y++)
@@ -51,21 +51,20 @@ int main(int argc, char** argv) {
         test_data[W*y + x] = 1.; 
   
   test_blob->print("Blob with a line");
-  
-  spectral_blob = man->SpatialToSpectral(Caffe::GPU, test_blob, SpectralComponentsManager::BLOB_DATA);
+  spectral_blob = man->SpatialToSpectral(Caffe::GPU, test_blob, SpectralComponentsManager<float>::BLOB_DATA);
   spectral_blob->print("Converted to spectral");
   
-  man->SpectralToSpatial(Caffe::GPU, spectral_blob, spatial_blob, SpectralComponentsManager::BLOB_DATA);  
+  man->SpectralToSpatial(Caffe::GPU, spectral_blob, spatial_blob, SpectralComponentsManager<float>::BLOB_DATA);  
   spatial_blob->print("Converted back to spatial");
   
   LOG(INFO) << "==== Test 3 ====";
   test_blob = man->getOrMakeBank(W,H);
   test_blob->print("The filter bank");
   
-  spectral_blob = man->SpatialToSpectral(Caffe::GPU, test_blob, SpectralComponentsManager::BLOB_DATA);
+  spectral_blob = man->SpatialToSpectral(Caffe::GPU, test_blob, SpectralComponentsManager<float>::BLOB_DATA);
   spectral_blob->print("Converted to spectral");
   
-  man->SpectralToSpatial(Caffe::GPU, spectral_blob, spatial_blob, SpectralComponentsManager::BLOB_DATA);  
+  man->SpectralToSpatial(Caffe::GPU, spectral_blob, spatial_blob, SpectralComponentsManager<float>::BLOB_DATA);  
   spatial_blob->print("Converted back to spatial");
   
   delete man;
