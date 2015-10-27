@@ -47,12 +47,13 @@ Blob<Dtype> *SpectralComponentsManager<Dtype>::getOrMakeBank(int W, int H) {
     bank_blob = new Blob<Dtype>();
     bank_blob->Reshape(1,W*H,W,H);
     fillBank(bank_blob);
+    basis_functions_map_[make_pair(W,H)] = bank_blob;
   }
   return bank_blob;
 }
 
 template <typename Dtype>
-const Dtype *SpectralComponentsManager<Dtype>::getBlobPart(Blob<Dtype> *blob, Caffe::Brew mode, blob_part part) {
+const Dtype *SpectralComponentsManager<Dtype>::getBlobPart(const Blob<Dtype> *blob, Caffe::Brew mode, blob_part part) {
   if (mode == Caffe::CPU) {
     if (part == BLOB_DATA) return blob->cpu_data();
     else if (part == BLOB_DIFF) return blob->cpu_diff();
@@ -119,10 +120,10 @@ Blob<Dtype>* SpectralComponentsManager<Dtype>::transform(Caffe::Brew mode, trans
   
   CHECK_EQ(in_blob->shape().size(), out_blob->shape().size());
   for (int i=0; i<in_blob->shape().size(); i++)
-    CHECK_EQ(in_blob->shape().at(i), out_blob->shape().at(i));
+    CHECK_EQ(in_blob->shape().at(i), out_blob->shape().at(i)) << "In/Out Shapes differ at dimension " << i;
   
   // actually do the job
-  const Dtype* in_data = getBlobPart(bank_blob, mode, part);
+  const Dtype* in_data = getBlobPart(in_blob, mode, part);
   const Dtype* bank_data = getBlobPart(bank_blob, mode, BLOB_DATA);
   Dtype* out_data = getMutableBlobPart(out_blob, mode, part);
   

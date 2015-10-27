@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
   spectral_blob = man->SpatialToSpectral(Caffe::GPU, test_blob, SpectralComponentsManager<float>::BLOB_DATA);
   spectral_blob->print("Converted to spectral");
   
-  man->SpectralToSpatial(Caffe::GPU, spectral_blob, spatial_blob, SpectralComponentsManager<float>::BLOB_DATA);  
+  spatial_blob = man->SpectralToSpatial(Caffe::GPU, spectral_blob, SpectralComponentsManager<float>::BLOB_DATA);  
   spatial_blob->print("Converted back to spatial");
   
   delete man;

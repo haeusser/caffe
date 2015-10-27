@@ -46,7 +46,7 @@ class SpectralComponentsManager {
   Blob<Dtype>* transform(Caffe::Brew mode, transform_direction transf_dir, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob, blob_part part);
   
   Dtype *getMutableBlobPart(Blob<Dtype> *blob, Caffe::Brew mode, blob_part part);
-  const Dtype *getBlobPart(Blob<Dtype> *blob, Caffe::Brew mode, blob_part part);
+  const Dtype *getBlobPart(const Blob<Dtype> *blob, Caffe::Brew mode, blob_part part);
   
   
   void fillBank(Blob<Dtype>* bank);
