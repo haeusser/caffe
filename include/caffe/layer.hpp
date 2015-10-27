@@ -357,7 +357,10 @@ class Layer {
     param_propagate_down_[param_id] = value;
   }
 
-
+  inline ActivityState_t GetActiveness() {
+    return activeness_;
+  }
+  
  protected:
   /** The protobuf that stores the layer parameters */
   LayerParameter layer_param_;
@@ -474,6 +477,8 @@ class Layer {
   
   void ApplyLossWeightSchedule(const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top);
   
+  void UpdateActiveness(const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top);
+  
   /**
    * Called by SetUp to initialize the weights associated with any top blobs in
    * the loss function. Store non-zero loss weights in the diff blob.
@@ -532,34 +537,37 @@ inline Dtype Layer<Dtype>::Forward(const vector<Blob<Dtype>*>& bottom,
   
   ApplyLossWeightSchedule(bottom, top);
   
-  switch (Caffe::mode()) {
-  case Caffe::CPU:
-    Forward_cpu(bottom, top);
-    for (int top_id = 0; top_id < top.size(); ++top_id) {
-      if (!this->loss(top_id)) { continue; }
-      const int count = top[top_id]->count();
-      const Dtype* data = top[top_id]->cpu_data();
-      const Dtype* loss_weights = top[top_id]->cpu_diff();
-      loss += caffe_cpu_dot(count, data, loss_weights);
+  if(activeness_ == ACTIVE  || phase_ == TEST) {
+    switch (Caffe::mode()) {
+    case Caffe::CPU:
+      Forward_cpu(bottom, top);
+      for (int top_id = 0; top_id < top.size(); ++top_id) {
+        if (!this->loss(top_id)) { continue; }
+        const int count = top[top_id]->count();
+        const Dtype* data = top[top_id]->cpu_data();
+        const Dtype* loss_weights = top[top_id]->cpu_diff();
+        loss += caffe_cpu_dot(count, data, loss_weights);
+      }
+      break;
+    case Caffe::GPU:
+      Forward_gpu(bottom, top);
+  #ifndef CPU_ONLY
+      for (int top_id = 0; top_id < top.size(); ++top_id) {
+        if (!this->loss(top_id)) { continue; }
+        const int count = top[top_id]->count();
+        const Dtype* data = top[top_id]->gpu_data();
+        const Dtype* loss_weights = top[top_id]->gpu_diff();
+        Dtype blob_loss = 0;
+        caffe_gpu_dot(count, data, loss_weights, &blob_loss);
+        loss += blob_loss;
+      }
+  #endif
+      break;
+    default:
+      LOG(FATAL) << "Unknown caffe mode.";
     }
-    break;
-  case Caffe::GPU:
-    Forward_gpu(bottom, top);
-#ifndef CPU_ONLY
-    for (int top_id = 0; top_id < top.size(); ++top_id) {
-      if (!this->loss(top_id)) { continue; }
-      const int count = top[top_id]->count();
-      const Dtype* data = top[top_id]->gpu_data();
-      const Dtype* loss_weights = top[top_id]->gpu_diff();
-      Dtype blob_loss = 0;
-      caffe_gpu_dot(count, data, loss_weights, &blob_loss);
-      loss += blob_loss;
-    }
-#endif
-    break;
-  default:
-    LOG(FATAL) << "Unknown caffe mode.";
   }
+  
   Unlock();
   return loss;
 }
@@ -569,87 +577,22 @@ inline void Layer<Dtype>::Backward(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down,
     const vector<Blob<Dtype>*>& bottom) {
   
-  /// Monitor changes in the activeness flags of all top blobs and change
-  /// own activeness if necessary
-  switch (activeness_) {
-    case ACTIVE: {
-      /// Stay active if any top blog is active...
-      bool stay_active = false;
-      for (int top_id = 0; top_id < top.size(); ++top_id)
-        stay_active |= top[top_id]->GetActivenessFlag();
-      /// ...else become inactive
-      if (not stay_active) {
-        activeness_ = BECOMING_INACTIVE;
-        LOG(INFO) << "Preparing layer " << layer_param_.name() << "for inactivity";
-      }
-      break;
-    }
-    case BECOMING_INACTIVE: {
-      /// Cancel this layer's deactivation if any top blob is active...
-      bool cancel_deactivation = false;
-      for (int top_id = 0; top_id < top.size(); ++top_id)
-        cancel_deactivation |= top[top_id]->GetActivenessFlag();
-      /// ...else switch to full inactivity
-      if (cancel_deactivation) {
-        activeness_ = ACTIVE;
-        LOG(INFO) << "Cancelling deactivation of layer " << layer_param_.name();
-      }
-      else {
-        activeness_ = INACTIVE;
-        LOG(INFO) << "Layer " << layer_param_.name() << " is now inactive";
-      }
-      break;
-    }
-    case INACTIVE: {
-      /// Reactivate if any top blob is active, else stay inactive
-      bool reactivate = false;
-      for (int top_id = 0; top_id < top.size(); ++top_id)
-        reactivate |= top[top_id]->GetActivenessFlag();
-      if (reactivate) {
-        activeness_ = ACTIVE;
-        LOG(INFO) << "Reactivating layer " << layer_param_.name();
-      }
-      break;
-    }
-    default: {
-      LOG(ERROR) << "Invalid value (" << activeness_ << ") for activeness_";
-    }
-  }
-
-  /// The layer's actions depend on its NEW activeness state
-  switch (activeness_) {
-    case ACTIVE: {
-      /// TODO Set activeness for bottom blobs
-      
-      /// Do back propagation
-      switch (Caffe::mode()) {
-      case Caffe::CPU:
-        Backward_cpu(top, propagate_down, bottom);
-        break;
-      case Caffe::GPU:
-        Backward_gpu(top, propagate_down, bottom);
-        break;
-      default:
-        LOG(FATAL) << "Unknown caffe mode.";
-      }
-      break;
-    }
-    case BECOMING_INACTIVE: {
-      /// TODO Set gradients to zero iff BECOMING_INACTIVE
-      
-      /// TODO Propagate flag from top to bottom layers      
-      
-    }
-    case INACTIVE: {
-      /// TODO Flag bottom blobs for inactiveness
-      
-      return;
-    }
-    default: {
-      LOG(ERROR) << "Invalid value (" << activeness_ << ") for activeness_";
-    }
-  }
+  UpdateActiveness(bottom, top);
   
+  if(activeness_ == ACTIVE || activeness_ == BECOMING_INACTIVE || phase_ == TEST) {
+    /// Do back propagation
+    switch (Caffe::mode()) {
+    case Caffe::CPU:
+      Backward_cpu(top, propagate_down, bottom);
+      break;
+    case Caffe::GPU:
+      Backward_gpu(top, propagate_down, bottom);
+      break;
+    default:
+      LOG(FATAL) << "Unknown caffe mode.";
+    }
+  }
+    
   
 }
 

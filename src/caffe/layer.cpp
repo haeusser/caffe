@@ -24,6 +24,85 @@ void Layer<Dtype>::Unlock() {
   }
 }
 
+template <typename Dtype>
+void Layer<Dtype>::UpdateActiveness(const vector<Blob<Dtype>*>& bottom,
+    const vector<Blob<Dtype>*>& top) {
+  
+  /// At least one top blob active?
+  bool some_top_blob_active = false;
+  for (int top_id = 0; top_id < top.size(); ++top_id) 
+    some_top_blob_active |= top[top_id]->GetActivenessFlag();
+  
+  /// Monitor changes in the activeness flags of all top blobs and change
+  /// own activeness if necessary
+  switch (activeness_) {
+    case ACTIVE: {
+      /// Stay active if any top blog is active...
+      /// ...else become inactive
+      if (not some_top_blob_active) {
+        activeness_ = BECOMING_INACTIVE;
+        LOG(INFO) << "Preparing layer " << layer_param_.name() << " for inactivity";
+      }
+      break;
+    }
+    case BECOMING_INACTIVE: {
+      /// Cancel this layer's deactivation if any top blob is active...
+      if (some_top_blob_active) {
+        activeness_ = ACTIVE;
+        LOG(INFO) << "Cancelling deactivation of layer " << layer_param_.name();
+      }
+      /// ...else switch to full inactivity
+      else {
+        activeness_ = INACTIVE;
+        LOG(INFO) << "Layer " << layer_param_.name() << " is now inactive";
+      }
+      break;
+    }
+    case INACTIVE: {
+      /// Reactivate if any top blob is active, else stay inactive
+      if (some_top_blob_active) {
+        activeness_ = ACTIVE;
+        LOG(INFO) << "Reactivating layer " << layer_param_.name();
+      }
+      break;
+    }
+    default: {
+      LOG(ERROR) << "Invalid value (" << activeness_ << ") for activeness_";
+    }
+  }
+
+      
+  /// The layer's actions depend on its NEW activeness state
+  switch (activeness_) {
+    case ACTIVE: {
+      /// Set activeness for bottom blobs
+      for (int bot_id = 0; bot_id < bottom.size(); ++bot_id) 
+        bottom[bot_id]->SetActivenessFlag(true);
+      break;
+    }
+    case BECOMING_INACTIVE: {
+      /// Set gradients to zero iff BECOMING_INACTIVE
+      for (int blob_id = 0; blob_id < blobs_.size(); ++blob_id) blobs_[blob_id]->scale_diff(0);
+      for (int blob_id = 0; blob_id < bottom.size(); ++blob_id) bottom[blob_id]->scale_diff(0);
+      
+      /// Propagate flag from top to bottom layers      
+      for (int bot_id = 0; bot_id < bottom.size(); ++bot_id) 
+        bottom[bot_id]->SetActivenessFlag(false);
+      break;
+    }
+    case INACTIVE: {
+      /// Flag bottom blobs for inactiveness
+      for (int bot_id = 0; bot_id < bottom.size(); ++bot_id) 
+        bottom[bot_id]->SetActivenessFlag(false);
+      
+      break;
+    }
+    default: {
+      LOG(ERROR) << "Invalid value (" << activeness_ << ") for activeness_";
+    }
+  }
+  
+}
 
 template <typename Dtype>
 void Layer<Dtype>::ApplyLossWeightSchedule(const vector<Blob<Dtype>*>& bottom,
@@ -57,6 +136,10 @@ void Layer<Dtype>::ApplyLossWeightSchedule(const vector<Blob<Dtype>*>& bottom,
             // Wake up at this iter again to check
             next_weightloss_change_at_iter_ = lossparam.loss_schedule_iter(sched_idx+1);
           }
+          
+          bool activeness = (new_loss_weight > 0);
+          for (int top_id = 0; top_id < top.size(); ++top_id) 
+            top[top_id]->SetActivenessFlag(activeness);
         }
         
       } else {
