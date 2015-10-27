@@ -17,7 +17,7 @@ namespace caffe {
 template <typename Dtype>
 class SpectralComponentsManager {
  public:
-  explicit SpectralComponentsManager() {}
+  explicit SpectralComponentsManager(): temporary_blob_(new Blob<Dtype>) {}
   
   Blob<Dtype>* SpatialToSpectral(Caffe::Brew mode, const Blob<Dtype>* in_blob);
   Blob<Dtype>* SpectralToSpatial(Caffe::Brew mode, const Blob<Dtype>* in_blob);
@@ -42,7 +42,7 @@ class SpectralComponentsManager {
   // Maps width/height pair of kernel size to a basis function bank index
   map<pair<int,int>, Blob<Dtype>* > basis_functions_map_;
   
-  map<pair<int,int>, Blob<Dtype>* > temporary_blobs_;
+  Blob<Dtype>* temporary_blob_;
 
   DISABLE_COPY_AND_ASSIGN(SpectralComponentsManager);
 };

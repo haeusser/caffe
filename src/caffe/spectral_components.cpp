@@ -41,14 +41,14 @@ Dtype SpectralComponentsManager<Dtype>::real_dft2_get_value(int W, int w, int x,
 template <typename Dtype>
 Blob<Dtype> *SpectralComponentsManager<Dtype>::getOrMakeBank(int W, int H) {
   
-  Blob<Dtype> *blob = basis_functions_map_[make_pair(W,H)]; // get or create
+  Blob<Dtype> *bank_blob = basis_functions_map_[make_pair(W,H)]; // get or create
   
-  if(blob == NULL) {
-    blob = new Blob<Dtype>();
-    // TODO create bank
-    // TODO also creat a temporary blob of the same size
+  if(bank_blob == NULL) {
+    bank_blob = new Blob<Dtype>();
+    bank_blob->Reshape(1,W*H,W,H);
+    fillBank(bank_blob);
   }
-  return blob;
+  return bank_blob;
 }
 
 template <typename Dtype>
@@ -88,8 +88,14 @@ Blob<Dtype>* SpectralComponentsManager<Dtype>::transform(Caffe::Brew mode, trans
   Blob<Dtype>* bank_blob = getOrMakeBank(W,H);   
   
   if(out_blob == NULL) {
-    //TODO: Get temp blob and set it for out_blob
-  }
+    out_blob = temporary_blob_;  
+    // reshape also allocates the memory if necessary. If a blob is reshaped to a smaller size, the memory is not deallocated, which is good
+    out_blob.ReshapeLike(*in_blob);
+  } 
+  
+  CHECK_EQ(in_blob->shape().size(), out_blob->shape().size());
+  for (int i=0; i<in_blob->shape().size(); i++)
+    CHECK_EQ(in_blob->shape().at(i), out_blob->shape().at(i));
   
   // actually do the job
   if (mode == Caffe::CPU) {
