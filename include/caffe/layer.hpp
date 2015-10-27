@@ -361,6 +361,8 @@ class Layer {
     return activeness_;
   }
   
+  void UpdateActiveness(const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top);
+  
  protected:
   /** The protobuf that stores the layer parameters */
   LayerParameter layer_param_;
@@ -477,8 +479,6 @@ class Layer {
   
   void ApplyLossWeightSchedule(const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top);
   
-  void UpdateActiveness(const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top);
-  
   /**
    * Called by SetUp to initialize the weights associated with any top blobs in
    * the loss function. Store non-zero loss weights in the diff blob.
@@ -576,8 +576,6 @@ template <typename Dtype>
 inline void Layer<Dtype>::Backward(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down,
     const vector<Blob<Dtype>*>& bottom) {
-  
-  UpdateActiveness(bottom, top);
   
   if(activeness_ == ACTIVE || activeness_ == BECOMING_INACTIVE || phase_ == TEST) {
     /// Do back propagation

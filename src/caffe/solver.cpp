@@ -269,14 +269,14 @@ void Solver<Dtype>::Step(int iters) {
               << result_vec[k] << loss_msg_stream.str();
         }
       }
-      for(int layer = 0; layer < net_->layers().size(); layer++) {
+      /*for(int layer = 0; layer < net_->layers().size(); layer++) {
         shared_ptr<Layer<Dtype> > curlayer = net_->layers().at(layer);
         if(curlayer->GetActiveness() == INACTIVE) {
           LOG_IF(INFO, Caffe::root_solver()) << "Layer not active: " << curlayer->layer_param().name();
         } else {
           LOG_IF(INFO, Caffe::root_solver()) << "Layer active: " << curlayer->layer_param().name();
         }
-      }
+      }*/
       
       iteration_timer.Stop();
       TimingMonitor::addMeasure("iteration_time", iteration_timer.MilliSeconds()/param_.display());
