@@ -1077,6 +1077,13 @@ message HuberL1LossParameter {
 
 // Message that stores parameters used by LpqLossLayer
 message LpqLossParameter {
+  /**
+   * Legacy parameter; now applies to p-PowerLayer
+   */
+  optional bool l2_prescale_by_channels = 4016 [default = false];
+  // if we want to normalize not by batch size, but by the number of non-NaN entries
+  optional bool normalize_by_num_entries = 4017 [default = false];
+  
   /** 
    * "Shift" for p-PowerLayer. Since the Lpq layer uses this parameter
    * to avoid singularities around 0, and p is usually >=1, this parameter
@@ -1089,6 +1096,7 @@ message LpqLossParameter {
    * is usually relevant and positive.
    */
   optional float q_epsilon = 4014 [default = 1e-2];
+  
   /****************************
    * If one of each of the following is given, p/q are constant and the entry
    * in "pq_episode_starts_at_iter" must be 0 (else the first entry must be 0).

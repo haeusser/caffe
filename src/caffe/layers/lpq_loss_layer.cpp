@@ -116,7 +116,7 @@ namespace caffe {
     sum_param.mutable_convolution_param()->set_kernel_size(1);
     sum_param.mutable_convolution_param()->mutable_weight_filler()
                                          ->set_type("constant");
-    if(this->layer_param_.l1_loss_param().l2_prescale_by_channels()) {
+    if(this->layer_param_.lpq_loss_param().l2_prescale_by_channels()) {
       sum_param.mutable_convolution_param()->mutable_weight_filler()
                                            ->set_value(Dtype(1)/
                                                        Dtype(bottom[0]->channels()));

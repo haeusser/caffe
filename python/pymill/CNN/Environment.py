@@ -669,11 +669,8 @@ class Environment:
         self.prepareTraining()
         prototxt = self._trainDir + '/train.prototxt'
 
-        self.makeScratchDir()
-
-        outfile = self._scratchDir + '/%s.png' % os.path.basename(prototxt).replace('.prototxt', '')
+        outfile = prototxt.replace('prototxt', 'png') #self._scratchDir + '/../%s.png' % os.path.basename(prototxt).replace('.prototxt', '')
         net = caffe_pb2.NetParameter()
-        print prototxt
         text_format.Merge(open(prototxt).read(), net)
         self.notice('drawing net to %s' % outfile)
         try:

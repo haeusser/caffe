@@ -124,8 +124,9 @@ def readFloat(name):
     dims = list(reversed(dims))
 
     data = np.fromfile(f, np.float32, count).reshape(dims)
-    data = np.transpose(data, (2, 1, 0))
-    data = np.transpose(data, (1, 0, 2))
+    if dim > 2:
+        data = np.transpose(data, (2, 1, 0))
+        data = np.transpose(data, (1, 0, 2))
 
     return data
 
@@ -149,7 +150,8 @@ def writeFloat(name, data):
 
     data = data.astype(np.float32)
     if dim==2:
-        data.transpose().tofile(f)
+        data.tofile(f)
+
     else:
         np.transpose(data, (2, 0, 1)).tofile(f)
 
