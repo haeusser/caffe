@@ -1537,7 +1537,7 @@ void AdamSolver<Dtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   Blob<Dtype>* net_param_beforeupdate = NULL;
   
   if(net_params_spectral[param_id]) {
-    net_param_beforeupdate = spec_comp_man_->SpatialToSpectral(Caffe::mode(), net_param_beforeupdate_spatial);
+    net_param_beforeupdate = spec_comp_man_->SpatialToSpectral(Caffe::mode(), net_param_beforeupdate_spatial, SpectralComponentsManager<Dtype>::BLOB_DIFF);
   } else {
     net_param_beforeupdate = net_param_beforeupdate_spatial;
   }
@@ -1613,7 +1613,7 @@ void AdamSolver<Dtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   }
   
   if(net_params_spectral[param_id]) {
-    spec_comp_man_->SpectralToSpatial(Caffe::mode(), net_param_beforeupdate, net_params[param_id]);
+    spec_comp_man_->SpectralToSpatial(Caffe::mode(), net_param_beforeupdate, net_params[param_id], SpectralComponentsManager<Dtype>::BLOB_DIFF);
   }
 }
 

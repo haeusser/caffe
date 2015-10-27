@@ -18,17 +18,22 @@ template <typename Dtype>
 class SpectralComponentsManager {
  public:
   explicit SpectralComponentsManager(): temporary_blob_(new Blob<Dtype>) {}
+   
+   enum blob_part
+   {
+      BLOB_DATA,
+      BLOB_DIFF
+   };
+
   
-  Blob<Dtype>* SpatialToSpectral(Caffe::Brew mode, const Blob<Dtype>* in_blob);
-  Blob<Dtype>* SpectralToSpatial(Caffe::Brew mode, const Blob<Dtype>* in_blob);
+  Blob<Dtype>* SpatialToSpectral(Caffe::Brew mode, const Blob<Dtype>* in_blob, blob_part part);
+  Blob<Dtype>* SpectralToSpatial(Caffe::Brew mode, const Blob<Dtype>* in_blob, blob_part part);
   
-  void SpatialToSpectral(Caffe::Brew mode, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob);
-  void SpectralToSpatial(Caffe::Brew mode, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob);
-  
+  void SpatialToSpectral(Caffe::Brew mode, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob, blob_part part);
+  void SpectralToSpatial(Caffe::Brew mode, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob, blob_part part);
+
   Blob<Dtype> *getOrMakeBank(int W, int H);
   
-  
-
  protected:
    
    enum transform_direction
@@ -38,7 +43,10 @@ class SpectralComponentsManager {
    };
 
   Dtype real_dft2_get_value(int W, int w, int x, int H, int h, int y);
-  Blob<Dtype>* transform(Caffe::Brew mode, transform_direction transf_dir, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob);
+  Blob<Dtype>* transform(Caffe::Brew mode, transform_direction transf_dir, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob, blob_part part);
+  
+  Dtype *getMutableBlobPart(Blob<Dtype> *blob, Caffe::Brew mode, blob_part part);
+  const Dtype *getBlobPart(Blob<Dtype> *blob, Caffe::Brew mode, blob_part part);
   
   
   void fillBank(Blob<Dtype>* bank);

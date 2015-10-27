@@ -52,6 +52,30 @@ Blob<Dtype> *SpectralComponentsManager<Dtype>::getOrMakeBank(int W, int H) {
 }
 
 template <typename Dtype>
+const Dtype *SpectralComponentsManager<Dtype>::getBlobPart(Blob<Dtype> *blob, Caffe::Brew mode, blob_part part) {
+  if (mode == Caffe::CPU) {
+    if (part == BLOB_DATA) return blob->cpu_data();
+    else if (part == BLOB_DIFF) return blob->cpu_diff();
+  } else if (mode == Caffe::GPU) {
+    if (part == BLOB_DATA) return blob->gpu_data();
+    else if (part == BLOB_DIFF) return blob->gpu_diff();
+  } else LOG(FATAL) << "Unknown mode " << mode;
+  return NULL;
+}
+
+template <typename Dtype>
+Dtype *SpectralComponentsManager<Dtype>::getMutableBlobPart(Blob<Dtype> *blob, Caffe::Brew mode, blob_part part) {
+  if (mode == Caffe::CPU) {
+    if (part == BLOB_DATA) return blob->mutable_cpu_data();
+    else if (part == BLOB_DIFF) return blob->mutable_cpu_diff();
+  } else if (mode == Caffe::GPU) {
+    if (part == BLOB_DATA) return blob->mutable_gpu_data();
+    else if (part == BLOB_DIFF) return blob->mutable_gpu_diff();
+  } else LOG(FATAL) << "Unknown mode " << mode;
+  return NULL;
+}
+
+template <typename Dtype>
 void SpectralComponentsManager<Dtype>::fillBank(Blob<Dtype>* bank) {
   int W = bank->shape()[3];
   int H = bank->shape()[2];
@@ -80,17 +104,17 @@ void SpectralComponentsManager<Dtype>::fillBank(Blob<Dtype>* bank) {
 
 // does the transform both ways, depending on transform_direction being SPATIAL_TO_SPECTRAL or SPECTRAL_TO_SPATIAL
 template <typename Dtype>
-Blob<Dtype>* SpectralComponentsManager<Dtype>::transform(Caffe::Brew mode, transform_direction transf_dir, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob) {
+Blob<Dtype>* SpectralComponentsManager<Dtype>::transform(Caffe::Brew mode, transform_direction transf_dir, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob, blob_part part) {
   
   int H = in_blob->shape()[2];
   int W = in_blob->shape()[3];
   
   Blob<Dtype>* bank_blob = getOrMakeBank(W,H);   
-  
+    
   if(out_blob == NULL) {
     out_blob = temporary_blob_;  
     // reshape also allocates the memory if necessary. If a blob is reshaped to a smaller size, the memory is not deallocated, which is good
-    out_blob.ReshapeLike(*in_blob);
+    out_blob->ReshapeLike(*in_blob);
   } 
   
   CHECK_EQ(in_blob->shape().size(), out_blob->shape().size());
@@ -98,54 +122,41 @@ Blob<Dtype>* SpectralComponentsManager<Dtype>::transform(Caffe::Brew mode, trans
     CHECK_EQ(in_blob->shape().at(i), out_blob->shape().at(i));
   
   // actually do the job
+  const Dtype* in_data = getBlobPart(bank_blob, mode, part);
+  const Dtype* bank_data = getBlobPart(bank_blob, mode, BLOB_DATA);
+  Dtype* out_data = getMutableBlobPart(out_blob, mode, part);
+  
+  CBLAS_TRANSPOSE transpose_second = (transf_dir == SPATIAL_TO_SPECTRAL) ? CblasTrans : CblasNoTrans;
+  
   if (mode == Caffe::CPU) {
-    const Dtype* in_data = in_blob->cpu_data();
-    const Dtype* bank_data = bank_blob->cpu_data();
-    Dtype* out_data = out_blob->mutable_cpu_data();
-    if (transf_dir == SPATIAL_TO_SPECTRAL) {
-      caffe::caffe_cpu_gemm<float>(CblasNoTrans, CblasTrans, in_blob->shape()[0]*in_blob->shape()[1], W*H, W*H, Dtype(1),
-          in_data, bank_data, (float)0., out_data);
-    } else if (transf_dir == SPECTRAL_TO_SPATIAL) {
-      caffe::caffe_cpu_gemm<float>(CblasNoTrans, CblasNoTrans, in_blob->shape()[0]*in_blob->shape()[1], W*H, W*H, Dtype(1),
-          in_data, bank_data, (float)0., out_data);
-    } else 
-      LOG(FATAL) << "Unknown transform_direction " << transf_dir;
+    caffe::caffe_cpu_gemm<float>(CblasNoTrans, transpose_second, in_blob->shape()[0]*in_blob->shape()[1], W*H, W*H, Dtype(1),
+        in_data, bank_data, (float)0., out_data);
   } else if (mode == Caffe::GPU) {
-    const Dtype* in_data = in_blob->gpu_data();
-    const Dtype* bank_data = bank_blob->gpu_data();
-    Dtype* out_data = out_blob->mutable_gpu_data();
-    if (transf_dir == SPATIAL_TO_SPECTRAL) {
-      caffe::caffe_gpu_gemm<float>(CblasNoTrans, CblasTrans, in_blob->shape()[0]*in_blob->shape()[1], W*H, W*H, Dtype(1),
-          in_data, bank_data, (float)0., out_data);
-    } else if (transf_dir == SPECTRAL_TO_SPATIAL) {
-      caffe::caffe_gpu_gemm<float>(CblasNoTrans, CblasNoTrans, in_blob->shape()[0]*in_blob->shape()[1], W*H, W*H, Dtype(1),
-          in_data, bank_data, (float)0., out_data);
-    } else 
-      LOG(FATAL) << "Unknown transform_direction " << transf_dir;
-  } else
-    LOG(FATAL) << "Unknown mode " << mode;  
+    caffe::caffe_gpu_gemm<float>(CblasNoTrans, transpose_second, in_blob->shape()[0]*in_blob->shape()[1], W*H, W*H, Dtype(1),
+        in_data, bank_data, (float)0., out_data);
+  } else LOG(FATAL) << "Unknown mode " << mode;
   
   return out_blob;
 }
 
 template <typename Dtype>
-void SpectralComponentsManager<Dtype>::SpectralToSpatial(Caffe::Brew mode, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob) {
-  this->transform(mode, SPECTRAL_TO_SPATIAL, in_blob, out_blob);  
+void SpectralComponentsManager<Dtype>::SpectralToSpatial(Caffe::Brew mode, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob, blob_part part) {
+  this->transform(mode, SPECTRAL_TO_SPATIAL, in_blob, out_blob, part);  
 }
 
 template <typename Dtype>
-void SpectralComponentsManager<Dtype>::SpatialToSpectral(Caffe::Brew mode, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob) {
-  this->transform(mode, SPATIAL_TO_SPECTRAL, in_blob, out_blob);  
+void SpectralComponentsManager<Dtype>::SpatialToSpectral(Caffe::Brew mode, const Blob<Dtype>* in_blob, Blob<Dtype>* out_blob, blob_part part) {
+  this->transform(mode, SPATIAL_TO_SPECTRAL, in_blob, out_blob, part);  
 }
 
 template <typename Dtype>
-Blob<Dtype>* SpectralComponentsManager<Dtype>::SpectralToSpatial(Caffe::Brew mode, const Blob<Dtype>* in_blob) {
-  return this->transform(mode, SPECTRAL_TO_SPATIAL, in_blob, NULL);  
+Blob<Dtype>* SpectralComponentsManager<Dtype>::SpectralToSpatial(Caffe::Brew mode, const Blob<Dtype>* in_blob, blob_part part) {
+  return this->transform(mode, SPECTRAL_TO_SPATIAL, in_blob, NULL, part);  
 }
 
 template <typename Dtype>
-Blob<Dtype>* SpectralComponentsManager<Dtype>::SpatialToSpectral(Caffe::Brew mode, const Blob<Dtype>* in_blob) {
-  return this->transform(mode, SPATIAL_TO_SPECTRAL, in_blob, NULL);  
+Blob<Dtype>* SpectralComponentsManager<Dtype>::SpatialToSpectral(Caffe::Brew mode, const Blob<Dtype>* in_blob, blob_part part) {
+  return this->transform(mode, SPATIAL_TO_SPECTRAL, in_blob, NULL, part);  
 }
 
 
@@ -153,62 +164,3 @@ INSTANTIATE_CLASS(SpectralComponentsManager);
 
 }  // namespace caffe
 
-
-//------------
-
-/*
-int main(int argc, char** argv) {
-  if (argc < 3) {
-    std::cout << "Usage: make_fourier_banks FILTER_WIDTH FILTER_HEIGHT" << std::endl;
-    return 0;
-  }
-    
-  int W = atoi(argv[1]);
-  int H = atoi(argv[2]);
-  
-  Blob<float> forward_bank(1,W*H,H,W);
-  
-  float* data = forward_bank.mutable_cpu_data();
-  
-  float* collage = new float[W*(W+1)*H*(H+1)];
-  
-  caffe::caffe_set(W*(W+1)*H*(H+1), (float)0., collage);
-  
-  for (int w=0; w<W; w++)
-    for (int h=0; h<H; h++) {
-      std::cout << " ===== w=" << w << ", h=" << h << "======== " << std::endl;
-      int start_ind = (h * W + w) * H * W; 
-      for (int y=0; y<H; y++) {
-        for (int x=0; x<W; x++) {
-          int ind = start_ind + y * W + x;
-          data[ind] = real_dft2(W, w, x, H, h, y);        
-        }        
-      }
-      float norm_coeff = caffe::caffe_cpu_dot(W*H, data + start_ind, data + start_ind);
-      norm_coeff = sqrt(norm_coeff);
-      std::cout << " >> norm_coeff=" << norm_coeff << std::endl;
-      for (int y=0; y<H; y++) {
-        for (int x=0; x<W; x++) {
-          int ind = start_ind + y * W + x;
-          data[ind] /= norm_coeff;
-          int collage_ind = (h*(H+1) + y)*W*(W+1) + w*(W+1) + x;
-          collage[collage_ind] = (data[ind]+1.)/2.*255.;
-          std::cout << data[ind] << " ";
-        }
-        std::cout << std::endl;
-      }
-    }
-        
-  caffe::writePGM(std::string("/misc/lmbraid17/sceneflownet/common/sandbox/fourier.pgm"), (const float*)collage, W*(W+1),H*(H+1));  
-  
-  float* product = new float[W*H*W*H];
-  
-  caffe::caffe_cpu_gemm<float>(CblasNoTrans, CblasTrans, W*H, W*H, W*H, (float)100000.,
-      data, data, (float)0., product);
-  
-  caffe::writePGM(std::string("/misc/lmbraid17/sceneflownet/common/sandbox/fourier_product.pgm"), (const float*)product, W*W,H*H);
-  
-  delete[] collage;
-  return 0;
-}
-*/
