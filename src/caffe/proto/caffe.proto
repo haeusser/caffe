@@ -333,6 +333,8 @@ message ParamSpec {
 
   // The multiplier on the global weight decay for this parameter.
   optional float decay_mult = 4 [default = 1.0];
+  
+  optional bool spectral_update = 3001 [default = false];
 }
 
 // NOTE
