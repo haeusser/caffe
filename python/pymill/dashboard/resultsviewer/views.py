@@ -108,8 +108,8 @@ def reorganize_queryset(queryset):
                 'monkaa.test.final',
                 'FlyingStuff3D.test.clean',
                 'FlyingStuff3D.test.final',
-                'FlyingStuff3D_new.test.clean',
-                'FlyingStuff3D_new.test.final',
+                'FlyingStuff3D.new.test.clean',
+                'FlyingStuff3D.new.test.final',
                 'kitti2012.train',
                 'kitti2015.train',
                 'chairs.val'
