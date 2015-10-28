@@ -140,6 +140,10 @@ void Layer<Dtype>::ApplyLossWeightSchedule(const vector<Blob<Dtype>*>& bottom,
           bool activeness = (new_loss_weight > 0);
           for (int top_id = 0; top_id < top.size(); ++top_id) 
             top[top_id]->SetActivenessFlag(activeness);
+          if (not activeness) {
+            LOG(INFO) << "Layer " << this->layer_param_.name()
+                      << " has marked itself for inactiveness.";
+          }
         }
         
       } else {

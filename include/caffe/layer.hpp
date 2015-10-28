@@ -577,7 +577,7 @@ inline void Layer<Dtype>::Backward(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down,
     const vector<Blob<Dtype>*>& bottom) {
   
-  if(activeness_ == ACTIVE || activeness_ == BECOMING_INACTIVE || phase_ == TEST) {
+  if(activeness_ == ACTIVE || phase_ == TEST) {
     /// Do back propagation
     switch (Caffe::mode()) {
     case Caffe::CPU:
