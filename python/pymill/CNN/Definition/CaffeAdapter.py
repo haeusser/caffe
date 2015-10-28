@@ -361,6 +361,7 @@ class ParameterCreator(object):
 _param_names = param_name_dict()
 _param_names['Deconvolution'] = 'convolution'
 _param_names['Correlation1D'] = 'correlation'
+_param_names['NegReLU'] = 'relu'
 
 Layers = LayerCreator()
 Params = ParameterCreator()
