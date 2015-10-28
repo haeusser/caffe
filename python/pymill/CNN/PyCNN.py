@@ -220,7 +220,7 @@ subparser.add_argument('networks', help='comma separated list of networks')
 subparser.add_argument('losses',   help='comma separated list of loss names', default=None)
 
 # view
-subparser = subparsers.add_parser('view', help='view weights')
+subparser = subparsers.add_parser('view-filters', help='view weights')
 subparser.add_argument('--iter', help='iteration of .caffemodel (default=last)', default=-1, type=int)
 
 # draw
@@ -339,8 +339,8 @@ elif args.command == 'plot-test':
 elif args.command == 'compare':
     env.compare(args.networks, args.losses)
     sys.exit(0)
-elif args.command == 'view':
-    env.view(args.iter)
+elif args.command == 'view-filters':
+    env.viewFilters(args.iter)
     sys.exit(0)
 elif args.command == 'copy':
     env.copy(args.source, args.target, args.with_snapshot, args.iter)

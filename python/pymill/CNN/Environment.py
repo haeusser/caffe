@@ -609,14 +609,15 @@ class Environment:
 
         Log.plotComparison(selectedNames, logs)
 
-    def view(self, iter):
-        raise Exception('under construction')
-
-        self.preprocessFile(self._testPrototmp, self._scratchDir + '/test.prototxt')
-
+    def viewFilters(self, iter):
+        self.prepareTraining()
+        prototxt = self._trainDir + '/train.prototxt'
         modelFile, iter = self.getModelFile(iter)
 
-        tb.system('weight-viewer %s %s' % (self._scratchDir + '/test.prototxt', modelFile))
+        os.environ['LD_LIBRARY_PATH']="/misc/lmbraid17/sceneflownet/common/programs/torch/install/lib:/usr/lib/x86_64-linux-gnu:/misc/lmbraid17/sceneflownet/common/software-root/lib:/home/ilge/dev/hackathon-caffe2/build/lib:/misc/software-lin/Qt-5.3.2/5.3/gcc_64/lib:/misc/lmbraid17/sceneflownet/common/programs/torch/install/lib:/usr/lib/x86_64-linux-gnu:/misc/lmbraid17/sceneflownet/common/software-root/lib:/home/ilge/dev/hackathon-caffe2/build/lib:/misc/software-lin/Qt-5.3.2/5.3/gcc_64/lib::/home/ilge/lib:/misc/software-lin/lmbsoft/openni-1.5.2.23-x86_64/usr/lib:/misc/software-lin/lmbsoft/glog/lib:/misc/software-lin/lmbsoft/mkl/lib:/misc/software-lin/lmbsoft/mkl/lib/intel64:/misc/software-lin/lmbsoft/cuda-6.5.14-x86_64/lib64:/misc/software-lin/lmbsoft/cuda-6.0.37-x86_64/lib64:/misc/student/mayern/OpenNI-Bin-Dev-Linux-x64-v1.5.4.0/Lib:/home/ilge/lib:/misc/software-lin/lmbsoft/openni-1.5.2.23-x86_64/usr/lib:/misc/software-lin/lmbsoft/glog/lib:/misc/software-lin/lmbsoft/mkl/lib:/misc/software-lin/lmbsoft/mkl/lib/intel64:/misc/software-lin/lmbsoft/cuda-6.5.14-x86_64/lib64:/misc/software-lin/lmbsoft/cuda-6.0.37-x86_64/lib64:/misc/student/mayern/OpenNI-Bin-Dev-Linux-x64-v1.5.4.0/Lib"
+        os.environ['PATH']="/home/ilge/bin:/home/ilge/dev/pymill/bin:/misc/lmbraid17/sceneflownet/common/programs/torch/install/bin:/misc/lmbraid17/sceneflownet/common/software-root/bin:/misc/lmbraid17/sceneflownet/ilge/hackathon-caffe2/python/pymill/bin:/misc/software-lin/Qt-5.3.2/5.3/gcc_64/bin:/home/ilge/bin:/home/ilge/dev/pymill/bin:/misc/lmbraid17/sceneflownet/common/programs/torch/install/bin:/misc/lmbraid17/sceneflownet/common/software-root/bin:/misc/lmbraid17/sceneflownet/ilge/hackathon-caffe2/python/pymill/bin:/misc/software-lin/Qt-5.3.2/5.3/gcc_64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/misc/software-lin/lmbsoft/cuda-6.5.14-x86_64/bin:/misc/software-lin/matlabR2013a/bin:/home/ilge/data/caffe/matching/bin:/misc/lmbraid15/hackathon/common/flo-results/bin:/misc/lmbraid17/sceneflownet/common/data_tools:/misc/software-lin/lmbsoft/cuda-6.5.14-x86_64/bin:/misc/software-lin/matlabR2013a/bin:/home/ilge/data/caffe/matching/bin:/misc/lmbraid15/hackathon/common/flo-results/bin:/misc/lmbraid17/sceneflownet/common/data_tools"
+
+        tb.system('/home/ilge/bin/weight-viewer %s %s' % (prototxt, modelFile))
 
     def copy(self, source, target, copySnapshot, iter):
         tb.system('mkdir -p %s' % target)
