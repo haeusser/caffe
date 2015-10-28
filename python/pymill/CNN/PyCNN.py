@@ -1,16 +1,4 @@
 #!/usr/bin/python
-# PYTHON_ARGCOMPLETE_OK
-
-# How to activate autocompletion:
-# First do
-#   $ pip install --user argcomplete (or without user if you are root)
-# Then install the automcompletion script.
-#   $ activate-global-python-argcomplete
-#
-# If you are not root, then install locally:
-#   $ activate-global-python-argcomplete --user
-# and make sure you source the resulting script in your .bashrc:
-#   . ~/.bash_completion.d/python-argcomplete.sh
 
 import os
 import sys
@@ -26,7 +14,6 @@ else:
 from string import Template
 from termcolor import colored
 import argparse
-import argcomplete
 import numpy as np
 from pymill import Toolbox as tb
 from pymill import CNN as CNN
