@@ -22,11 +22,13 @@ class Results:
 
     def read(self, iter, dataset, measure):
         cur = self._conn.cursor()
+        dataset = dataset.replace('_', '.')
         cur.execute('SELECT value FROM results WHERE networkName ="%s" AND iteration="%d" AND dataset="%s" AND measure="%s"' % (self._net, int(iter), dataset, measure))
         return cur.fetchone()[0]
 
     def update(self, iter, dataset, task, measure, position, value):
         if position is None: position = ""
+        dataset = dataset.replace('_', '.')
         self._conn.execute('UPDATE results SET value = %f, date = "%s" WHERE networkName ="%s" AND iteration="%d" AND dataset="%s" AND task="%s" AND measure="%s" AND position="%s"' % (float(value), str(datetime.datetime.now()), self._net, int(iter), dataset, task, measure, position))
         if self._conn.total_changes == 0:
             self._conn.execute('INSERT INTO results (networkName, task, iteration, dataset, measure, position, value, date) VALUES ("%s", "%s", %d, "%s", "%s", "%s", %f, "%s")' % (self._net, task, iter, dataset, measure, position, float(value), str(datetime.datetime.now())))
