@@ -587,8 +587,7 @@ class Environment:
     def eta(self):
         log = Log(self._name, self._logFile)
 
-        solverfile = self.prepareTraining()
-        text = open(solverfile).read().split('\n')
+        text = open('training/solver.prototxt').read().split('\n')
 
         max_iter = -1
         for line in text:

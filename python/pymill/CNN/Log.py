@@ -201,7 +201,7 @@ class Log:
 
         delta = datetime.timedelta(seconds=time)
 
-        return (datetime.datetime.now() + delta).strftime('%d.%m.%Y %H:%M')
+        return (datetime.datetime.now() + delta).strftime('%a %d.%m.%Y %H:%M')
 
     def displayBlobSummary(self):
         sizes = OrderedDict()
