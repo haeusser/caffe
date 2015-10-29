@@ -31,6 +31,8 @@ class FormattedResults(models.Model):
     monkaatestfinal = models.FloatField(blank=True, null=True, verbose_name='monkaa.test.final', db_column='monkaa.test.final')
     FlyingStuff3Dtestclean = models.FloatField(blank=True, null=True, verbose_name='FlyingStuff3D.test.clean', db_column='FlyingStuff3D.test.clean')
     FlyingStuff3Dtestfinal = models.FloatField(blank=True, null=True, verbose_name='FlyingStuff3D.test.final', db_column='FlyingStuff3D.test.final')
+    FlyingStuff3Dnewtestclean = models.FloatField(blank=True, null=True, verbose_name='FlyingStuff3D.new.test.clean', db_column='FlyingStuff3D.new.test.clean')
+    FlyingStuff3Dnewtestfinal = models.FloatField(blank=True, null=True, verbose_name='FlyingStuff3D.new.test.final', db_column='FlyingStuff3D.new.test.final')
     kitti2012train = models.FloatField(blank=True, null=True, verbose_name='kitti2012.train', db_column='kitti2012.train')
     kitti2015train = models.FloatField(blank=True, null=True, verbose_name='kitti2015.train', db_column='kitti2015.train')
     chairsval = models.FloatField(blank=True, null=True, verbose_name='chairs.val', db_column='chairs.val')

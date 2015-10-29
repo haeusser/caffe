@@ -42,5 +42,6 @@ STUB_GPU(NegReLULayer);
 #endif
 
 INSTANTIATE_CLASS(NegReLULayer);
+REGISTER_LAYER_CLASS(NegReLU);
 
 }  // namespace caffe
