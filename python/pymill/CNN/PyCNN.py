@@ -226,6 +226,9 @@ sub_parser = subparsers.add_parser('snapshot', help='connect to current process 
 # snapshot
 sub_parser = subparsers.add_parser('blob-sum', help='blob summary of current trainig log')
 
+# eta
+sub_parser = subparsers.add_parser('eta', help='estimated time of arrival for training')
+
 # autocomplete very slow for some reason
 #argcomplete.autocomplete(parser)
 
@@ -316,6 +319,9 @@ if   args.command == 'sweep':
     sys.exit(0)
 elif args.command == 'plot':
     env.plot(args.select)
+    sys.exit(0)
+elif args.command == 'eta':
+    env.eta()
     sys.exit(0)
 elif args.command == 'plot-lr':
     env.plotLR()

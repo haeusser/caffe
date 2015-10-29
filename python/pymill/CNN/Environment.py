@@ -584,6 +584,22 @@ class Environment:
         log = Log(self._name, self._logFile)
         log.plotlr()
 
+    def eta(self):
+        log = Log(self._name, self._logFile)
+
+        solverfile = self.prepareTraining()
+        text = open(solverfile).read().split('\n')
+
+        max_iter = -1
+        for line in text:
+            if line.strip().startswith('max_iter:'):
+                parts = line.split(':')
+                max_iter = int(parts[1])
+
+        if max_iter==-1: raise Exception('cannot find max_iter')
+
+        print 'ETA: %s' % log.eta(max_iter)
+
     def compare(self, networks, losses):
         folders = [dir for dir in os.listdir('.') if os.path.isdir(dir) and not dir.startswith('.')]
         networks = tb.wildcardMatch(folders, networks)

@@ -12,6 +12,7 @@ from matplotlib.font_manager import FontProperties
 import matplotlib
 from pymill import Config
 from collections import OrderedDict
+import datetime
 
 
 def smooth(x,window_len=11,window='hanning'):
@@ -169,6 +170,38 @@ class Log:
             self._lines.append((iter, l))
 
         self._measureList = tb.unique(self._measureList)
+
+    def eta(self, max_iter):
+        from dateutil.parser import parse
+        itertime = 0
+        lastiter = -1
+        lasttime = -1
+        times = []
+        for iter, line in self._lines:
+            if iter!=lastiter:
+                match = re.compile('.([0-9]{2})([0-9]{2}) ([0-9]{2}:[0-9]{2}:[0-9]{2}).*').match(line)
+                if match:
+                    fulldate = '00%02d-%02d-%02d %s' % (15, int(match.group(1)), int(match.group(2)), match.group(3))
+                    time = parse(fulldate)
+
+                    if lasttime != -1:
+                        niters = iter - lastiter
+                        diff = time - lasttime
+                        times.append(diff.seconds/float(niters))
+
+
+                    lasttime = time
+
+                lastiter = iter
+
+        time = np.mean(times)
+
+        remaining = max_iter - lastiter
+        time*= remaining
+
+        delta = datetime.timedelta(seconds=time)
+
+        return (datetime.datetime.now() + delta).strftime('%d.%m.%Y %H:%M')
 
     def displayBlobSummary(self):
         sizes = OrderedDict()
