@@ -33,7 +33,7 @@ void NegReLULayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-__global__ void ReLUBackward(const int n, const Dtype* in_diff,
+__global__ void NegReLUBackward(const int n, const Dtype* in_diff,
     const Dtype* in_data, Dtype* out_diff, Dtype negative_slope) {
   CUDA_KERNEL_LOOP(index, n) {
     out_diff[index] = in_diff[index] * ((in_data[index] < 0)
@@ -52,7 +52,7 @@ void NegReLULayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     const int count = bottom[0]->count();
     Dtype negative_slope = this->layer_param_.relu_param().negative_slope();
     // NOLINT_NEXT_LINE(whitespace/operators)
-    ReLUBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
+    NegReLUBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, top_diff, bottom_data, bottom_diff, negative_slope);
     CUDA_POST_KERNEL_CHECK;
   }
