@@ -145,7 +145,7 @@ class FlyingStuff3DNewTest(Dataset):
         kwargs['setting']         = 'OPTICAL_FLOW_SINGLE'
         kwargs['rendertype']      = self._rendertype
         kwargs['phase']           = self._phase
-        kwargs['collection_list'] = COLL_LISTS_DIR+'/v1/FlyingStuff3D_new_test.txt'
+        kwargs['collection_list'] = COLL_LISTS_DIR+'/v1/FlyingStuff3D_new_WebP_test.txt' #FlyingStuff3D_new_test.txt'
         kwargs['rand_permute']    = False
         return Data.BinaryData(net, **kwargs)
 
@@ -321,8 +321,8 @@ def getDatasetNames(task):
                 'monkaa.test.final',
                 'FlyingStuff3D.test.clean',
                 'FlyingStuff3D.test.final',
-                'FlyingStuff3DNew.test.clean',
-                'FlyingStuff3DNew.test.final',
+                'FlyingStuff3D_new.test.clean',
+                'FlyingStuff3D_new.test.final',
                 'kitti2012.train',
                 'kitti2015.train',)
     ## Optical flow
@@ -344,6 +344,8 @@ def getDatasetNames(task):
                 'monkaa.test.final',
                 'FlyingStuff3D.test.clean',
                 'FlyingStuff3D.test.final',
+                'FlyingStuff3D_new.test.clean',
+                'FlyingStuff3D_new.test.final',
                 'kitti2015.train',)
     else:
         raise Exception('unknown task: "%s"' % task)
