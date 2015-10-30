@@ -32,8 +32,14 @@ void KittiErrorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
   int count = bottom[0]->count();
   
-  const Dtype tau1 = 3; // pixel error threshold below which prediction is accepted
-  const Dtype tau2 = 0.05; // percentage error below which prediction is accepted
+  // pixel error threshold below which prediction is accepted
+  Dtype tau1 = this->layer_param_.kitti_error_param().pixel_threshold();
+  
+  // percentage error below which prediction is accepted
+  Dtype tau2 = this->layer_param_.kitti_error_param().percentage_threshold();
+    
+  //const Dtype tau1 = 3; 
+  //const Dtype tau2 = 0.05; // percentage error below which prediction is accepted
   
   const Dtype* pred_data = bottom[0]->cpu_data();
   const Dtype* gt_data = bottom[1]->cpu_data();
@@ -53,7 +59,7 @@ void KittiErrorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   }
  
   Dtype loss = Dtype(errorpix) / Dtype(totalpix);
-  top[0]->mutable_cpu_data()[0] = loss;
+  top[0]->mutable_cpu_data()[0] = loss * 100;
 }
 
 

@@ -174,9 +174,20 @@ def standardDeploy(NetworkBlock, generateNet=True):
         epe_loss.setName('disp_epe')
         epe_loss.enableOutput()
         
-        epe_loss = Layers.KittiError(net, (blobs.predict_disp_final, blobs.disp_gt), nout=1, loss_weight=(1,), name='disp_D1all')
-        epe_loss.setName('disp_D1all')
-        epe_loss.enableOutput()
+        kitti_loss1 = Layers.KittiError(net, (blobs.predict_disp_final, blobs.disp_gt), nout=1, loss_weight=(1,), name='disp_D1all',
+                                     pixel_threshold=3, percentage_threshold=0.05)
+        kitti_loss1.setName('disp_D1all')
+        kitti_loss1.enableOutput()
+        
+        kitti_loss2 = Layers.KittiError(net, (blobs.predict_disp_final, blobs.disp_gt), nout=1, loss_weight=(1,), name='disp_OutAll5px',
+                                     pixel_threshold=5, percentage_threshold=0)
+        kitti_loss2.setName('disp_OutAll5px')
+        kitti_loss2.enableOutput()
+        
+        kitti_loss3 = Layers.KittiError(net, (blobs.predict_disp_final, blobs.disp_gt), nout=1, loss_weight=(1,), name='disp_OutAll3px',
+                                     pixel_threshold=3, percentage_threshold=0)
+        kitti_loss3.setName('disp_OutAll3px')
+        kitti_loss3.enableOutput()
 
         return blobs.predict_disp_final
 
