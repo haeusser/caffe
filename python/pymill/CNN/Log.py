@@ -194,7 +194,7 @@ class Log:
 
                 lastiter = iter
 
-        time = np.mean(times)
+        time = np.mean(times[:,-100])
 
         remaining = max_iter - lastiter
         time*= remaining
