@@ -322,7 +322,7 @@ class ScheduleFiller : public Filler<Dtype> {
   int iter_; 
 };
 
-// Added by Alexey: fills a conv layer by a per-channel difference of gaussians
+// Added by Alexey: fills a conv layer by a per-channel difference of gaussians. If sigma2 < 0, the filter is set to a Gaussian with std sigma1; if sigma2 > 0, it's set to the difference of gaussians with std sigma1 and sigma2
 template <typename Dtype>
 class DoGFiller : public Filler<Dtype> {
  public:

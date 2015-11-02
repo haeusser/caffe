@@ -61,6 +61,11 @@ void GenerateAugmentationParametersLayer<Dtype>::Reshape(const vector<Blob<Dtype
     if (bottom[0]->width() > 1 || bottom[0]->height() > 1)
       mode_ = "regenerate";
     
+  // There are three modes: 
+//     "add" - the generated parameters are added to the given ones; 
+//     "replace" - the generated parameters replace the given ones (but the parameters which are not being generated are left as is); 
+//     "regenerate" - whole parameter vector is set to zero and then the new parameters are generated
+    
   LOG(INFO) << "mode: " << mode_;  
  
   if (bottom.size() >= 1)

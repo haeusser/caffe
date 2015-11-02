@@ -28,7 +28,7 @@ void ScaleGradientLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 template <typename Dtype>
 void ScaleGradientLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
-  iter_++;
+  int iter = this->GetNet()->GetSolver()->iter();
 
   Dtype coeff = 1;
   if (discount_coeff_schedule_.initial_coeff() == 0) {
@@ -50,7 +50,17 @@ void ScaleGradientLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
      */
     coeff = discount_coeff_schedule_.initial_coeff() *
                 exp(( log(discount_coeff_schedule_.final_coeff() /discount_coeff_schedule_.initial_coeff()) ) *
-                (Dtype(2) / (Dtype(1) + exp(- 1.0986 * iter_ / discount_coeff_schedule_.half_life())) - Dtype(1)));
+                (Dtype(2) / (Dtype(1) + exp(- 1.0986 * iter / discount_coeff_schedule_.half_life())) - Dtype(1)));
+  }
+  
+  if (this->layer_param_.scale_gradient_param().has_normalize_gradient()) {
+    Dtype dot;
+    if (this->layer_param_.scale_gradient_param().normalize_gradient() == "L2") {
+      dot = caffe_cpu_dot(top[0]->count(), top[0]->cpu_diff(), top[0]->cpu_diff());
+      coeff /= sqrt(dot + this->layer_param_.scale_gradient_param().epsilon());
+    }
+    if ((this->GetNet()->GetSolver()->param().display() && (iter % this->GetNet()->GetSolver()->param().display() == 0) && this->layer_param_.scale_gradient_param().verbose()) || this->layer_param_.scale_gradient_param().force_verbose())
+      LOG(INFO) << "iter=" << iter << ", norm=" << dot << ", coeff=" << coeff;
   }
                 
   caffe_cpu_axpby<Dtype>(top[0]->count(), coeff, top[0]->cpu_diff(),
