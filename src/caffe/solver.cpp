@@ -300,12 +300,20 @@ void Solver<Dtype>::Step(int iters) {
          && Caffe::root_solver()) ||
          (request == SolverAction::SNAPSHOT)) {
       Snapshot();
+    } else if (param_.snapshot_at_iter()
+         && iter_ % param_.snapshot_at_iter() == 0
+         && Caffe::root_solver()) {
+      Snapshot();
     }
+    
     if (SolverAction::STOP == request) {
       requested_early_exit_ = true;
       // Break out of training loop.
       break;
     }
+    
+    
+    
     
     // Visualization
     /*const bool visualize = param_.visualize() && (iter_ % param_.visualize() == 0);
