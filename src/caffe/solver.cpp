@@ -301,7 +301,7 @@ void Solver<Dtype>::Step(int iters) {
          (request == SolverAction::SNAPSHOT)) {
       Snapshot();
     } else if (param_.snapshot_at_iter()
-         && iter_ % param_.snapshot_at_iter() == 0
+         && iter_ == param_.snapshot_at_iter()
          && Caffe::root_solver()) {
       Snapshot();
     }
