@@ -164,6 +164,14 @@ subparser.add_argument('--def',        help='custom test definition (default tes
 subparser.add_argument('--output',     help='output images to folder output_...', action='store_true')
 subparser.add_argument('param',        help='parameter to network', nargs='*')
 
+# test-ref
+subparser = subparsers.add_parser('test-ref', help='test a network')
+subparser.add_argument('--iter',       help='iteration of .caffemodel to use', default=-1, type=int)
+subparser.add_argument('--num-iter',   help='number of iterations to run (default=auto)', default=-1, type=int)
+subparser.add_argument('--def',        help='custom test definition (default test.proto*/.py)', default=None)
+subparser.add_argument('--output',     help='output images to folder output_...', action='store_true')
+subparser.add_argument('param',        help='parameter to network', nargs='*')
+
 # run-tests
 subparser = subparsers.add_parser('run-tests', help='run multiple tests')
 subparser.add_argument('--iter',       help='iteration of .caffemodel to use', default=-1, type=int)
@@ -363,6 +371,13 @@ elif args.command == 'test':
     if args.backend == 'python' and not args.execute: preparePythonBackend()
     if args.local:
         env.test(args.iter, args.output, getattr(args,'def'), parseParameters(args.param), args.num_iter)
+        sys.exit(0)
+    else:
+        runOnCluster(env, args.node, args.gpus, args.background, trackJob=False)
+elif args.command == 'test-ref':
+    if args.backend == 'python' and not args.execute: preparePythonBackend()
+    if args.local:
+        env.testref(args.iter, getattr(args,'def'), parseParameters(args.param), args.num_iter)
         sys.exit(0)
     else:
         runOnCluster(env, args.node, args.gpus, args.background, trackJob=False)

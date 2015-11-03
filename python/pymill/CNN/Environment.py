@@ -532,7 +532,7 @@ class Environment:
         os.chdir(self._path)
         self._backend.test(caffemodelFilename=modelFile, protoFilename=finalProto, iterations=num_iter, logFile=self._scratchLogFile)
 
-        if output and 'dataset' in vars:
+        if output and 'dataset' in vars and num_iter==-1:
             outPath = '%s/output_%d_%s' % (self._path, iter, vars['dataset'])
             if os.path.isdir(outPath):
                 logFile = '%s/log.txt' % outPath
@@ -543,6 +543,44 @@ class Environment:
             self._saveTestResults(iter,vars['dataset'])
 
         print 'Iteration was %d' %iter
+
+    def testref(self, iter, definition=None, vars={}, num_iter=-1):
+        modelFile, iter = self.getModelFile(iter)
+
+        vars['output'] = True
+        vars['prefix'] = 'ref_%d' % iter
+        vars['lowres'] = True
+
+        self.makeScratchDir()
+
+        if definition is None: definition = 'test'
+        proto = self.findProto(definition)
+
+        outPath = '%s/output_%d_%s' % (self._path, iter, vars['dataset'])
+        if os.path.isdir(outPath):
+            if self._unattended or tb.queryYesNo('Output folder %s exists, do you want to delete it first?' % os.path.basename(outPath)):
+                os.system('rm -rf %s' % outPath)
+
+        finalProto = self.makeScratchPrototxt(proto, vars)
+        solverProto = self.makeScratchPrototxt(self._solverProto, vars)
+
+        self.notice('testing snapshot iteration %d for %d iterations...' % (iter, num_iter), 'notice')
+        os.chdir(self._path)
+        self._backend.test(caffemodelFilename=modelFile, protoFilename=finalProto, iterations=num_iter, logFile=self._scratchLogFile)
+
+
+
+        # if output and 'dataset' in vars and num_iter==-1:
+        #     outPath = '%s/output_%d_%s' % (self._path, iter, vars['dataset'])
+        #     if os.path.isdir(outPath):
+        #         logFile = '%s/log.txt' % outPath
+        #         print 'saving log to %s', logFile
+        #         os.system('cp %s %s' % (self._scratchLogFile, logFile))
+        #
+        # if 'dataset' in vars:
+        #     self._saveTestResults(iter,vars['dataset'])
+        #
+        # print 'Iteration was %d' %iter
 
     def runTests(self, iter, datasets, output=False, definition=None, vars={}):
         if isinstance(datasets,str): datasets = datasets.split(',')
