@@ -202,7 +202,7 @@ def readDisparity(filename):
     elif len(f_in.shape) == 2:
       depth = f_in[:,:].astype('float64') / 256.
       ## Set invalid pixels (disparity 0) to -1
-      depth[depth<0] = -1
+      depth[depth==0] = np.nan
     else:
       raise Exception('Invalid image format')
 

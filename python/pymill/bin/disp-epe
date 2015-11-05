@@ -21,4 +21,8 @@ diff2 = tb.readDisparity(args.diff2)  \
         else tb.readFloat(args.diff2).squeeze()
 #diff2 = tb.readFloat(args.diff2).squeeze()
 
-print np.average(np.abs(diff1-diff2))
+## Exclude NaN values from evaluation
+nanmask = ~(np.isnan(diff1-diff2))
+
+print np.average(np.abs(diff1[nanmask]-diff2[nanmask]))
+
