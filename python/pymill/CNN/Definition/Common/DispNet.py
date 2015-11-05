@@ -53,6 +53,63 @@ def standardTest(DeployBlock, generateNet=True):
     return Block
 
 
+def standardSingleTest(DeployBlock, generateNet=True):
+    def Block(net, datasetName, output, data_size, basename, prefix=None, use_augmentation_mean=True):
+
+        # img0, img1, disp_gt = dataset.dispLayer(net)
+        img0 = net.addInput(1, 3, data_size[0], data_size[1])
+        img1 = net.addInput(1, 3, data_size[0], data_size[1])
+        disp_gt = net.zeros(1, 1, data_size[0], data_size[1])
+
+        disp_pred = DeployBlock(net, img0, img1, disp_gt, data_size[1], data_size[0], None, use_augmentation_mean)
+
+        if output:
+            out_path = 'output_%s_%s' % (prefix, datasetName) if prefix else 'output_%s' % datasetName
+            os.system('mkdir -p %s' % out_path)
+
+            f = open('%s/viewer.cfg' % out_path, 'w')
+            f.write('3 2\n')
+            f.write('0 0 -imgL.ppm\n')
+            f.write('1 0 -imgR.ppm\n')
+            f.write('2 0 DIFF(-dispL.float3,-gt.float3)\n')
+            f.write('0 1 -dispL.float3\n')
+            f.write('1 1 -gt.float3\n')
+            f.write('2 1 none\n')
+            f.close()
+
+            net.writeImage(img0, folder=out_path, filename=(basename+'-imgL.ppm'))
+            net.writeImage(img1, folder=out_path, filename=(basename+'-imgR.ppm'))
+            net.writeFloat(disp_pred, folder=out_path, filename=(basename+'-dispL.float3'))
+
+    if generateNet:
+        net = Network()
+
+        dataset = str(param('dataset'))
+        if dataset is None:
+            raise Exception('please specify dataset=...')
+
+        use_augmentation_mean = bool(param('use_augmentation_mean', default=True))
+        output = bool(param('output', default=False))
+        prefix = str(param('prefix', default=None))
+        basename = str(param('basename', default=''))
+        height = int(param('height', default=-1))
+        width = int(param('width', default=-1))
+
+        assert use_augmentation_mean # Must be used because we don't have mean color
+
+        Block(net,
+              dataset,
+              output,
+              (height, width),
+              basename,
+              prefix,
+              use_augmentation_mean)
+
+        print net.toProto()
+
+    return Block
+
+
 def standardDeployWithMeanBug(NetworkBlock, generateNet=True):
     def Block(net, img0, img1, disp_gt, width, height, mean_color, augmentation_mean=True):
         blobs = net.namedBlobs()

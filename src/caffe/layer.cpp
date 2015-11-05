@@ -112,29 +112,35 @@ void Layer<Dtype>::ApplyLossWeightSchedule(const vector<Blob<Dtype>*>& bottom,
   if(next_weightloss_change_at_iter_ >= 0) {
     CHECK(this->net_ != NULL) << "Need a reference to net from Layer if using Loss Weight Schedule";
     int iter = this->net_->iter();
+    
     if(iter >= next_weightloss_change_at_iter_
      && this->layer_param_.has_loss_param()) {
     
       LossParameter lossparam = this->layer_param_.loss_param();
       int schedule_size = lossparam.loss_schedule_iter_size();
       if(schedule_size > 0) {
-        int sched_idx = 0;
+        
         float new_loss_weight = -1;
-        for(; sched_idx < schedule_size; sched_idx++) {
-          if(lossparam.loss_schedule_iter(sched_idx) >= iter) {
+        int chosen_sched_idx = 0;
+        
+        for(int sched_idx = 0; sched_idx < schedule_size; sched_idx++) {
+          if(iter >= lossparam.loss_schedule_iter(sched_idx)) {
             new_loss_weight = lossparam.loss_schedule_lossweight(sched_idx);
-            break;
+            chosen_sched_idx = sched_idx;
           }
         }
         if(new_loss_weight >= 0) {
           // Change loss weight of blob 0 (currently only one loss output supported)
-          LOG(INFO) << "Changing loss weight of layer " << this->layer_param_.name() << " to " << new_loss_weight << " (sched_idx = " << sched_idx << ")";
+          LOG(INFO) << "Changing loss weight of layer " << this->layer_param_.name() << " to " << new_loss_weight << " (chosen_sched_idx = " << chosen_sched_idx << ") at iter " << iter;
           layer_param_.set_loss_weight(0, new_loss_weight);
           SetLossWeights(top);
           
-          if(sched_idx+1 < schedule_size) { // Is there a next entry?
+          if(chosen_sched_idx+1 < schedule_size) { // Is there a next entry?
             // Wake up at this iter again to check
-            next_weightloss_change_at_iter_ = lossparam.loss_schedule_iter(sched_idx+1);
+            next_weightloss_change_at_iter_ = lossparam.loss_schedule_iter(chosen_sched_idx+1);
+            LOG(INFO) << "Next loss weight change of layer " << this->layer_param_.name() << " at iter " << next_weightloss_change_at_iter_;
+          } else {
+            next_weightloss_change_at_iter_ = -1;
           }
           
           bool activeness = (new_loss_weight > 0);

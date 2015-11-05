@@ -582,6 +582,47 @@ class Environment:
         #
         # print 'Iteration was %d' %iter
 
+    def testfilelist(self, filelist, iter, output=False, definition=None, vars={}):
+        modelFile, iter = self.getModelFile(iter)
+
+        if output:
+            vars['output'] = True
+            vars['prefix'] = iter
+
+        vars['dataset'] = os.path.basename(filelist)
+        vars['width'] = 1000
+        vars['height'] = 500
+
+        self.makeScratchDir()
+
+        if definition is None: definition = 'testsingle'
+        proto = self.findProto(definition)
+
+        if output and 'dataset' in vars:
+            outPath = '%s/output_%d_%s' % (self._path, iter, vars['dataset'])
+            if os.path.isdir(outPath):
+                if self._unattended or tb.queryYesNo('Output folder %s exists, do you want to delete it first?' % os.path.basename(outPath)):
+                    os.system('rm -rf %s' % outPath)
+
+        finalProto = self.makeScratchPrototxt(proto, vars)
+        solverProto = self.makeScratchPrototxt(self._solverProto, vars)
+
+        # self.notice('testing snapshot iteration %d for %d iterations...' % (iter, num_iter), 'notice')
+        # os.chdir(self._path)
+        # self._backend.test(caffemodelFilename=modelFile, protoFilename=finalProto, iterations=num_iter, logFile=self._scratchLogFile)
+        #
+        # if output and 'dataset' in vars:
+        #     outPath = '%s/output_%d_%s' % (self._path, iter, vars['dataset'])
+        #     if os.path.isdir(outPath):
+        #         logFile = '%s/log.txt' % outPath
+        #         print 'saving log to %s', logFile
+        #         os.system('cp %s %s' % (self._scratchLogFile, logFile))
+        #
+        # if 'dataset' in vars:
+        #     self._saveTestResults(iter,vars['dataset'])
+
+        print 'Iteration was %d' %iter
+
     def runTests(self, iter, datasets, output=False, definition=None, vars={}):
         if isinstance(datasets,str): datasets = datasets.split(',')
         if datasets is None: datasets = self.determineTestDatasets()

@@ -261,6 +261,7 @@ class Network(object):
     def __init__(self, prefix=''):
         self._members = DataStruct()
         self._layers = []
+        self._inputs = []
         self._blobs = []
         self._prefix = prefix
         self._counts = {}
@@ -274,6 +275,11 @@ class Network(object):
 
     def addLayer(self, layer):
         self._layers.append(layer)
+
+    def addInput(self, num, channels, height, width):
+        output = self.newBlob()
+        self._inputs.append(([num, channels, height, width], output))
+        return output
 
     def newBlob(self):
         blob = Blob(self)
@@ -324,6 +330,11 @@ class Network(object):
 
         net = caffe_pb2.NetParameter()
         net.layer.extend(protoLayers)
+
+        for net_input in self._inputs:
+            net.input.append(net_input[1].name())
+            new_shape = net.input_shape.add()
+            new_shape.dim.extend(net_input[0])
 
         return net
 
