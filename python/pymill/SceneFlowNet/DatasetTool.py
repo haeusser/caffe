@@ -16,7 +16,7 @@ for file in os.listdir(dataPath):
 
 collections = ds.readCollections(defs)
 
-tb.pprint(collections)
+tb.pprint(dict(collections.items()))
 
 def getSelectedCollections():
     collectionNames = collections.keys()
