@@ -5,12 +5,12 @@ from pymill.CNN.Definition import *
 from math import ceil
 
 def standardTest(DeployBlock, generateNet=True):
-    def Block(net, datasetName, output, prefix=None, use_augmentation_mean=True):
+    def Block(net, datasetName, output, prefix=None, use_augmentation_mean=True, lowres=False):
         dataset = Dataset.get(name=datasetName, phase='TEST')
 
         img0, img1, disp_gt = dataset.dispLayer(net)
 
-        disp_pred = DeployBlock(net, img0, img1, disp_gt, dataset.width(), dataset.height(), dataset.meanColors(), use_augmentation_mean)
+        disp_pred, disp_pred_lowres = DeployBlock(net, img0, img1, disp_gt, dataset.width(), dataset.height(), dataset.meanColors(), use_augmentation_mean)
 
         if output:
             out_path = 'output_%s_%s' % (prefix, datasetName) if prefix else 'output_%s' % datasetName
@@ -29,6 +29,8 @@ def standardTest(DeployBlock, generateNet=True):
             net.writeImage(img0, folder=out_path, prefix='', suffix='-imgL')
             net.writeImage(img1, folder=out_path, prefix='', suffix='-imgR')
             net.writeFloat(disp_pred, folder=out_path, prefix='', suffix='-dispL')
+            if lowres:
+                net.writeFloat(disp_pred_lowres, folder=out_path, prefix='', suffix='-dispL-lowres')
             net.writeFloat(disp_gt, folder=out_path, prefix='', suffix='-gt')
 
     if generateNet:
@@ -41,12 +43,14 @@ def standardTest(DeployBlock, generateNet=True):
         use_augmentation_mean = bool(param('use_augmentation_mean', default=True))
         output = bool(param('output', default=False))
         prefix = str(param('prefix', default=None))
+        lowres = bool(param('lowres', default=False))
 
         Block(net,
               dataset,
               output,
               prefix,
-              use_augmentation_mean)
+              use_augmentation_mean,
+              lowres)
 
         print net.toProto()
 
@@ -224,6 +228,8 @@ def standardDeploy(NetworkBlock, generateNet=True):
                                            blobs.img1_nomean_resize,
                                            blobs.disp_gt_resize)
 
+        blobs.predict_disp2_final  = net.scale(blobs.predict_disp2, rescale_coeff_x)
+
         blobs.predict_disp_resize = net.resample(blobs.predict_disp2, width=width, height=height, reference=None, type='LINEAR', antialias=True)
         blobs.predict_disp_final  = net.scale(blobs.predict_disp_resize, rescale_coeff_x)
 
@@ -246,7 +252,7 @@ def standardDeploy(NetworkBlock, generateNet=True):
         kitti_loss3.setName('disp_OutAll3px')
         kitti_loss3.enableOutput()
 
-        return blobs.predict_disp_final
+        return (blobs.predict_disp_final, blobs.predict_disp2_final)
 
     if generateNet:
         net = Network()
