@@ -295,8 +295,8 @@ class Environment:
         self._scratchDir = self._path + '/scratch/%s' % uuid.uuid4()
         self._jobDir = self._path + '/jobs'
 
-        self._modelFiles = iterFiles('.caffemodel', self._trainDir)
-        self._stateFiles = iterFiles('.solverstate', self._trainDir)
+        self._modelFiles = iterFiles('.caffemodel', self._trainDir) + iterFiles('.caffemodel.h5', self._trainDir)
+        self._stateFiles = iterFiles('.solverstate', self._trainDir) + iterFiles('.solverstate.h5', self._trainDir)
         self._logFiles = logFiles(self._logDir)
 
         self._trainProto = self.findProto('train')
