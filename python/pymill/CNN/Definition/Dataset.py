@@ -225,6 +225,36 @@ class Kitti2012Train(Dataset):
         return Data.BinaryData(net, **kwargs)
 
 
+class FakeKittiTreesEval(Dataset):
+    '''@brief 2012 KITTI training dataset (disparity, optical flow)'''
+    def __init__(self, phase):
+        Dataset.__init__(self, 'FakeKittiTrees.eval', 'FINAL', phase)
+
+    def width(self): return 960
+    def height(self): return 540
+    def meanColors(self):               # FIX ME FIX ME FIX ME FIX ME FIX ME FIX ME!!!
+        if self._rendertype == 'CLEAN':
+            return (76.4783107737, 69.4660111681, 58.0279756163)
+        else:
+            return (91.2236713645, 82.6859238723, 69.5627393708)
+
+    def dispLayer(self, net, **kwargs):
+        kwargs['setting']         = 'DISPARITY_SINGLE'
+        kwargs['rendertype']      = self._rendertype
+        kwargs['phase']           = self._phase
+        kwargs['collection_list'] = COLL_LISTS_DIR+'/v1/FakeKittiTrees_eval.txt'
+        kwargs['rand_permute']    = False
+        return Data.BinaryData(net, **kwargs)
+
+    def flowLayer(self, net, **kwargs):
+        kwargs['setting']         = 'OPTICAL_FLOW_SINGLE'
+        kwargs['rendertype']      = self._rendertype
+        kwargs['phase']           = self._phase
+        kwargs['collection_list'] = COLL_LISTS_DIR+'/v1/FakeKittiTrees_eval.txt'
+        kwargs['rand_permute']    = False
+        return Data.BinaryData(net, **kwargs)
+
+
 class Kitti2015Train(Dataset):
     '''@brief 2015 KITTI training dataset (disparity, optical flow, scene flow)'''
     def __init__(self, phase):
@@ -253,9 +283,18 @@ class Kitti2015Train(Dataset):
         kwargs['collection_list'] = COLL_LISTS_DIR+'/kitti2015_train.txt'
         kwargs['rand_permute']    = False
         return Data.BinaryData(net, **kwargs)
-    
-    #def sceneFlowLayer(self, net, **kwargs):
-        ## TODO
+
+    def sceneFlowLayer(self, net, **kwargs):
+        kwargs['setting']         = 'SCENE_FLOW_SINGLE_REDUCED'
+        kwargs['rendertype']      = self._rendertype
+        kwargs['phase']           = self._phase
+        kwargs['collection_list'] = COLL_LISTS_DIR+'/kitti2015_train.txt'
+        kwargs['rand_permute']    = False
+        blobs = Data.BinaryData(net, **kwargs)
+        batch_size = kwargs['batch_size'] if 'batch_size' in kwargs else 1
+        blobs.gt.flowR = net.zeros(batch_size, 2, self.height(), self.width())
+        blobs.gt.disp1L = net.zeros(batch_size, 1, self.height(), self.width())
+        return blobs
 
 
 class FlyingChairsValidation(Dataset):
@@ -301,6 +340,7 @@ def get(name=None, rendertype=None, phase=None):
     elif name == 'monkaa.test.clean':         return MonkaaTest('CLEAN', phase)
     elif name == 'monkaa.test.final':         return MonkaaTest('FINAL', phase)
     elif name == 'chairs.val':                return FlyingChairsValidation(phase)
+    elif name == 'FakeKittiTrees.eval':  return FakeKittiTreesEval(phase)
     else:
         raise Exception('unknown dataset "%s" for phase "%s"' % (name, phase))
 
