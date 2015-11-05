@@ -189,12 +189,23 @@ def readDisparity(filename):
         return disp
 
     """ Return disparity read from filename. """
-    f_in = np.array(Image.open(filename))
-    d_r = f_in[:,:,0].astype('float64')
-    d_g = f_in[:,:,1].astype('float64')
-    d_b = f_in[:,:,2].astype('float64')
 
-    depth = d_r * 4 + d_g / (2**6) + d_b / (2**14)
+    f_in = np.array(Image.open(filename))
+
+    ## Case 1: 8-bit RGB
+    if len(f_in.shape) == 3:
+      d_r = f_in[:,:,0].astype('float64')
+      d_g = f_in[:,:,1].astype('float64')
+      d_b = f_in[:,:,2].astype('float64')
+      depth = d_r * 4 + d_g / (2**6) + d_b / (2**14)
+    ## Case 2: 16-bit grayscale PNG
+    elif len(f_in.shape) == 2:
+      depth = f_in[:,:].astype('float64') / 256.
+      ## Set invalid pixels (disparity 0) to -1
+      depth[depth<0] = -1
+    else:
+      raise Exception('Invalid image format')
+
     return depth
 
 
