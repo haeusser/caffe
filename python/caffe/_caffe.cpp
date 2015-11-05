@@ -9,6 +9,7 @@
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 #include <boost/python/suite/indexing/map_indexing_suite.hpp>
 #include <numpy/arrayobject.h>
+#include <boost/algorithm/string/predicate.hpp>
 
 // these need to be included after boost on OS X
 #include <string>  // NOLINT(build/include_order)
@@ -99,10 +100,18 @@ shared_ptr<Net<Dtype> > Net_Init_Load(
   return net;
 }
 
-void Net_Save(const Net<Dtype>& net, string filename) {
-  NetParameter net_param;
-  net.ToProto(&net_param, false);
-  WriteProtoToBinaryFile(net_param, filename.c_str());
+void Net_Save(const Net<Dtype>& net, string filename) 
+{
+  if(boost::algorithm::ends_with(filename,".h5")) 
+  {
+    net.ToHDF5(filename, false); 
+  } 
+  else 
+  {
+    NetParameter net_param;
+    net.ToProto(&net_param, false);
+    WriteProtoToBinaryFile(net_param, filename.c_str());
+  }
 }
 
 void Net_SetInputArrays(Net<Dtype>* net, bp::object data_obj,
