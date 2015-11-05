@@ -175,6 +175,21 @@ def _dataStructFromSceneFlow(list):
 
     return struct
 
+def _dataStructFromSceneFlow2(list):
+    struct = DataStruct()
+
+    struct.add('inp', '')
+
+    struct.inp.img0L      = list[0]
+    struct.inp.img0R      = list[1]
+    struct.inp.img1L      = list[2]
+    struct.inp.img1R      = list[3]
+    struct.gt.flowL       = list[4]
+    struct.gt.disp0L      = list[5]
+    struct.gt.dispChangeL = list[6]
+
+    return struct
+
 
 def BinaryData_SceneFlow(net, **kwargs):
   '''
@@ -280,17 +295,43 @@ def BinaryData_SceneFlow_Single(net, **kwargs):
   else: return blobs
 
 
+def BinaryData_SceneFlow_Single_Reduced(net, **kwargs):
+  '''
+  @brief Setup network inputs for scene flow
+  @returns A list of single-blob network INPUT and LABEL
+  '''
+  samples = []
 
-#def instantiate(net):
-  #net.input, net.gt = BinaryData(
-      #setting='OPTICAL_FLOW',
-      #collectionList='cliplist_040915_train.txt',
-      #batch_size=4,
-      #verbose=True,
-      #rand_permute=True,
-      #rand_permute_seed=77
-    #)
+  if kwargs['rendertype'] == 'CLEAN' or kwargs['rendertype'] == 'BOTH':
+      samples += (Sample((Entry('cleanImageL',  0),
+                          Entry('cleanImageR',  0),
+                          Entry('cleanImageL', +1),
+                          Entry('cleanImageR', +1),
+                          Entry('forwardFlowL',  0),
+                          Entry('dispL',  0),
+                          Entry('forwardDispChangeL', 0))),)
 
+  if kwargs['rendertype'] == 'FINAL' or kwargs['rendertype'] == 'BOTH':
+      samples += (Sample((Entry('finalImageL',  0),
+                          Entry('finalImageR',  0),
+                          Entry('finalImageL', +1),
+                          Entry('finalImageR', +1),
+                          Entry('forwardFlowL',  0),
+                          Entry('dispL',  0),
+                          Entry('forwardDispChangeL', 0))),)
+
+  nout = NumberOfEntries(samples)
+  if 'output_index' in kwargs:
+      nout += 1
+      del kwargs['output_index']
+
+  blobs = Layers.BinaryData(net,
+                           nout=nout,
+                           include=(Proto.NetStateRule(phase=kwargs['phase']),),
+                           data_param=DataParams(samples, **kwargs))
+
+  if kwargs['return_struct']: return _dataStructFromSceneFlow2(blobs)
+  else: return blobs
 
 
 def BinaryData_Disparity(net, **kwargs):
@@ -363,12 +404,13 @@ def BinaryData(net, setting, **kwargs):
   @returns A list of single-blob network INPUT and LABEL
   '''
   BinaryDataConstructors = {
-    'OPTICAL_FLOW'          : BinaryData_OpticalFlow,
-    'OPTICAL_FLOW_SINGLE'   : BinaryData_OpticalFlow_Single,
-    'SCENE_FLOW'            : BinaryData_SceneFlow,
-    'SCENE_FLOW_SINGLE'     : BinaryData_SceneFlow_Single,
-    'DISPARITY'             : BinaryData_Disparity,
-    'DISPARITY_SINGLE'      : BinaryData_Disparity_Single,
+    'OPTICAL_FLOW'               : BinaryData_OpticalFlow,
+    'OPTICAL_FLOW_SINGLE'        : BinaryData_OpticalFlow_Single,
+    'SCENE_FLOW'                 : BinaryData_SceneFlow,
+    'SCENE_FLOW_SINGLE'          : BinaryData_SceneFlow_Single,
+    'SCENE_FLOW_SINGLE_REDUCED'  : BinaryData_SceneFlow_Single_Reduced,
+    'DISPARITY'                  : BinaryData_Disparity,
+    'DISPARITY_SINGLE'           : BinaryData_Disparity_Single,
   }
 
   if 'collection_list' not in kwargs: 
@@ -387,7 +429,7 @@ def BinaryData(net, setting, **kwargs):
   default('collection_list_dir', COLLECTIONLIST_DIR)
   default('disk_reader_threads', 4)
 
-  if setting in ('SCENE_FLOW', 'SCENE_FLOW_SINGLE'):
+  if setting in ('SCENE_FLOW', 'SCENE_FLOW_SINGLE', 'SCENE_FLOW_SINGLE_REDUCED'):
     default('return_struct', True)
   else:
     default('return_struct', False)
