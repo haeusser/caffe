@@ -77,9 +77,9 @@ def standardSingleTest(DeployBlock, generateNet=True):
             f.write('2 1 none\n')
             f.close()
 
-            net.writeImage(img0, folder=out_path, filename=(basename+'-imgL.ppm'))
-            net.writeImage(img1, folder=out_path, filename=(basename+'-imgR.ppm'))
-            net.writeFloat(disp_pred, folder=out_path, filename=(basename+'-dispL.float3'))
+            net.writeImage(img0, folder=out_path, filename=(os.path.join(out_path,basename+'-imgL.ppm')))
+            net.writeImage(img1, folder=out_path, filename=(os.path.join(out_path,basename+'-imgR.ppm')))
+            net.writeFloat(disp_pred, folder=out_path, filename=(os.path.join(out_path,basename+'-dispL.float3')))
 
     if generateNet:
         net = Network()
