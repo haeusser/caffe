@@ -65,7 +65,7 @@ def standardSingleTest(DeployBlock, generateNet=True):
         img1 = net.addInput(1, 3, data_size[0], data_size[1])
         disp_gt = net.zeros(1, 1, data_size[0], data_size[1])
 
-        disp_pred = DeployBlock(net, img0, img1, disp_gt, data_size[1], data_size[0], None, use_augmentation_mean)
+        disp_pred = DeployBlock(net, img0, img1, disp_gt, data_size[1], data_size[0], None, use_augmentation_mean)[0]
 
         if output:
             out_path = 'output_%s_%s' % (prefix, datasetName) if prefix else 'output_%s' % datasetName
