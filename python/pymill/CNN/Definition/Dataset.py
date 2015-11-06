@@ -196,6 +196,44 @@ class FakeKittiTrees(Dataset):
         kwargs['rand_permute']    = False
         return Data.BinaryData(net, **kwargs)
 
+class MonkaaTrain(Dataset):
+    '''@brief Monkaa training dataset (disparity, optical flow, scene flow)'''
+    def __init__(self, rendertype, phase):
+        Dataset.__init__(self, 'monkaa_train', rendertype, phase)
+
+    def width(self): return 960
+    def height(self): return 540
+    def meanColors(self):               # FIX ME FIX ME FIX ME FIX ME FIX ME FIX ME!!!
+        if self._rendertype == 'CLEAN': 
+            return (76.4783107737, 69.4660111681, 58.0279756163)
+        else:                           
+            return (91.2236713645, 82.6859238723, 69.5627393708)
+
+    def dispLayer(self, net, **kwargs):
+        kwargs['setting']         = 'DISPARITY_SINGLE'
+        kwargs['rendertype']      = self._rendertype
+        kwargs['phase']           = self._phase
+        kwargs['collection_list'] = COLL_LISTS_DIR+'/v1/monkaa_train.txt'
+        kwargs['rand_permute']    = False
+        return Data.BinaryData(net, **kwargs)
+
+    def flowLayer(self, net, **kwargs):
+        kwargs['setting']         = 'OPTICAL_FLOW_SINGLE'
+        kwargs['rendertype']      = self._rendertype
+        kwargs['phase']           = self._phase
+        kwargs['collection_list'] = COLL_LISTS_DIR+'/v1/monkaa_train.txt'
+        kwargs['rand_permute']    = False
+        return Data.BinaryData(net, **kwargs)
+      
+    def sceneFlowLayer(self, net, **kwargs):
+        kwargs['setting']         = 'SCENE_FLOW_SINGLE'
+        kwargs['rendertype']      = self._rendertype
+        kwargs['phase']           = self._phase
+        kwargs['collection_list'] = COLL_LISTS_DIR+'/v1/monkaa_train.txt'
+        kwargs['rand_permute']    = False
+        return Data.BinaryData(net, **kwargs)
+
+
 class MonkaaTest(Dataset):
     '''@brief Monkaa testing dataset (disparity, optical flow, scene flow)'''
     def __init__(self, rendertype, phase):
@@ -204,9 +242,9 @@ class MonkaaTest(Dataset):
     def width(self): return 960
     def height(self): return 540
     def meanColors(self):               # FIX ME FIX ME FIX ME FIX ME FIX ME FIX ME!!!
-        if self._rendertype == 'CLEAN': 
+        if self._rendertype == 'CLEAN':
             return (76.4783107737, 69.4660111681, 58.0279756163)
-        else:                           
+        else:
             return (91.2236713645, 82.6859238723, 69.5627393708)
 
     def dispLayer(self, net, **kwargs):
@@ -224,7 +262,7 @@ class MonkaaTest(Dataset):
         kwargs['collection_list'] = COLL_LISTS_DIR+'/v1/monkaa_test.txt'
         kwargs['rand_permute']    = False
         return Data.BinaryData(net, **kwargs)
-      
+
     def sceneFlowLayer(self, net, **kwargs):
         kwargs['setting']         = 'SCENE_FLOW_SINGLE'
         kwargs['rendertype']      = self._rendertype
@@ -419,6 +457,8 @@ def get(name=None, rendertype=None, phase=None):
     elif name == 'monkaa.release.final':      return MonkaaRelease('FINAL', phase)
     elif name == 'FakeKittiTrees.clean':      return FakeKittiTrees('CLEAN', phase)
     elif name == 'FakeKittiTrees.final':      return FakeKittiTrees('FINAL', phase)
+    elif name == 'monkaa.train.clean':         return MonkaaTrain('CLEAN', phase)
+    elif name == 'monkaa.train.final':         return MonkaaTrain('FINAL', phase)
     elif name == 'chairs.val':                return FlyingChairsValidation(phase)
     elif name == 'FakeKittiTrees.eval':  return FakeKittiTreesEval(phase)
     else:
@@ -437,6 +477,8 @@ def getDatasetNames(task):
     if task == 'disp':
         return ('sintel.train.clean',
                 'sintel.train.final',
+                'monkaa.train.clean',
+                'monkaa.train.final',
                 'monkaa.test.clean',
                 'monkaa.test.final',
                 'monkaa.release.clean',
@@ -453,6 +495,8 @@ def getDatasetNames(task):
     elif task == 'flow':
         return ('sintel.train.clean',
                 'sintel.train.final',
+                'monkaa.train.clean',
+                'monkaa.train.final',
                 'monkaa.test.clean',
                 'monkaa.test.final',
                 'monkaa.release.clean',
@@ -474,6 +518,8 @@ def getDatasetNames(task):
                 'monkaa.release.final',
                 'FakeKittiTrees.clean',
                 'FakeKittiTrees.final',
+                'monkaa.train.clean',
+                'monkaa.train.final',
                 'FlyingStuff3D.test.clean',
                 'FlyingStuff3D.test.final',
                 'FlyingStuff3D_new.test.clean',
