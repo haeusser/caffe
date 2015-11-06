@@ -156,6 +156,45 @@ class FlyingStuff3DNewTest(Dataset):
         kwargs['collection_list'] = COLL_LISTS_DIR+'/v1/FlyingStuff3D_new_test.txt'
         kwargs['rand_permute']    = False
         return Data.BinaryData(net, **kwargs)
+      
+      
+
+class FakeKittiTrees(Dataset):
+    '''@brief FlyingStuff3D testing dataset (disparity, optical flow, scene flow)'''
+    def __init__(self, rendertype, phase):
+        Dataset.__init__(self, 'FakeKittiTrees', rendertype, phase)
+
+    def width(self): return 960
+    def height(self): return 540
+    def meanColors(self):               # FIX ME FIX ME FIX ME FIX ME FIX ME FIX ME!!!
+        if self._rendertype == 'CLEAN': 
+            return (76.4783107737, 69.4660111681, 58.0279756163)
+        else:                           
+            return (91.2236713645, 82.6859238723, 69.5627393708)
+
+    def dispLayer(self, net, **kwargs):
+        kwargs['setting']         = 'DISPARITY_SINGLE'
+        kwargs['rendertype']      = self._rendertype
+        kwargs['phase']           = self._phase
+        kwargs['collection_list'] = COLL_LISTS_DIR+'/v1/FakeKittiTrees_full.txt'
+        kwargs['rand_permute']    = False
+        return Data.BinaryData(net, **kwargs)
+
+    def flowLayer(self, net, **kwargs):
+        kwargs['setting']         = 'OPTICAL_FLOW_SINGLE'
+        kwargs['rendertype']      = self._rendertype
+        kwargs['phase']           = self._phase
+        kwargs['collection_list'] = COLL_LISTS_DIR+'/v1/FakeKittiTrees_full.txt'
+        kwargs['rand_permute']    = False
+        return Data.BinaryData(net, **kwargs)
+      
+    def sceneFlowLayer(self, net, **kwargs):
+        kwargs['setting']         = 'SCENE_FLOW_SINGLE'
+        kwargs['rendertype']      = self._rendertype
+        kwargs['phase']           = self._phase
+        kwargs['collection_list'] = COLL_LISTS_DIR+'/v1/FakeKittiTrees_full.txt'
+        kwargs['rand_permute']    = False
+        return Data.BinaryData(net, **kwargs)
 
 class MonkaaTest(Dataset):
     '''@brief Monkaa testing dataset (disparity, optical flow, scene flow)'''
@@ -191,6 +230,43 @@ class MonkaaTest(Dataset):
         kwargs['rendertype']      = self._rendertype
         kwargs['phase']           = self._phase
         kwargs['collection_list'] = COLL_LISTS_DIR+'/v1/monkaa_test.txt'
+        kwargs['rand_permute']    = False
+        return Data.BinaryData(net, **kwargs)
+      
+class MonkaaRelease(Dataset):
+    '''@brief Monkaa testing dataset (disparity, optical flow, scene flow)'''
+    def __init__(self, rendertype, phase):
+        Dataset.__init__(self, 'monkaa.release', rendertype, phase)
+
+    def width(self): return 960
+    def height(self): return 540
+    def meanColors(self):               # FIX ME FIX ME FIX ME FIX ME FIX ME FIX ME!!!
+        if self._rendertype == 'CLEAN': 
+            return (76.4783107737, 69.4660111681, 58.0279756163)
+        else:                           
+            return (91.2236713645, 82.6859238723, 69.5627393708)
+
+    def dispLayer(self, net, **kwargs):
+        kwargs['setting']         = 'DISPARITY_SINGLE'
+        kwargs['rendertype']      = self._rendertype
+        kwargs['phase']           = self._phase
+        kwargs['collection_list'] = COLL_LISTS_DIR+'/v1/monkaa_release.txt'
+        kwargs['rand_permute']    = False
+        return Data.BinaryData(net, **kwargs)
+
+    def flowLayer(self, net, **kwargs):
+        kwargs['setting']         = 'OPTICAL_FLOW_SINGLE'
+        kwargs['rendertype']      = self._rendertype
+        kwargs['phase']           = self._phase
+        kwargs['collection_list'] = COLL_LISTS_DIR+'/v1/monkaa_release.txt'
+        kwargs['rand_permute']    = False
+        return Data.BinaryData(net, **kwargs)
+      
+    def sceneFlowLayer(self, net, **kwargs):
+        kwargs['setting']         = 'SCENE_FLOW_SINGLE'
+        kwargs['rendertype']      = self._rendertype
+        kwargs['phase']           = self._phase
+        kwargs['collection_list'] = COLL_LISTS_DIR+'/v1/monkaa_release.txt'
         kwargs['rand_permute']    = False
         return Data.BinaryData(net, **kwargs)
 
@@ -300,6 +376,10 @@ def get(name=None, rendertype=None, phase=None):
     elif name == 'FlyingStuff3D_new.test.final':  return FlyingStuff3DNewTest('FINAL', phase)
     elif name == 'monkaa.test.clean':         return MonkaaTest('CLEAN', phase)
     elif name == 'monkaa.test.final':         return MonkaaTest('FINAL', phase)
+    elif name == 'monkaa.release.clean':      return MonkaaRelease('CLEAN', phase)
+    elif name == 'monkaa.release.final':      return MonkaaRelease('FINAL', phase)
+    elif name == 'FakeKittiTrees.clean':      return FakeKittiTrees('CLEAN', phase)
+    elif name == 'FakeKittiTrees.final':      return FakeKittiTrees('FINAL', phase)
     elif name == 'chairs.val':                return FlyingChairsValidation(phase)
     else:
         raise Exception('unknown dataset "%s" for phase "%s"' % (name, phase))
@@ -319,6 +399,10 @@ def getDatasetNames(task):
                 'sintel.train.final',
                 'monkaa.test.clean',
                 'monkaa.test.final',
+                'monkaa.release.clean',
+                'monkaa.release.final',
+                'FakeKittiTrees.clean',
+                'FakeKittiTrees.final',
                 'FlyingStuff3D.test.clean',
                 'FlyingStuff3D.test.final',
                 'FlyingStuff3D_new.test.clean',
@@ -331,6 +415,10 @@ def getDatasetNames(task):
                 'sintel.train.final',
                 'monkaa.test.clean',
                 'monkaa.test.final',
+                'monkaa.release.clean',
+                'monkaa.release.final',
+                'FakeKittiTrees.clean',
+                'FakeKittiTrees.final',
                 'FlyingStuff3D.test.clean',
                 'FlyingStuff3D.test.final',
                 'FlyingStuff3D_new.test.clean',
@@ -342,6 +430,10 @@ def getDatasetNames(task):
     elif task == 'sceneflow':
         return ('monkaa.test.clean',
                 'monkaa.test.final',
+                'monkaa.release.clean',
+                'monkaa.release.final',
+                'FakeKittiTrees.clean',
+                'FakeKittiTrees.final',
                 'FlyingStuff3D.test.clean',
                 'FlyingStuff3D.test.final',
                 'FlyingStuff3D_new.test.clean',
