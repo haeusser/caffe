@@ -37,6 +37,7 @@ class FormattedResults(models.Model):
     kitti2015train = models.FloatField(blank=True, null=True, verbose_name='kitti2015.train', db_column='kitti2015.train')
     chairsval = models.FloatField(blank=True, null=True, verbose_name='chairs.val', db_column='chairs.val')
     FakeKittiTreeseval = models.FloatField(blank=True, null=True, verbose_name='FakeKittiTrees.eval', db_column='FakeKittiTrees.eval')
+    monkaareleaseclean = models.FloatField(blank=True, null=True, verbose_name='monkaa.release.clean', db_column='monkaa.release.clean')
 
     class Meta:
         managed = False

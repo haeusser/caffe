@@ -113,7 +113,8 @@ def reorganize_queryset(queryset):
                 'kitti2012.train',
                 'kitti2015.train',
                 'chairs.val',
-                'FakeKittiTrees.eval'
+                'FakeKittiTrees.eval',
+                'monkaa.release.clean'
                 ]
 
     for net in nets_set:
