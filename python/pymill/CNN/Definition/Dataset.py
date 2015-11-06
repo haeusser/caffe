@@ -81,6 +81,17 @@ class SintelTrain(Dataset):
         kwargs['rand_permute']    = False
         return Data.BinaryData(net, **kwargs)
 
+    def sceneFlowLayer(self, net, **kwargs):
+        kwargs['setting']         = 'SCENE_FLOW_DISP_PAIR'
+        kwargs['rendertype']      = self._rendertype
+        kwargs['phase']           = self._phase
+        kwargs['collection_list'] = COLL_LISTS_DIR+'/sintel_train.txt'
+        kwargs['rand_permute']    = False
+        blobs = Data.BinaryData(net, **kwargs)
+        batch_size = kwargs['batch_size'] if 'batch_size' in kwargs else 1
+        blobs.gt.flowR = net.zeros(batch_size, 2, self.height(), self.width())
+        blobs.gt.dispChangeL = net.zeros(batch_size, 1, self.height(), self.width())
+        return blobs
 
 class FlyingStuff3DTest(Dataset):
     '''@brief FlyingStuff3D testing dataset (disparity, optical flow, scene flow)'''
@@ -368,6 +379,13 @@ class FakeKittiTreesEval(Dataset):
         kwargs['rand_permute']    = False
         return Data.BinaryData(net, **kwargs)
 
+    def sceneFlowLayer(self, net, **kwargs):
+        kwargs['setting']         = 'SCENE_FLOW_SINGLE'
+        kwargs['rendertype']      = self._rendertype
+        kwargs['phase']           = self._phase
+        kwargs['collection_list'] = COLL_LISTS_DIR+'/v1/FakeKittiTrees_full.txt'
+        kwargs['rand_permute']    = False
+        return Data.BinaryData(net, **kwargs)
 
 class Kitti2015Train(Dataset):
     '''@brief 2015 KITTI training dataset (disparity, optical flow, scene flow)'''
@@ -457,10 +475,10 @@ def get(name=None, rendertype=None, phase=None):
     elif name == 'monkaa.release.final':      return MonkaaRelease('FINAL', phase)
     elif name == 'FakeKittiTrees.clean':      return FakeKittiTrees('CLEAN', phase)
     elif name == 'FakeKittiTrees.final':      return FakeKittiTrees('FINAL', phase)
-    elif name == 'monkaa.train.clean':         return MonkaaTrain('CLEAN', phase)
-    elif name == 'monkaa.train.final':         return MonkaaTrain('FINAL', phase)
+    elif name == 'monkaa.train.clean':        return MonkaaTrain('CLEAN', phase)
+    elif name == 'monkaa.train.final':        return MonkaaTrain('FINAL', phase)
     elif name == 'chairs.val':                return FlyingChairsValidation(phase)
-    elif name == 'FakeKittiTrees.eval':  return FakeKittiTreesEval(phase)
+    elif name == 'FakeKittiTrees.eval':       return FakeKittiTreesEval(phase)
     else:
         raise Exception('unknown dataset "%s" for phase "%s"' % (name, phase))
 
@@ -518,6 +536,7 @@ def getDatasetNames(task):
                 'monkaa.release.final',
                 'FakeKittiTrees.clean',
                 'FakeKittiTrees.final',
+                'FakeKittiTrees.eval',
                 'monkaa.train.clean',
                 'monkaa.train.final',
                 'FlyingStuff3D.test.clean',
