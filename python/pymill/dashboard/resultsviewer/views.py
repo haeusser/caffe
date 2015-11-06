@@ -112,7 +112,8 @@ def reorganize_queryset(queryset):
                 'FlyingStuff3D.new.test.final',
                 'kitti2012.train',
                 'kitti2015.train',
-                'chairs.val'
+                'chairs.val',
+                'FakeKittiTrees.eval'
                 ]
 
     for net in nets_set:

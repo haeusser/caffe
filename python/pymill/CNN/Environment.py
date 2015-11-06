@@ -2,8 +2,11 @@
 
 import os
 import sys
+import caffe
 import matplotlib.pyplot as plt
+from scipy import misc
 from pymill import Toolbox as tb
+from pymill.Toolbox import IO
 import re
 from Files import iterFiles
 from Files import logFiles
@@ -13,6 +16,7 @@ from string import Template
 import uuid
 from Results import Results
 from collections import OrderedDict
+import numpy as np
 
 
 def caffeBin():
@@ -291,8 +295,8 @@ class Environment:
         self._scratchDir = self._path + '/scratch/%s' % uuid.uuid4()
         self._jobDir = self._path + '/jobs'
 
-        self._modelFiles = iterFiles('.caffemodel', self._trainDir)
-        self._stateFiles = iterFiles('.solverstate', self._trainDir)
+        self._modelFiles = iterFiles('.caffemodel', self._trainDir) + iterFiles('.caffemodel.h5', self._trainDir)
+        self._stateFiles = iterFiles('.solverstate', self._trainDir) + iterFiles('.solverstate.h5', self._trainDir)
         self._logFiles = logFiles(self._logDir)
 
         self._trainProto = self.findProto('train')
@@ -585,13 +589,11 @@ class Environment:
     def testfilelist(self, filelist, iter, output=False, definition=None, vars={}):
         modelFile, iter = self.getModelFile(iter)
 
-        if output:
-            vars['output'] = True
-            vars['prefix'] = iter
+        assert(output)
+        vars['output'] = True
+        vars['prefix'] = iter
 
-        vars['dataset'] = os.path.basename(filelist)
-        vars['width'] = 1000
-        vars['height'] = 500
+        vars['dataset'] = os.path.splitext(os.path.basename(filelist))[0]
 
         self.makeScratchDir()
 
@@ -604,22 +606,43 @@ class Environment:
                 if self._unattended or tb.queryYesNo('Output folder %s exists, do you want to delete it first?' % os.path.basename(outPath)):
                     os.system('rm -rf %s' % outPath)
 
-        finalProto = self.makeScratchPrototxt(proto, vars)
-        solverProto = self.makeScratchPrototxt(self._solverProto, vars)
+        data_list = IO.readTupleList(filelist)
 
-        # self.notice('testing snapshot iteration %d for %d iterations...' % (iter, num_iter), 'notice')
-        # os.chdir(self._path)
-        # self._backend.test(caffemodelFilename=modelFile, protoFilename=finalProto, iterations=num_iter, logFile=self._scratchLogFile)
-        #
-        # if output and 'dataset' in vars:
-        #     outPath = '%s/output_%d_%s' % (self._path, iter, vars['dataset'])
-        #     if os.path.isdir(outPath):
-        #         logFile = '%s/log.txt' % outPath
-        #         print 'saving log to %s', logFile
-        #         os.system('cp %s %s' % (self._scratchLogFile, logFile))
-        #
-        # if 'dataset' in vars:
-        #     self._saveTestResults(iter,vars['dataset'])
+        print data_list
+
+        # Run a new net for every sample:
+        for idx, line in enumerate(data_list):
+        
+            num_blobs = len(line)
+            input_data = []
+            for blob_idx in range(num_blobs):
+                img = IO.readImage(line[blob_idx])
+                #print(img.shape)
+                input_data.append(img[np.newaxis, :, :, :].transpose(0, 3, 1, 2)[:,[2,1,0],:,:])
+                #print(input_data[-1].shape)
+
+            vars['width'] = input_data[0].shape[3]
+            vars['height'] = input_data[0].shape[2]
+            vars['basename'] = 'b%03d' % idx
+            
+            finalProto = self.makeScratchPrototxt(proto, vars)
+
+            caffe.set_logging_disabled()
+            caffe.set_mode_gpu()
+            net = caffe.Net(finalProto, modelFile,caffe.TEST)
+
+            print 'Network forward pass (%d of %d). %d inputs of shapes:' % (idx+1, len(data_list), num_blobs)
+            for blob_idx in range(num_blobs):
+                print("  " + str(input_data[blob_idx].shape))
+
+            if not len(net.inputs) == len(line):
+                raise Exception('Net has %d inputs and in file list there are %d' % (len(net.inputs), len(line)))
+
+            input_dict = {}
+            for blob_idx in range(num_blobs):
+                input_dict[net.inputs[blob_idx]] = input_data[blob_idx]
+
+            net.forward(**input_dict)
 
         print 'Iteration was %d' %iter
 

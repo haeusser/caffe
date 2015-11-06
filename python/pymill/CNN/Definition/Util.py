@@ -56,6 +56,7 @@ def writeImage(net, blob, folder='output', prefix='', suffix='', scale=1.0, file
         Layers.ImgWriter(net,
                          blob,
                          writer_param={
+                           'folder' : folder,
                            'file' : filename,
                            'scale' : scale })
     else:
@@ -74,6 +75,7 @@ def writeFlow( net, blob, folder='output', prefix='', suffix='', scale=1.0, file
         Layers.FLOWriter(net,
                          blob,
                           writer_param={
+                            'folder' : folder,
                             'file' : filename,
                             'scale' : scale })
     else:
@@ -92,9 +94,8 @@ def writeFloat(net, blob, folder='output', prefix='', suffix='', scale=1.0, file
         Layers.FloatWriter(net,
                            blob,
                            writer_param={
+                             'folder' : folder,
                              'file' : filename,
-                             'prefix': prefix,
-                             'suffix': suffix,
                              'scale' : scale })
     else:
         Layers.FloatWriter(net,

@@ -165,7 +165,7 @@ subparser.add_argument('--output',     help='output images to folder output_...'
 subparser.add_argument('param',        help='parameter to network', nargs='*')
 
 # test-ref
-subparser = subparsers.add_parser('test-ref', help='test a network')
+subparser = subparsers.add_parser('test-ref', help='test a network with refinement')
 subparser.add_argument('--iter',       help='iteration of .caffemodel to use', default=-1, type=int)
 subparser.add_argument('--num-iter',   help='number of iterations to run (default=auto)', default=-1, type=int)
 subparser.add_argument('--def',        help='custom test definition (default test.proto*/.py)', default=None)

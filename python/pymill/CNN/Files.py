@@ -31,7 +31,7 @@ class IterFile:
     def __str__(self):
         return self._filename
 
-def iterFiles(type='.solverstate', dir='.'):
+def iterFiles(type='.solverstate', dir='.', omit=None):
     result = []
 
     if not os.path.isdir(dir):
@@ -40,6 +40,8 @@ def iterFiles(type='.solverstate', dir='.'):
     files = os.listdir(dir)
     for file in files:
         if file.endswith(type):
+            if omit is not None and omit in file:
+                continue
             result.append(IterFile('%s/%s' % (dir, file)))
 
     return sorted(result, key=lambda iter: iter.iteration())

@@ -949,19 +949,20 @@ void Net<Dtype>::CopyTrainedLayersFromHDF5(const string trained_filename) {
   for (int i = 0; i < num_layers; ++i) {
     string source_layer_name = hdf5_get_name_by_idx(data_hid, i);
     if (!layer_names_index_.count(source_layer_name)) {
-      DLOG(INFO) << "Ignoring source layer " << source_layer_name;
+      LOG(INFO) << "Ignoring source layer " << source_layer_name;
       continue;
     }
     int target_layer_id = layer_names_index_[source_layer_name];
-    DLOG(INFO) << "Copying source layer " << source_layer_name;
     vector<shared_ptr<Blob<Dtype> > >& target_blobs =
         layers_[target_layer_id]->blobs();
     hid_t layer_hid = H5Gopen2(data_hid, source_layer_name.c_str(),
         H5P_DEFAULT);
     CHECK_GE(layer_hid, 0)
         << "Error reading weights from " << trained_filename;
-    // Check that source layer doesn't have more params than target layer
     int num_source_params = hdf5_get_num_links(layer_hid);
+    if(num_source_params)
+        LOG(INFO) << "Copying source layer " << source_layer_name;
+    // Check that source layer doesn't have more params than target layer
     CHECK_LE(num_source_params, target_blobs.size())
         << "Incompatible number of blobs for layer " << source_layer_name;
     for (int j = 0; j < target_blobs.size(); ++j) {
