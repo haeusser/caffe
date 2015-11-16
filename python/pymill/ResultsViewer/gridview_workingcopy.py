@@ -248,46 +248,69 @@ def readFlow(name):
 
 
 def readFloat(name):
-  '''Read float file (binary blob with leading dimension info)'''
-  with open(name, 'rb') as f:
-    if f.readline() != b'float\n':
-      raise Exception('float file %s did not contain <float> keyword' % name)
+    f = open(name, 'rb')
 
-    dim = int(f.readline())
+    if f.readline().strip().decode("utf-8") != 'float':
+        raise Exception('float file %s did not contain <float> keyword' % name)
+
+    dim = int(f.readline().decode("utf-8"))
+
     dims = []
     count = 1
     for i in range(0, dim):
-      d = int(f.readline())
-      dims.append(d)
-      count *= d
+        d = int(f.readline().decode("utf-8"))
+        dims.append(d)
+        count *= d
 
-    ## Hacky hack. multichannel data -> use first channel
-    if dim == 3:
-      dim = 2
-      dims = dims[:2]
-      dims = dims[::-1]
+    dims = list(reversed(dims))
 
     data = np.fromfile(f, np.float32, count).reshape(dims)
-    if dim == 2:
-      #data = np.transpose(data, (1, 0))
-      data = np.transpose(data, (0, 1))
-    else:
-      raise Exception('dimensions (%s) not supported'%(','.join(dims)))
-    """elif dim == 3:
-      if dims[2] == 1:
-        data = data[:,:,0]
-        logging.debug(data.shape)
-        #data = np.transpose(data, (2, 1, 0))
-        #data = np.transpose(data, (1, 0, 2))
-        #logging.debug(data.shape)
-        #data = np.transpose(data, (1, 0))
-        #data = np.transpose(data, (0, 1))
-      else:
-        raise Exception('3d data not (yet) supported')
-        #data = np.transpose(data, (2, 1, 0))
-        #data = np.transpose(data, (1, 0, 2))"""
+    if dim > 2:
+        data = np.transpose(data, (2, 1, 0))
+        data = np.transpose(data, (1, 0, 2))
 
-    return data
+    return data.squeeze()
+  # '''Read float file (binary blob with leading dimension info)'''
+  # with open(name, 'rb') as f:
+  #   if f.readline() != b'float\n':
+  #     raise Exception('float file %s did not contain <float> keyword' % name)
+  #
+  #   dim = int(f.readline())
+  #   dims = []
+  #   count = 1
+  #   for i in range(0, dim):
+  #     d = int(f.readline())
+  #     dims.append(d)
+  #     count *= d
+  #
+  #   ## Hacky hack. multichannel data -> use first channel
+  #   if dim == 3:
+  #     dim = 2
+  #     dims = dims[:2]
+  #     dims = dims[::-1]
+  #
+  #   data = np.fromfile(f, np.float32, count).reshape(dims)
+  #   if dim == 2:
+  #     #data = np.transpose(data, (1, 0))
+  #     data = np.transpose(data, (0, 1))
+  #     pass
+  #   else:
+  #     raise Exception('dimensions (%s) not supported'%(','.join(dims)))
+  #   """elif dim == 3:
+  #     if dims[2] == 1:
+  #       data = data[:,:,0]
+  #       logging.debug(data.shape)
+  #       #data = np.transpose(data, (2, 1, 0))
+  #       #data = np.transpose(data, (1, 0, 2))
+  #       #logging.debug(data.shape)
+  #       #data = np.transpose(data, (1, 0))
+  #       #data = np.transpose(data, (0, 1))
+  #     else:
+  #       raise Exception('3d data not (yet) supported')
+  #       #data = np.transpose(data, (2, 1, 0))
+  #       #data = np.transpose(data, (1, 0, 2))"""
+  #
+  #   return data
 
 
 class Cell(object):
@@ -394,6 +417,10 @@ class FloatCell(Cell):
         raw_float_data = self.raw_data[idx]
       else:
         raw_float_data = readFloat(self.filenames[idx])
+        # shape = raw_float_data.shape
+        # if shape[0]>shape[1]:
+        #   raw_float_data = raw_float_data.transpose()
+        # print('read %s, %s'%(self.filenames[idx], raw_float_data.shape))
 
     if (floatMax-floatMin)<0.01:
       updateStatus('Float scale minimum too close to maximum!')
@@ -451,6 +478,37 @@ class FlowCell(Cell):
                            .scaled(self.label.size(),
                                    QtCore.Qt.KeepAspectRatio)))
 
+class LabelWithSave(QtWidgets.QLabel):
+  def __init__(self):
+    QtWidgets.QLabel.__init__(self)
+    self._pixmap = None
+
+  def contextMenuEvent(self, event):
+    menu = QtWidgets.QMenu(self)
+    saveAction = menu.addAction("Save")
+    saveInvertedAction = menu.addAction("Save inverted")
+
+    def save(filename, invert=False):
+      pixmap = self._pixmap
+      if invert:
+        image = QtGui.QImage(pixmap)
+        image.invertPixels(QtGui.QImage.InvertRgba)
+        pixmap = QtGui.QPixmap.fromImage(image)
+      pixmap.save(filename)
+
+    action = menu.exec(self.mapToGlobal(event.pos()))
+    if action == saveAction:
+      filename = QtWidgets.QFileDialog.getSaveFileName(self, 'Save image')[0]
+      if filename != '':
+        save(filename)
+    elif action == saveInvertedAction:
+      filename = QtWidgets.QFileDialog.getSaveFileName(self, 'Save inverted image')[0]
+      if filename != '':
+        save(filename, True)
+
+  def setPixmap(self, pixmap):
+    QtWidgets.QLabel.setPixmap(self, pixmap)
+    self._pixmap = pixmap
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -472,7 +530,7 @@ class MainWindow(QtWidgets.QMainWindow):
       for x in range(configuration['X']):
         cell_container = QtWidgets.QWidget()
         cell_layout = QtWidgets.QVBoxLayout()
-        image_label = QtWidgets.QLabel()
+        image_label = LabelWithSave()
         image_label.setMinimumSize(80,60)
         image_label.setAlignment(QtCore.Qt.AlignCenter)
         image_label.setAutoFillBackground(True)
