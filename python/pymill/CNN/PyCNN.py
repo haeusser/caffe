@@ -2,6 +2,7 @@
 
 import os
 import sys
+
 ## (mayern) remove my .local folder from the PYTHONPATH -->
 EVILPATH = '/home/mayern/.local/lib/python2.7/site-packages'
 if EVILPATH in sys.path:
@@ -11,6 +12,7 @@ if EVILPATH in sys.path:
 else:
   import matplotlib.pyplot as plt
 ## <-- (mayern) remove my .local folder from the PYTHONPATH
+
 from string import Template
 from termcolor import colored
 import argparse
@@ -172,9 +174,9 @@ subparser.add_argument('--def',        help='custom test definition (default tes
 subparser.add_argument('--output',     help='output images to folder output_...', action='store_true')
 subparser.add_argument('param',        help='parameter to network', nargs='*')
 
-# testfilelist
-subparser = subparsers.add_parser('testfilelist', help='test a network on a list of files')
-subparser.add_argument('filelist', help='the file with a list of inputs')
+# test-files
+subparser = subparsers.add_parser('test-files', help='test a network on a list of files')
+subparser.add_argument('filelist',     help='the file with a list of inputs')
 subparser.add_argument('--iter',       help='iteration of .caffemodel to use', default=-1, type=int)
 subparser.add_argument('--def',        help='custom test definition (default test.proto*/.py)', default=None)
 subparser.add_argument('--output',     help='output images to folder output_...', action='store_true')
@@ -207,6 +209,16 @@ subparser = subparsers.add_parser('sweep', help='delete output folders')
 # sanitize
 subparser = subparsers.add_parser('sanitize', help='delete everything that was created by pycnn')
 
+# shrink
+subparser = subparsers.add_parser('shrink', help='delete intermediate solverstates and weights up to the last, as well as jobs, output and scratch')
+subparser.add_argument('--iter-step',    help='keep solverstates and weights every N iterations', default=-1, type=int)
+
+# archive
+subparser = subparsers.add_parser('archive', help='moves net to target folder and executes shrink-sanitze')
+subparser.add_argument('--iter-step',    help='keep solverstates and weights every N iterations', default=-1, type=int)
+subparser.add_argument('source', help='source directory')
+subparser.add_argument('target', help='target directory')
+
 # plot
 subparser = subparsers.add_parser('plot', help='plot losses and accuracies')
 subparser.add_argument('--select', help='selection of measures, e.g. test_*,train_*', default='')
@@ -230,20 +242,20 @@ subparser.add_argument('--iter', help='iteration of .caffemodel (default=last)',
 subparser = subparsers.add_parser('draw', help='draw model diagram')
 
 # copy
-sub_parser = subparsers.add_parser('copy', help='copy a model')
-sub_parser.add_argument('source', help='source directory')
-sub_parser.add_argument('target', help='target directory')
-sub_parser.add_argument('--with-snapshot', help='last snapshot', action='store_true')
-sub_parser.add_argument('--iter', help='iteration of snapshot (default=last)', default=-1, type=int)
+subparser = subparsers.add_parser('copy', help='copy a model')
+subparser.add_argument('source', help='source directory')
+subparser.add_argument('target', help='target directory')
+subparser.add_argument('--with-snapshot', help='last snapshot', action='store_true')
+subparser.add_argument('--iter', help='iteration of snapshot (default=last)', default=-1, type=int)
 
 # snapshot
-sub_parser = subparsers.add_parser('snapshot', help='connect to current process and request snapshot')
+subparser = subparsers.add_parser('snapshot', help='connect to current process and request snapshot')
 
 # snapshot
-sub_parser = subparsers.add_parser('blob-sum', help='blob summary of current trainig log')
+subparser = subparsers.add_parser('blob-sum', help='blob summary of current trainig log')
 
 # eta
-sub_parser = subparsers.add_parser('eta', help='estimated time of arrival for training')
+subparser = subparsers.add_parser('eta', help='estimated time of arrival for training')
 
 # autocomplete very slow for some reason
 #argcomplete.autocomplete(parser)
@@ -354,6 +366,12 @@ elif args.command == 'view-filters':
 elif args.command == 'copy':
     env.copy(args.source, args.target, args.with_snapshot, args.iter)
     sys.exit(0)
+elif args.command == 'archive':
+    env.archive(args.source, args.target, args.iter_step)
+    sys.exit(0)
+elif args.command == 'shrink':
+    env.shrink(args.iter_step)
+    sys.exit(0)
 elif args.command == 'draw':
     os.system('gwenview %s &' % env.draw())
     sys.exit(0)
@@ -389,10 +407,10 @@ elif args.command == 'test-ref':
         sys.exit(0)
     else:
         runOnCluster(env, args.node, args.gpus, args.background, trackJob=False)
-elif args.command == 'testfilelist':
+elif args.command == 'test-files':
     if args.backend == 'python' and not args.execute: preparePythonBackend()
     if args.local:
-        env.testfilelist(args.filelist, args.iter, args.output, getattr(args,'def'), parseParameters(args.param))
+        env.testFiles(args.filelist, args.iter, args.output, getattr(args,'def'), parseParameters(args.param))
         sys.exit(0)
     else:
         runOnCluster(env, args.node, args.gpus, args.background, trackJob=False)

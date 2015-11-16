@@ -429,9 +429,8 @@ class Environment:
             self.notice('removing training', 'del')
             os.system('rm -rf %s' % self._trainDir)
 
-        if self.haveScratchDir():
-            self.notice('removing scratch', 'del')
-            os.system('rm -rf %s/scracth' % self._path)
+        self.notice('removing scratch', 'del')
+        os.system('rm -rf %s/scratch' % self._path)
 
         if self.haveJobDir():
             self.notice('removing jobs', 'del')
@@ -444,6 +443,44 @@ class Environment:
             if os.path.isdir(file) and file.startswith('output'):
                 self.notice('removing %s' % file, 'del')
                 os.system('rm -rf %s/%s' % (self._path, file))
+
+    def shrink(self, iter_step):
+        self.notice('removing *.pyc', 'del')
+        os.system('rm -f %s/*.pyc' % (self._path))
+
+        self.notice('removing scratch', 'del')
+        os.system('rm -rf %s/scratch' % self._path)
+
+        if self.haveJobDir():
+            self.notice('removing jobs', 'del')
+            os.system('rm -rf %s' % self._jobDir)
+
+        self.sweep()
+
+        print 'shrinking training dir ...'
+        if self.haveTrainDir():
+            for file in self._stateFiles:
+                keep = False
+                if iter_step != -1:
+                    if file.iteration() % iter_step == 0:
+                        keep = True
+                if file == self._stateFiles[-1]:
+                    keep = True
+
+                modelFile = None
+                for f in self._modelFiles:
+                    if f.iteration() == file.iteration():
+                        modelFile = f
+
+                if keep:
+                    if modelFile is not None: tb.notice('keeping files %s and %s' % (os.path.basename(modelFile.filename()), os.path.basename(file.filename())),'passed')
+                    else: tb.notice('keeping file %s' % file,'passed')
+                else:
+                    if modelFile is not None:
+                        modelFile.delete(True)
+                        file.delete(True)
+                    else:
+                        file.delete(True)
 
     def cleanScratch(self):
         if self.haveScratchDir():
@@ -586,7 +623,7 @@ class Environment:
         #
         # print 'Iteration was %d' %iter
 
-    def testfilelist(self, filelist, iter, output=False, definition=None, vars={}):
+    def testFiles(self, filelist, iter, output=False, definition=None, vars={}):
         modelFile, iter = self.getModelFile(iter)
 
         assert(output)
@@ -770,6 +807,16 @@ class Environment:
             if os.path.isdir('%s/%s' % (source,f)) and f.startswith('output'): continue
 
             tb.system('cp -r %s %s/%s %s' % ('' if self._silent else '-v', source, f, target))
+
+    def archive(self, src, target, iter_step=-1):
+        basename = os.path.basename(src)
+        targetPath = os.path.join(target, basename)
+
+        env = Environment(src,backend=self._backend, unattended=self._unattended, silent=self._silent)
+        env.init()
+        env.shrink(iter_step=iter_step)
+        tb.notice('archiving %s to %s' % (src, targetPath), 'run')
+        os.system('mv %s %s' % (src, targetPath))
 
     def execute(self, file, iter):
         self.makeScratchDir()
