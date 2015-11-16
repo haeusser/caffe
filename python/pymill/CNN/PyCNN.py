@@ -214,7 +214,7 @@ subparser = subparsers.add_parser('shrink', help='delete intermediate solverstat
 subparser.add_argument('--iter-step',    help='keep solverstates and weights every N iterations', default=-1, type=int)
 
 # archive
-subparser = subparsers.add_parser('archive', help='moves net to target folder and executes shrink-sanitze')
+subparser = subparsers.add_parser('archive', help='shrink net and move to target folder (do not repeat network name in target)')
 subparser.add_argument('--iter-step',    help='keep solverstates and weights every N iterations', default=-1, type=int)
 subparser.add_argument('source', help='source directory')
 subparser.add_argument('target', help='target directory')
