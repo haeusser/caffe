@@ -41,8 +41,9 @@ BinaryDataLayer<Dtype>::BinaryDataLayer(const LayerParameter& param)
     prefetch_full_(),
     reader_(param)
 {
-  prefetch_.resize(param.data_param().prefetch()*
-                   param.data_param().batch_size());
+//   prefetch_.resize(param.data_param().prefetch()*
+//                    param.data_param().batch_size());
+  prefetch_.resize(param.data_param().prefetch());
 
   CHECK_GE(param.data_param().sample().size(), 0) << "No samples defined.";  
 
