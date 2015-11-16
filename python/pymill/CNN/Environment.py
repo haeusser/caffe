@@ -457,7 +457,6 @@ class Environment:
 
         self.sweep()
 
-        print 'shrinking training dir ...'
         if self.haveTrainDir():
             for file in self._stateFiles:
                 keep = False
@@ -473,7 +472,9 @@ class Environment:
                         modelFile = f
 
                 if keep:
-                    if modelFile is not None: tb.notice('keeping files %s and %s' % (os.path.basename(modelFile.filename()), os.path.basename(file.filename())),'passed')
+                    if modelFile is not None:
+                        tb.notice('keeping file %s' % (os.path.basename(file.filename())),'passed')
+                        tb.notice('keeping file %s' % (os.path.basename(modelFile.filename())),'passed')
                     else: tb.notice('keeping file %s' % file,'passed')
                 else:
                     if modelFile is not None:
