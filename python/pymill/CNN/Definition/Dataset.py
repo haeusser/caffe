@@ -482,7 +482,10 @@ def get(name=None, rendertype=None, phase=None):
     else:
         raise Exception('unknown dataset "%s" for phase "%s"' % (name, phase))
 
-
+#
+# Please use getTestDatasetNames from below!
+# This function will be renamed in future.
+#
 def getDatasetNames(task):
     '''
     @brief List available _TEST_ datasets for a given task
@@ -513,14 +516,11 @@ def getDatasetNames(task):
     elif task == 'flow':
         return ('sintel.train.clean',
                 'sintel.train.final',
-                'monkaa.train.clean',
-                'monkaa.train.final',
-                'monkaa.test.clean',
-                'monkaa.test.final',
                 'monkaa.release.clean',
                 'monkaa.release.final',
                 'FakeKittiTrees.clean',
                 'FakeKittiTrees.final',
+                'FakeKittiTrees.eval',
                 'FlyingStuff3D.test.clean',
                 'FlyingStuff3D.test.final',
                 'FlyingStuff3D_new.test.clean',
@@ -546,3 +546,6 @@ def getDatasetNames(task):
                 'kitti2015.train',)
     else:
         raise Exception('unknown task: "%s"' % task)
+
+def getTestDatasetNames(task):
+    return getDatasetNames(task)
