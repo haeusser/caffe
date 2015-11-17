@@ -406,7 +406,7 @@ def BinaryData_Disparity(net, **kwargs):
                           Entry('dispL',  0))),
                   Sample((Entry('cleanImageR',  0),
                           Entry('cleanImageL',  0),
-                          Entry('dispR',  0))))
+                          Entry('dispR',  0))),)
 
   if kwargs['rendertype'] == 'FINAL' or kwargs['rendertype'] == 'BOTH':
       samples += (Sample((Entry('finalImageL',  0),
@@ -414,7 +414,7 @@ def BinaryData_Disparity(net, **kwargs):
                           Entry('dispL',  0))),
                   Sample((Entry('finalImageR',  0),
                           Entry('finalImageL',  0),
-                          Entry('dispR',  0))))
+                          Entry('dispR',  0))),)
 
   nout = NumberOfEntries(samples)
   if 'output_index' in kwargs:
@@ -438,12 +438,12 @@ def BinaryData_Disparity_Single(net, **kwargs):
   if kwargs['rendertype'] == 'CLEAN' or kwargs['rendertype'] == 'BOTH':
       samples += (Sample((Entry('cleanImageL',  0),
                           Entry('cleanImageR',  0),
-                          Entry('dispL',  0))))
+                          Entry('dispL',  0))),)
 
   if kwargs['rendertype'] == 'FINAL' or kwargs['rendertype'] == 'BOTH':
       samples += (Sample((Entry('finalImageL',  0),
                           Entry('finalImageR',  0),
-                          Entry('dispL',  0))))
+                          Entry('dispL',  0))),)
 
   nout = NumberOfEntries(samples)
   if 'output_index' in kwargs:
