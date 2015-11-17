@@ -538,18 +538,19 @@ class Environment:
         os.chdir(self._trainDir)
         self._backend.resume(solverFilename=solverFilename, solverstateFilename=stateFile, logFile=self._logFile)
 
-    def _saveTestResults(self, iter, dataset):
+    def _saveTestResults(self, iter, dataset, save=True):
         log = Log(self._name, self._scratchLogFile)
 
         results = OrderedDict()
         for measure in self.params().measures():
             value = log.getAssignment(str(measure))
-            Results(self._path).update(iter, dataset, self.params().task(), measure.type(), measure.position(), value)
+            if save:
+                Results(self._path).update(iter, dataset, self.params().task(), measure.type(), measure.position(), value)
             results[str(measure)] = value
 
         return results
 
-    def test(self, iter, output=False, definition=None, vars={}, num_iter=-1):
+    def test(self, iter, output=False, definition=None, vars={}, num_iter=-1, discard=False):
         modelFile, iter = self.getModelFile(iter)
 
         if output:
@@ -582,7 +583,7 @@ class Environment:
                 os.system('cp %s %s' % (self._scratchLogFile, logFile))
 
         if 'dataset' in vars:
-            self._saveTestResults(iter,vars['dataset'])
+            self._saveTestResults(iter,vars['dataset'], not discard)
 
         print 'Iteration was %d' %iter
 
@@ -609,8 +610,6 @@ class Environment:
         self.notice('testing snapshot iteration %d for %d iterations...' % (iter, num_iter), 'notice')
         os.chdir(self._path)
         self._backend.test(caffemodelFilename=modelFile, protoFilename=finalProto, iterations=num_iter, logFile=self._scratchLogFile)
-
-
 
         # if output and 'dataset' in vars and num_iter==-1:
         #     outPath = '%s/output_%d_%s' % (self._path, iter, vars['dataset'])
@@ -684,7 +683,7 @@ class Environment:
 
         print 'Iteration was %d' %iter
 
-    def runTests(self, iter, datasets, output=False, definition=None, vars={}):
+    def runTests(self, iter, datasets, output=False, definition=None, vars={}, discard=False):
         if isinstance(datasets,str): datasets = datasets.split(',')
         if datasets is None: datasets = self.determineTestDatasets()
 
@@ -698,7 +697,7 @@ class Environment:
                 vars['dataset'] = dataset
                 self.test(iter, output, definition, vars)
 
-                values = self._saveTestResults(iter, dataset)
+                values = self._saveTestResults(iter, dataset, not discard)
                 results.append((dataset, values))
         finally:
             print
@@ -813,11 +812,40 @@ class Environment:
         basename = os.path.basename(src)
         targetPath = os.path.join(target, basename)
 
+        if os.path.exists(targetPath):
+            raise Exception("target path %s already exists" % targetPath)
+
         env = Environment(src,backend=self._backend, unattended=self._unattended, silent=self._silent)
         env.init()
         env.shrink(iter_step=iter_step)
         tb.notice('archiving %s to %s' % (src, targetPath), 'run')
         os.system('mv %s %s' % (src, targetPath))
+
+    def listIter(self):
+        if self.haveTrainDir():
+            for file in self._stateFiles:
+                modelFile = None
+                for f in self._modelFiles:
+                    if f.iteration() == file.iteration():
+                        modelFile = f
+
+                if modelFile is not None:
+                    print file.iteration()
+
+    def currentIter(self):
+        iters = []
+        if self.haveTrainDir():
+            for file in self._stateFiles:
+                modelFile = None
+                for f in self._modelFiles:
+                    if f.iteration() == file.iteration():
+                        modelFile = f
+
+                if modelFile is not None:
+                    iters.append(file.iteration())
+
+        if len(iters):
+            print iters[-1]
 
     def execute(self, file, iter):
         self.makeScratchDir()
