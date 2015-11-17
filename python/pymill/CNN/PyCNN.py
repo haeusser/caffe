@@ -164,6 +164,7 @@ subparser.add_argument('--iter',       help='iteration of .caffemodel to use', d
 subparser.add_argument('--num-iter',   help='number of iterations to run (default=auto)', default=-1, type=int)
 subparser.add_argument('--def',        help='custom test definition (default test.proto*/.py)', default=None)
 subparser.add_argument('--output',     help='output images to folder output_...', action='store_true')
+subparser.add_argument('--forget',     help='do not save result in database', action='store_true')
 subparser.add_argument('param',        help='parameter to network', nargs='*')
 
 # test-ref
@@ -188,6 +189,7 @@ subparser.add_argument('--iter',       help='iteration of .caffemodel to use', d
 subparser.add_argument('--datasets',   help='list of datasets (default=all)', default=None)
 subparser.add_argument('--def',        help='custom test definition (default test.proto*/.py)', default=None)
 subparser.add_argument('--output',     help='output images to folder output_...', action='store_true')
+subparser.add_argument('--forget',     help='do not save result in database', action='store_true')
 subparser.add_argument('param',        help='parameter to network', nargs='*')
 
 # continue
@@ -256,6 +258,12 @@ subparser = subparsers.add_parser('blob-sum', help='blob summary of current trai
 
 # eta
 subparser = subparsers.add_parser('eta', help='estimated time of arrival for training')
+
+# iter
+subparser = subparsers.add_parser('iter', help='print current snapshot iteration')
+
+# list-iter
+subparser = subparsers.add_parser('list-iter', help='list available snapshot iterations')
 
 # autocomplete very slow for some reason
 #argcomplete.autocomplete(parser)
@@ -382,6 +390,12 @@ elif args.command == 'snapshot':
 elif args.command == 'blob-sum':
     env.blobSummary()
     sys.exit(0)
+elif args.command == 'list-iter':
+    env.listIter()
+    sys.exit(0)
+elif args.command == 'iter':
+    env.currentIter()
+    sys.exit(0)
 
 # gpu operations
 if   args.command == 'train':
@@ -396,7 +410,7 @@ if   args.command == 'train':
 elif args.command == 'test':
     if args.backend == 'python' and not args.execute: preparePythonBackend()
     if args.local:
-        env.test(args.iter, args.output, getattr(args,'def'), parseParameters(args.param), args.num_iter)
+        env.test(args.iter, args.output, getattr(args,'def'), parseParameters(args.param), args.num_iter, args.forget)
         sys.exit(0)
     else:
         runOnCluster(env, args.node, args.gpus, args.background, trackJob=False)
@@ -416,7 +430,7 @@ elif args.command == 'test-files':
         runOnCluster(env, args.node, args.gpus, args.background, trackJob=False)
 elif args.command == 'run-tests':
     if args.local:
-        env.runTests(args.iter, args.datasets, args.output, getattr(args,'def'), parseParameters(args.param))
+        env.runTests(args.iter, args.datasets, args.output, getattr(args,'def'), parseParameters(args.param), args.forget)
         sys.exit(0)
     else:
         runOnCluster(env, args.node, args.gpus, args.background, trackJob=False)
