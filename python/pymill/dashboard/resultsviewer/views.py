@@ -10,6 +10,7 @@ from .forms import RestartForm
 import json
 import subprocess
 import os
+from django.http import HttpResponse
 
 def results(request):
     queryset = Results.objects.using('results')
@@ -32,6 +33,10 @@ def results(request):
             filter_params.update(request.POST)
             if 'passwd' in filter_params.keys():
                 form_message = restart_if_necessary(filter_params['passwd'])
+                if form_message == 'ok':
+                    restart_message = '''<html><meta http-equiv="refresh" content="10">
+                    <body>Dashboard server is restarting. Will reload in 10 seconds.</body></html>'''
+                    return HttpResponse(restart_message)
                 del filter_params['passwd']
             new_cookie_necessary = True
         else:
@@ -110,7 +115,7 @@ def restart_if_necessary(passwd):
         print('##### INITIALIZING RESTART #####')
         print('##### current dir: {}'.format(os.getcwd()))
         subprocess.call(['./dashboard-refresh.sh'])
-        return 'Restarting dashboard server. Reload in 10 seconds.'
+        return 'ok'
     else:
         print('##### WRONG RESTART PASSWORD ENTERED #####')
         return 'Wrong password. Please contact haeusser@cs.tum.edu'
