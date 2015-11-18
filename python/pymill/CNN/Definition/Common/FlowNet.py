@@ -84,6 +84,93 @@ def standardTest(DeployBlock, generateNet=True):
     return Block
 
 
+def standardSingleTest(DeployBlock, generateNet=True):
+    '''
+    @brief Create Testing-mode wrapper for a Deploy-mode net
+    
+    @param DeployBlock Deploy-mode Block(..) function
+    @param generateNet IFF TRUE, a network prototxt will be made and printed
+    
+    @returns Testing-mode Block(..) function that adds a data layer to a Deploy-mode
+             net
+    '''
+    def Block(net, datasetName, output, data_size, basename, prefix=None, use_augmentation_mean=True):
+        '''
+        @brief Add a data layer for dataset "datasetName" to a network
+        
+        @param net Incomplete network definition
+        @param datasetName Name of the desired dataset (see Dataset.py)
+        @param output IFF TRUE, the network will write its input and output to disk
+        @param prefix Filename prefix for file outputs of "output" is TRUE
+        @param use_augmentation_mean IFF TRUE, data mean will be computed on the fly
+        '''
+        blobs = net.namedBlobs()
+        ## Make data layer
+        #dataset = Dataset.get(name=datasetName, phase='TEST')
+        
+        #img0, img1, flow_gt = dataset.flowLayer(net)
+        img0 = net.addInput(1, 3, data_size[0], data_size[1])
+        img1 = net.addInput(1, 3, data_size[0], data_size[1])
+        flow_gt = net.zeros(1, 2, data_size[0], data_size[1])
+        
+        ## Connect data to Deploy-mode net
+        flow_pred = DeployBlock(net, img0, img1, flow_gt, 
+                                data_size[1], data_size[0], None, use_augmentation_mean)
+        
+        ## Output network input and output
+        if output:
+            if prefix:
+                out_path = 'output_%s_%s' % (prefix, datasetName)
+            else:
+                out_path = 'output_%s' % datasetName
+            if not os.path.isdir(out_path):
+                os.makedirs(out_path)
+            
+            ## Write configuration file for viewer tool
+            f = open('%s/viewer.cfg' % out_path, 'w')
+            f.write('3 2\n')
+            f.write('0 0 -img0.ppm\n')
+            f.write('1 0 -img1.ppm\n')
+            f.write('2 0 EPE(-flow.flo,-gt.flo)\n')
+            f.write('0 1 -flow.flo\n')
+            f.write('1 1 -gt.flo\n')
+            f.write('2 1 DIFF(-flow.flo,-gt.flo)\n')
+            f.close()
+            
+            ## Create network file outputs
+            net.writeImage(img0, folder=out_path, filename=(os.path.join(out_path,basename+'-imgL.ppm')))
+            net.writeImage(img1, folder=out_path, filename=(os.path.join(out_path,basename+'-imgR.ppm')))
+            net.writeFloat(flow_pred, folder=out_path, filename=(os.path.join(out_path,basename+'-flow.float3')))
+
+    if generateNet:
+        net = Network()
+
+        dataset = str(param('dataset'))
+        if dataset is None:
+            raise Exception('please specify dataset=...')
+
+        use_augmentation_mean = bool(param('use_augmentation_mean', default=True))
+        output = bool(param('output', default=False))
+        prefix = str(param('prefix', default=None))
+        
+        basename = str(param('basename', default=''))
+        height = int(param('height', default=-1))
+        width = int(param('width', default=-1))
+        assert use_augmentation_mean # Must be used because we don't have mean color
+
+        Block(net,
+              dataset,
+              output,
+              (height, width),
+              basename,
+              prefix,
+              use_augmentation_mean)
+
+        print net.toProto()
+
+    return Block
+
+
 def standardExtract(generateNet=True):
     '''
     @brief Create a network wrapper that dumps dataset contents
