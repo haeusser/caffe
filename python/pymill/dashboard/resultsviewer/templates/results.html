@@ -24,7 +24,11 @@
 <p>Support: Philip <code>Haeusser@cs.tum.edu</code></p>
 <p>Debug Info: <code>{{ filter_params }}</code></p>
 
-    
+<form action="/" method="post">
+    {% csrf_token %}
+    {{ restart_form }}
+    <input type="submit" value="restart server" />
+</form>
     
     </body>
 </html>

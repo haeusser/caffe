@@ -6,8 +6,10 @@ from resultsviewer.tables import ResultsTable
 from resultsviewer.tables import FormattedResults
 from resultsviewer.tables import FormattedResultsTable
 from .forms import OptionsForm
+from .forms import RestartForm
 import json
-
+import subprocess
+import os
 
 def results(request):
     queryset = Results.objects.using('results')
@@ -28,6 +30,9 @@ def results(request):
     if request.method == 'POST' or cookie_set:
         if request.method == 'POST':
             filter_params.update(request.POST)
+            if 'passwd' in filter_params.keys():
+                restart_if_necessary(filter_params['passwd'])
+                del filter_params['passwd']
             new_cookie_necessary = True
         else:
             filter_params.update(json.loads(request.COOKIES.get('filter_params')))
@@ -89,12 +94,24 @@ def results(request):
     table.exclude += ('dataset', 'value',)
 
     filter_form = OptionsForm(filter_params, measures=measures, positions=positions)
+    restart_form = RestartForm()
     response = render(request, 'results.html', locals())
 
     if new_cookie_necessary:
         response.set_cookie(key='filter_params', value=json.dumps(filter_params))
     return response
 
+
+def restart_if_necessary(passwd):
+    if not passwd:
+        return
+    passwd = passwd[0]
+    if passwd == 'vegas':
+        print('##### INITIALIZING RESTART #####')
+        print('##### current dir: {}'.format(os.getcwd()))
+        subprocess.call(['./dashboard-refresh.sh'])
+    else:
+        print('##### WRONG RESTART PASSWORD ENTERED #####')
 
 def reorganize_queryset(queryset):
     q = queryset.all()

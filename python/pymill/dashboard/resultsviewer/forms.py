@@ -36,3 +36,10 @@ class OptionsForm(forms.Form):
             if m not in [[''], [None]]:
                 result += (m[0], m[0]),
         return result
+
+class RestartForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        super(RestartForm, self).__init__(*args, **kwargs)
+        self.fields['passwd'] = forms.CharField(widget=forms.PasswordInput(), label='', required=False)
+
+
