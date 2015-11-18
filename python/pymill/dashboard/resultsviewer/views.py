@@ -31,7 +31,7 @@ def results(request):
         if request.method == 'POST':
             filter_params.update(request.POST)
             if 'passwd' in filter_params.keys():
-                restart_if_necessary(filter_params['passwd'])
+                form_message = restart_if_necessary(filter_params['passwd'])
                 del filter_params['passwd']
             new_cookie_necessary = True
         else:
@@ -104,14 +104,16 @@ def results(request):
 
 def restart_if_necessary(passwd):
     if not passwd:
-        return
+        return ''
     passwd = passwd[0]
     if passwd == 'vegas':
         print('##### INITIALIZING RESTART #####')
         print('##### current dir: {}'.format(os.getcwd()))
         subprocess.call(['./dashboard-refresh.sh'])
+        return 'Restarting dashboard server. Reload in 10 seconds.'
     else:
         print('##### WRONG RESTART PASSWORD ENTERED #####')
+        return 'Wrong password. Please contact haeusser@cs.tum.edu'
 
 def reorganize_queryset(queryset):
     q = queryset.all()
