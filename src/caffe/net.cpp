@@ -16,6 +16,7 @@
 #include "caffe/util/insert_splits.hpp"
 #include "caffe/util/math_functions.hpp"
 #include "caffe/util/upgrade_proto.hpp"
+#include "caffe/data_layers.hpp"
 
 #include "caffe/test/test_caffe_main.hpp"
 
@@ -31,6 +32,7 @@ template <typename Dtype>
 Net<Dtype>::Net(const string& param_file, Phase phase, const Net* root_net)
     : root_net_(root_net) {
   NetParameter param;
+  solver_ = NULL;
   ReadNetParamsFromTextFileOrDie(param_file, &param);
   param.mutable_state()->set_phase(phase);
   Init(param);
@@ -38,6 +40,9 @@ Net<Dtype>::Net(const string& param_file, Phase phase, const Net* root_net)
 
 template <typename Dtype>
 void Net<Dtype>::Init(const NetParameter& in_param) {
+  iter_ = 0;
+  test_iter_count_ = 0;
+
   CHECK(Caffe::root_solver() || root_net_)
       << "root_net_ needs to be set for all non-root solvers";
   // Set phase from the state.
@@ -115,6 +120,7 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
       // If a blob needs backward, this layer should provide it.
       need_backward |= blob_need_backward_[blob_id];
     }
+//     LOG(INFO) << "DEBUG: need_backward = " << need_backward;
     int num_top = layer_param.top_size();
     for (int top_id = 0; top_id < num_top; ++top_id) {
       AppendTop(param, layer_id, top_id, &available_blobs, &blob_name_to_idx);
@@ -123,6 +129,8 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
     // specified fewer than the required number (as specified by
     // ExactNumTopBlobs() or MinTopBlobs()), allocate them here.
     Layer<Dtype>* layer = layers_[layer_id].get();
+    layer->SetNet(this);
+    
     if (layer->AutoTopBlobs()) {
       const int needed_num_top =
           std::max(layer->MinTopBlobs(), layer->ExactNumTopBlobs());
@@ -172,7 +180,11 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
     for (int param_id = 0; param_id < num_param_blobs; ++param_id) {
       const ParamSpec* param_spec = (param_id < param_size) ?
           &layer_param.param(param_id) : &default_param_spec;
-      const bool param_need_backward = param_spec->lr_mult() != 0;
+      bool param_need_backward = param_spec->lr_mult() != 0;
+      
+      if (!layer->AllowBackward())
+        param_need_backward = false;
+      
       need_backward |= param_need_backward;
       layers_[layer_id]->set_param_propagate_down(param_id,
                                                   param_need_backward);
@@ -180,6 +192,9 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
     for (int param_id = 0; param_id < num_param_blobs; ++param_id) {
       AppendParam(param, layer_id, param_id);
     }
+    if (!layer->AllowBackward())
+        need_backward = false;
+//     LOG(INFO) << "DEBUG: need_backward = " << need_backward;
     // Finally, set the backward flag
     layer_need_backward_.push_back(need_backward);
     if (need_backward) {
@@ -503,6 +518,7 @@ void Net<Dtype>::AppendParam(const NetParameter& param, const int layer_id,
     has_params_decay_.push_back(param_spec->has_decay_mult());
     params_lr_.push_back(param_spec->lr_mult());
     params_weight_decay_.push_back(param_spec->decay_mult());
+    params_spectral_update_.push_back(param_spec->spectral_update());
   } else {
     // Named param blob with name we've seen before: share params
     const int owner_net_param_id = param_names_index_[param_name];
@@ -923,15 +939,16 @@ void Net<Dtype>::CopyTrainedLayersFromHDF5(const string trained_filename) {
       continue;
     }
     int target_layer_id = layer_names_index_[source_layer_name];
-    DLOG(INFO) << "Copying source layer " << source_layer_name;
     vector<shared_ptr<Blob<Dtype> > >& target_blobs =
         layers_[target_layer_id]->blobs();
     hid_t layer_hid = H5Gopen2(data_hid, source_layer_name.c_str(),
         H5P_DEFAULT);
     CHECK_GE(layer_hid, 0)
         << "Error reading weights from " << trained_filename;
-    // Check that source layer doesn't have more params than target layer
     int num_source_params = hdf5_get_num_links(layer_hid);
+    if(num_source_params)
+        LOG(INFO) << "Copying source layer " << source_layer_name;
+    // Check that source layer doesn't have more params than target layer
     CHECK_LE(num_source_params, target_blobs.size())
         << "Incompatible number of blobs for layer " << source_layer_name;
     for (int j = 0; j < target_blobs.size(); ++j) {

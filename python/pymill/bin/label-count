@@ -1,0 +1,43 @@
+#!/usr/bin/python
+
+import os
+import sys
+import argparse
+from pymill import Toolbox as tb
+from scipy import misc
+import numpy as np
+
+parser = argparse.ArgumentParser()
+parser.add_argument('lmdb', help='path to lmdb')
+parser.add_argument('preselection', help='path to preselection file')
+
+args = parser.parse_args()
+
+
+preselections=open(args.preselection).read().split('\n')
+
+labels = {}
+for l in preselections:
+    l = l.strip()
+    if l == '': continue
+    if l not  in labels:
+        labels[l] = 0
+    labels[l] += 1
+
+filename = os.path.join(args.lmdb, 'count.txt')
+print 'writing to', filename
+f = open(filename, 'w')
+
+all = 0
+for l, count in labels.iteritems():
+    all += count
+print '%s: %d' % ('all', all)
+f.write('%s: %d\n' % ('all', all))
+
+for l, count in labels.iteritems():
+    print '%s: %d' % (l, count)
+    f.write('%s: %d\n' % (l, count))
+
+
+
+

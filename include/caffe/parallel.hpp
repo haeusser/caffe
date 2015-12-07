@@ -4,6 +4,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <vector>
+#include <boost/python.hpp>
 
 #include "caffe/blob.hpp"
 #include "caffe/common.hpp"
@@ -95,10 +96,19 @@ class P2PSync : public GPUParams<Dtype>, public Solver<Dtype>::Callback,
 
   void run(const vector<int>& gpus);
 
+  void setPyCallbackGradientsReady(PyObject *py_solver, PyObject *py_callback, int iter);
+  void setPyCallbackIteration(int iter);
+  void setPySolver(PyObject *py_solver);
+
+  
  protected:
   void on_start();
   void on_gradients_ready();
 
+  PyObject *py_solver_;
+  PyObject *py_callback_gradients_;
+  int iter_next_py_callback_;
+  
   void InternalThreadEntry();
 
   P2PSync<Dtype>* parent_;

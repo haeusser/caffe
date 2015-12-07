@@ -8,6 +8,7 @@
 #include "caffe/util/hdf5.hpp"
 #include "caffe/util/io.hpp"
 #include "caffe/util/upgrade_proto.hpp"
+#include "caffe/util/benchmark.hpp"
 
 namespace caffe {
 
@@ -106,6 +107,7 @@ void Solver<Dtype>::InitTrainNet() {
   } else {
     net_.reset(new Net<Dtype>(net_param, root_solver_->net_.get()));
   }
+  net_->SetSolver(this);
 }
 
 template <typename Dtype>
@@ -120,7 +122,7 @@ void Solver<Dtype>::InitTestNets() {
   const int num_test_net_files = param_.test_net_size();
   const int num_test_nets = num_test_net_params + num_test_net_files;
   if (num_generic_nets) {
-      CHECK_GE(param_.test_iter_size(), num_test_nets)
+    CHECK_GE(param_.test_iter_size(), num_test_nets)
           << "test_iter must be specified for each test network.";
   } else {
       CHECK_EQ(param_.test_iter_size(), num_test_nets)
@@ -200,6 +202,8 @@ void Solver<Dtype>::Step(int iters) {
   Dtype smoothed_loss = 0;
 
   while (iter_ < stop_iter) {
+    net_->set_iter(iter_);
+
     // zero-init the params
     net_->ClearParamDiffs();
     if (param_.test_interval() && iter_ % param_.test_interval() == 0
@@ -255,6 +259,19 @@ void Solver<Dtype>::Step(int iters) {
               << result_vec[k] << loss_msg_stream.str();
         }
       }
+      /*for(int layer = 0; layer < net_->layers().size(); layer++) {
+        shared_ptr<Layer<Dtype> > curlayer = net_->layers().at(layer);
+        if(curlayer->GetActiveness() == INACTIVE) {
+          LOG_IF(INFO, Caffe::root_solver()) << "Layer not active: " << curlayer->layer_param().name();
+        } else {
+          LOG_IF(INFO, Caffe::root_solver()) << "Layer active: " << curlayer->layer_param().name();
+        }
+      }*/
+      
+      iteration_timer.Stop();
+      TimingMonitor::addMeasure("iteration_time", iteration_timer.MilliSeconds()/param_.display());
+      iteration_timer.Start();
+      TimingMonitor::collapseAndDisplay();
     }
     for (int i = 0; i < callbacks_.size(); ++i) {
       callbacks_[i]->on_gradients_ready();
@@ -273,7 +290,12 @@ void Solver<Dtype>::Step(int iters) {
          && Caffe::root_solver()) ||
          (request == SolverAction::SNAPSHOT)) {
       Snapshot();
+    } else if (param_.snapshot_at_iter()
+         && iter_ == param_.snapshot_at_iter()
+         && Caffe::root_solver()) {
+      Snapshot();
     }
+    
     if (SolverAction::STOP == request) {
       requested_early_exit_ = true;
       // Break out of training loop.

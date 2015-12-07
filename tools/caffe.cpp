@@ -92,7 +92,7 @@ static void get_gpus(vector<int>* gpus) {
   } else if (FLAGS_gpu.size()) {
     vector<string> strings;
     boost::split(strings, FLAGS_gpu, boost::is_any_of(","));
-    for (int i = 0; i < strings.size(); ++i) {
+    for (uint i = 0; i < strings.size(); ++i) {
       gpus->push_back(boost::lexical_cast<int>(strings[i]));
     }
   } else {
@@ -111,7 +111,7 @@ int device_query() {
   LOG(INFO) << "Querying GPUs " << FLAGS_gpu;
   vector<int> gpus;
   get_gpus(&gpus);
-  for (int i = 0; i < gpus.size(); ++i) {
+  for (uint i = 0; i < gpus.size(); ++i) {
     caffe::Caffe::SetDevice(gpus[i]);
     caffe::Caffe::DeviceQuery();
   }
@@ -124,10 +124,10 @@ RegisterBrewFunction(device_query);
 void CopyLayers(caffe::Solver<float>* solver, const std::string& model_list) {
   std::vector<std::string> model_names;
   boost::split(model_names, model_list, boost::is_any_of(",") );
-  for (int i = 0; i < model_names.size(); ++i) {
+  for (uint i = 0; i < model_names.size(); ++i) {
     LOG(INFO) << "Finetuning from " << model_names[i];
     solver->net()->CopyTrainedLayersFrom(model_names[i]);
-    for (int j = 0; j < solver->test_nets().size(); ++j) {
+    for (uint j = 0; j < solver->test_nets().size(); ++j) {
       solver->test_nets()[j]->CopyTrainedLayersFrom(model_names[i]);
     }
   }
@@ -159,6 +159,8 @@ int train() {
   caffe::SolverParameter solver_param;
   caffe::ReadSolverParamsFromTextFileOrDie(FLAGS_solver, &solver_param);
 
+  solver_param.set_param_file((std::string)FLAGS_solver);
+  
   // If the gpus flag is not provided, allow the mode and device to be set
   // in the solver prototxt.
   if (FLAGS_gpu.size() == 0
@@ -178,7 +180,7 @@ int train() {
     Caffe::set_mode(Caffe::CPU);
   } else {
     ostringstream s;
-    for (int i = 0; i < gpus.size(); ++i) {
+    for (uint i = 0; i < gpus.size(); ++i) {
       s << (i ? ", " : "") << gpus[i];
     }
     LOG(INFO) << "Using GPUs " << s.str();
@@ -191,7 +193,8 @@ int train() {
 
   caffe::SignalHandler signal_handler(
         GetRequestedAction(FLAGS_sigint_effect),
-        GetRequestedAction(FLAGS_sighup_effect));
+        GetRequestedAction(FLAGS_sighup_effect),
+        caffe::SolverAction::SNAPSHOT);
 
   shared_ptr<caffe::Solver<float> >
       solver(caffe::SolverRegistry<float>::CreateSolver(solver_param));
@@ -221,7 +224,6 @@ RegisterBrewFunction(train);
 // Test: score a model.
 int test() {
   CHECK_GT(FLAGS_model.size(), 0) << "Need a model definition to score.";
-  CHECK_GT(FLAGS_weights.size(), 0) << "Need model weights to score.";
 
   // Set device id and mode
   vector<int> gpus;
@@ -236,20 +238,32 @@ int test() {
   }
   // Instantiate the caffe net.
   Net<float> caffe_net(FLAGS_model, caffe::TEST);
-  caffe_net.CopyTrainedLayersFrom(FLAGS_weights);
-  LOG(INFO) << "Running for " << FLAGS_iterations << " iterations.";
+  if(FLAGS_weights != "")
+    caffe_net.CopyTrainedLayersFrom(FLAGS_weights);
+  else
+    LOG(WARNING) << "Weights uninitialized.";
+
+  if(FLAGS_iterations<=0)
+  {
+      int net_test_iters = caffe_net.test_iter_count();
+      FLAGS_iterations = net_test_iters;
+      LOG(INFO) << "Running for " << FLAGS_iterations << " iterations (given by data layer).";
+  }
+  else
+      LOG(INFO) << "Running for " << FLAGS_iterations << " iterations (given by command line).";
 
   vector<Blob<float>* > bottom_vec;
   vector<int> test_score_output_id;
   vector<float> test_score;
   float loss = 0;
   for (int i = 0; i < FLAGS_iterations; ++i) {
+    caffe_net.set_iter(i);
     float iter_loss;
     const vector<Blob<float>*>& result =
         caffe_net.Forward(bottom_vec, &iter_loss);
     loss += iter_loss;
     int idx = 0;
-    for (int j = 0; j < result.size(); ++j) {
+    for (uint j = 0; j < result.size(); ++j) {
       const float* result_vec = result[j]->cpu_data();
       for (int k = 0; k < result[j]->count(); ++k, ++idx) {
         const float score = result_vec[k];
@@ -267,7 +281,7 @@ int test() {
   }
   loss /= FLAGS_iterations;
   LOG(INFO) << "Loss: " << loss;
-  for (int i = 0; i < test_score.size(); ++i) {
+  for (uint i = 0; i < test_score.size(); ++i) {
     const std::string& output_name = caffe_net.blob_names()[
         caffe_net.output_blob_indices()[test_score_output_id[i]]];
     const float loss_weight = caffe_net.blob_loss_weights()[
@@ -335,7 +349,7 @@ int time() {
     Timer iter_timer;
     iter_timer.Start();
     forward_timer.Start();
-    for (int i = 0; i < layers.size(); ++i) {
+    for (uint i = 0; i < layers.size(); ++i) {
       timer.Start();
       layers[i]->Forward(bottom_vecs[i], top_vecs[i]);
       forward_time_per_layer[i] += timer.MicroSeconds();
@@ -353,7 +367,7 @@ int time() {
       << iter_timer.MilliSeconds() << " ms.";
   }
   LOG(INFO) << "Average time per layer: ";
-  for (int i = 0; i < layers.size(); ++i) {
+  for (uint i = 0; i < layers.size(); ++i) {
     const caffe::string& layername = layers[i]->layer_param().name();
     LOG(INFO) << std::setfill(' ') << std::setw(10) << layername <<
       "\tforward: " << forward_time_per_layer[i] / 1000 /
@@ -403,3 +417,4 @@ int main(int argc, char** argv) {
     gflags::ShowUsageWithFlagsRestrict(argv[0], "tools/caffe");
   }
 }
+

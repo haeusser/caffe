@@ -239,6 +239,13 @@ message SolverParameter {
   }
   // DEPRECATED: use type instead of solver_type
   optional SolverType solver_type = 30 [default = SGD];
+  optional int32 log_interval = 2001 [default = 10000000];  // log per this number of iterations (simple log)
+  optional int32 viz_interval = 2002 [default = 10000000];  // log visualization per this number of iterations (net blobs snapshot)
+
+  optional string se_index_blob = 2003 [default = "sample_index"];  // the blob that contains the index for the sample
+  optional string se_error_blob = 2004 [default = "epe"];  // the blob that contains the error for the sample
+  optional int32 se_interval = 2005 [default = 0];  // number of iterations after which the errors will be sent to the Net  
+
 }
 
 // A message that stores the solver snapshots
@@ -566,7 +573,7 @@ message DataParameter {
   // Specify the data source.
   optional string source = 1;
   // Specify the batch size.
-  optional uint32 batch_size = 4;
+  optional uint32 batch_size = 4 [default = 1];
   // The rand_skip variable is for the data layer to skip a few data points
   // to avoid all asynchronous sgd clients to start at the same point. The skip
   // point would be set as rand_skip * rand(0,1). Note that rand_skip should not

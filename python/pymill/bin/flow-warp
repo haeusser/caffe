@@ -1,0 +1,33 @@
+#!/usr/bin/python
+
+import os
+import sys
+import argparse
+from pymill import Toolbox as tb
+from scipy import misc
+import numpy as np
+
+parser = argparse.ArgumentParser()
+parser.add_argument('img0File', help='first image')
+parser.add_argument('img1File', help='second image')
+parser.add_argument('flowFile', help='flow')
+parser.add_argument('outFile',  help='output overview image')
+
+args = parser.parse_args()
+
+img0 = tb.readImage(args.img0File)
+img1 = tb.readImage(args.img1File)
+flow = tb.readFlow(args.flowFile)
+
+warped = tb.flowWarp(img1, flow)
+
+h = img0.shape[0]
+w = img0.shape[1]
+imgCheck = np.zeros((2*h, 2*w, 3)).astype(np.uint8)
+imgCheck[0:h, 0:w, :] = img0
+imgCheck[0:h, w:2*w, :] = img1
+imgCheck[h:2*h, 0:w, :] = warped
+
+print img0.max(), img0.min()
+
+misc.imsave(args.outFile, imgCheck)

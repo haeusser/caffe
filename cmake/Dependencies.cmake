@@ -170,3 +170,26 @@ endif()
 if(BUILD_docs)
   find_package(Doxygen)
 endif()
+
+# ---[ WebP
+# ExternalProject_Add(
+#   webp
+#   PREFIX "${CMAKE_BINARY_DIR}/webp"
+#   URL "http://downloads.webmproject.org/releases/webp/libwebp-0.4.3.tar.gz"
+#   # do not update 
+#   UPDATE_COMMAND ""
+#   # compile with PIC because caffe builds a shared object
+#   CONFIGURE_COMMAND CFLAGS=-fPIC 
+#                     ../webp/configure --disable-gl
+#                                       --disable-png 
+#                                       --disable-jpeg  
+#                                       --disable-tiff 
+#                                       --disable-gif
+#                                       --disable-wic 
+#                                       --disable-shared 
+#   BUILD_COMMAND "make" 
+#   # do not install
+#   INSTALL_COMMAND ""
+# )
+#list(APPEND external_project_dependencies webp)
+

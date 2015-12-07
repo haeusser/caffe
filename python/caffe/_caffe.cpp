@@ -7,7 +7,9 @@
 #include <boost/python.hpp>
 #include <boost/python/raw_function.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
+#include <boost/python/suite/indexing/map_indexing_suite.hpp>
 #include <numpy/arrayobject.h>
+#include <boost/algorithm/string/predicate.hpp>
 
 // these need to be included after boost on OS X
 #include <string>  // NOLINT(build/include_order)
@@ -37,6 +39,11 @@ const int NPY_DTYPE = NPY_FLOAT32;
 // Selecting mode.
 void set_mode_cpu() { Caffe::set_mode(Caffe::CPU); }
 void set_mode_gpu() { Caffe::set_mode(Caffe::GPU); }
+void set_logging_disabled() { Caffe::set_logging(false); }
+void setup_teeing(const char* filename) { Caffe::setup_teeing(filename); }
+
+// Set solver count
+void set_solver_count(int count) { Caffe::set_solver_count(count); }
 
 // For convenience, check that input files can be opened, and raise an
 // exception that boost will send to Python if not (caffe could still crash
@@ -95,10 +102,18 @@ shared_ptr<Net<Dtype> > Net_Init_Load(
   return net;
 }
 
-void Net_Save(const Net<Dtype>& net, string filename) {
-  NetParameter net_param;
-  net.ToProto(&net_param, false);
-  WriteProtoToBinaryFile(net_param, filename.c_str());
+void Net_Save(const Net<Dtype>& net, string filename) 
+{
+  if(boost::algorithm::ends_with(filename,".h5")) 
+  {
+    net.ToHDF5(filename, false); 
+  } 
+  else 
+  {
+    NetParameter net_param;
+    net.ToProto(&net_param, false);
+    WriteProtoToBinaryFile(net_param, filename.c_str());
+  }
 }
 
 void Net_SetInputArrays(Net<Dtype>* net, bp::object data_obj,
@@ -137,6 +152,12 @@ Solver<Dtype>* GetSolverFromFile(const string& filename) {
   SolverParameter param;
   ReadSolverParamsFromTextFileOrDie(filename, &param);
   return SolverRegistry<Dtype>::CreateSolver(param);
+}
+
+Solver<Dtype>* GetSolverFromString(const string& s) {
+  SolverParameter param;
+  param.ParseFromString(s);
+  return GetSolver<Dtype>(param);
 }
 
 struct NdarrayConverterGenerator {
@@ -216,6 +237,9 @@ BOOST_PYTHON_MODULE(_caffe) {
   bp::def("set_mode_cpu", &set_mode_cpu);
   bp::def("set_mode_gpu", &set_mode_gpu);
   bp::def("set_device", &Caffe::SetDevice);
+  bp::def("set_solver_count", &set_solver_count);
+  bp::def("set_logging_disabled", &set_logging_disabled);
+  bp::def("setup_teeing", &setup_teeing);
 
   bp::def("layer_type_list", &LayerRegistry<Dtype>::LayerTypeList);
 
@@ -231,6 +255,7 @@ BOOST_PYTHON_MODULE(_caffe) {
     .def("copy_from", static_cast<void (Net<Dtype>::*)(const string)>(
         &Net<Dtype>::CopyTrainedLayersFrom))
     .def("share_with", &Net<Dtype>::ShareTrainedLayersWith)
+    .def("clear_param_diffs", &Net<Dtype>::ClearParamDiffs)
     .add_property("_blob_loss_weights", bp::make_function(
         &Net<Dtype>::blob_loss_weights, bp::return_internal_reference<>()))
     .add_property("_blobs", bp::make_function(&Net<Dtype>::blobs,
@@ -241,6 +266,14 @@ BOOST_PYTHON_MODULE(_caffe) {
         bp::return_value_policy<bp::copy_const_reference>()))
     .add_property("_layer_names", bp::make_function(&Net<Dtype>::layer_names,
         bp::return_value_policy<bp::copy_const_reference>()))
+    .add_property("_params_lr", bp::make_function(&Net<Dtype>::params_lr,
+        bp::return_internal_reference<>()))
+    .add_property("_learnable_param_ids", bp::make_function(&Net<Dtype>::learnable_param_ids,
+        bp::return_value_policy<bp::copy_const_reference>()))
+    .add_property("_param_layer_indices", bp::make_function(&Net<Dtype>::param_layer_indices,
+        bp::return_value_policy<bp::copy_const_reference>()))
+    .add_property("_blob_names_index", bp::make_function(&Net<Dtype>::blob_names_index,
+        bp::return_value_policy<bp::copy_const_reference>()))
     .add_property("_inputs", bp::make_function(&Net<Dtype>::input_blob_indices,
         bp::return_value_policy<bp::copy_const_reference>()))
     .add_property("_outputs",
@@ -248,7 +281,7 @@ BOOST_PYTHON_MODULE(_caffe) {
         bp::return_value_policy<bp::copy_const_reference>()))
     .def("_set_input_arrays", &Net_SetInputArrays,
         bp::with_custodian_and_ward<1, 2, bp::with_custodian_and_ward<1, 3> >())
-    .def("save", &Net_Save);
+    .def("save", &Net_Save)
 
   bp::class_<Blob<Dtype>, shared_ptr<Blob<Dtype> >, boost::noncopyable>(
     "Blob", bp::no_init)
@@ -280,21 +313,35 @@ BOOST_PYTHON_MODULE(_caffe) {
 
   bp::class_<LayerParameter>("LayerParameter", bp::no_init);
 
+  bp::class_<P2PSync<Dtype>, shared_ptr<P2PSync<Dtype> >, boost::noncopyable>(
+    "P2PSync", bp::no_init)
+    .def("__init__", bp::make_constructor(&P2PSync_Init))
+    .add_property("solver", bp::make_function(&P2PSync<Dtype>::solver,
+          bp::return_internal_reference<>()))
+    .def("set_on_gradients_callback", &P2PSync<Dtype>::setPyCallbackGradientsReady)
+    .def("set_callback_iteration", &P2PSync<Dtype>::setPyCallbackIteration)
+    .def("set_pysolver", &P2PSync<Dtype>::setPySolver)
+    .def("run", &P2PSync_run);
+
   bp::class_<Solver<Dtype>, shared_ptr<Solver<Dtype> >, boost::noncopyable>(
     "Solver", bp::no_init)
     .add_property("net", &Solver<Dtype>::net)
     .add_property("test_nets", bp::make_function(&Solver<Dtype>::test_nets,
           bp::return_internal_reference<>()))
-    .add_property("iter", &Solver<Dtype>::iter)
+    .add_property("iter", &Solver<Dtype>::iter)    
     .def("solve", static_cast<void (Solver<Dtype>::*)(const char*)>(
           &Solver<Dtype>::Solve), SolveOverloads())
     .def("step", &Solver<Dtype>::Step)
     .def("restore", &Solver<Dtype>::Restore)
     .def("snapshot", &Solver<Dtype>::Snapshot);
+    .def("apply_update", &Solver<Dtype>::ApplyUpdate)
+    .def("increment_iter", &Solver<Dtype>::increment_iter);
+
 
   bp::class_<SGDSolver<Dtype>, bp::bases<Solver<Dtype> >,
     shared_ptr<SGDSolver<Dtype> >, boost::noncopyable>(
-        "SGDSolver", bp::init<string>());
+        "SGDSolver", bp::init<string>())
+    .def("getLearningRate", &SGDSolver<Dtype>::GetLearningRate);
   bp::class_<NesterovSolver<Dtype>, bp::bases<Solver<Dtype> >,
     shared_ptr<NesterovSolver<Dtype> >, boost::noncopyable>(
         "NesterovSolver", bp::init<string>());
@@ -314,6 +361,16 @@ BOOST_PYTHON_MODULE(_caffe) {
   bp::def("get_solver", &GetSolverFromFile,
       bp::return_value_policy<bp::manage_new_object>());
 
+  bp::def("get_solver_from_string", &GetSolverFromString,
+      bp::return_value_policy<bp::manage_new_object>());
+
+  bp::class_<std::pair<int, int> >("IntPair")
+    .def_readwrite("first", &std::pair<int, int>::first)
+    .def_readwrite("second", &std::pair<int, int>::second);
+
+  bp::class_<std::map<string, int> >("MapStringInt")
+        .def(bp::map_indexing_suite<std::map<string, int> >() );
+
   // vector wrappers for all the vector types we use
   bp::class_<vector<shared_ptr<Blob<Dtype> > > >("BlobVec")
     .def(bp::vector_indexing_suite<vector<shared_ptr<Blob<Dtype> > >, true>())
@@ -332,6 +389,8 @@ BOOST_PYTHON_MODULE(_caffe) {
     .def(bp::vector_indexing_suite<vector<shared_ptr<Net<Dtype> > >, true>());
   bp::class_<vector<bool> >("BoolVec")
     .def(bp::vector_indexing_suite<vector<bool> >());
+  bp::class_<vector<pair<int,int> > >("PairVec")
+    .def(bp::vector_indexing_suite<vector<pair<int,int> > >());
 
   // boost python expects a void (missing) return value, while import_array
   // returns NULL for python3. import_array1() forces a void return value.

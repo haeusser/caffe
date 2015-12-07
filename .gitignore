@@ -31,6 +31,7 @@
 
 # Editor temporaries
 *.swp
+*.kate-swp
 *~
 *.kate-swp
 
@@ -54,7 +55,7 @@
 ## Caffe
 
 # User's build configuration
-Makefile.config
+#Makefile.config
 
 # Data and models are either
 # 1. reference, and not casually committed
@@ -95,3 +96,17 @@ LOCK
 LOG*
 CURRENT
 MANIFEST-*
+/hackathon-caffe2.includes
+*.config
+*.creator
+/hackathon-caffe2.files
+/Makefile.qt
+Makefile.config-haeusser
+Makefile.config-mayern
+
+# allow small testing db
+!python/pymill/test/mnist/*
+
+# results dashboard related stuff
+python/pymill/dashboard/resultsviewer/migrations/*
+

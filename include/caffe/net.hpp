@@ -12,7 +12,11 @@
 #include "caffe/layer.hpp"
 #include "caffe/proto/caffe.pb.h"
 
+#include <boost/function.hpp>
+
 namespace caffe {
+
+template <typename Dtype> class Solver;
 
 /**
  * @brief Connects Layer%s together into a directed acyclic graph (DAG)
@@ -64,6 +68,16 @@ class Net {
    */
   void ClearParamDiffs();
 
+  /**
+   * @brief Store link to Solver if there is any
+   */
+  inline void SetSolver(Solver<Dtype> *solver) {
+    this->solver_ = solver;
+  }
+  inline Solver<Dtype>* GetSolver() {
+    return this->solver_;
+  }
+  
   /**
    * The network backward should take no input and output, since it solely
    * computes the gradient w.r.t the parameters, and the data has already been
@@ -163,6 +177,9 @@ class Net {
   inline const vector<Dtype>& blob_loss_weights() const {
     return blob_loss_weights_;
   }
+  inline const map<string,int>& blob_names_index() const {
+    return blob_names_index_;
+  }
   inline const vector<bool>& layer_need_backward() const {
     return layer_need_backward_;
   }
@@ -173,6 +190,15 @@ class Net {
   inline const vector<Blob<Dtype>*>& learnable_params() const {
     return learnable_params_;
   }
+  
+  inline const vector<int>& learnable_param_ids() const {
+    return learnable_param_ids_;
+  }
+  
+  inline const vector<pair<int,int> >& param_layer_indices() const {
+    return param_layer_indices_;
+  }
+  
   /// @brief returns the learnable parameter learning rate multipliers
   inline const vector<float>& params_lr() const { return params_lr_; }
   inline const vector<bool>& has_params_lr() const { return has_params_lr_; }
@@ -186,6 +212,10 @@ class Net {
   const map<string, int>& param_names_index() const {
     return param_names_index_;
   }
+  inline const vector<bool>& params_spectral_update() const {
+    return params_spectral_update_;
+  }
+  
   inline const vector<int>& param_owners() const { return param_owners_; }
   /// @brief Input and output blob numbers
   inline int num_inputs() const { return net_input_blobs_.size(); }
@@ -220,11 +250,32 @@ class Net {
   static bool StateMeetsRule(const NetState& state, const NetStateRule& rule,
       const string& layer_name);
 
+  inline void set_iter(int iter) { iter_=iter; }
+  int iter() { return iter_; }
+
+  inline void set_test_iter_count(int iter) { LOG(INFO) << "Setting test iteration count to " << iter; test_iter_count_=iter; }
+  int test_iter_count() { return test_iter_count_; }
+  
+  typedef boost::function<void(vector<int>, vector<float>)> UpdateSampleCallback;
+
+  void register_update_sample_callback(UpdateSampleCallback cb) { update_sample_callbacks_.push_back(cb); }
+
+  void update_sample_errors(vector<int> indices, vector<float> error)
+  {
+      CHECK(indices.size() == error.size());
+
+      for(int i=0; i<update_sample_callbacks_.size();  i++)
+          update_sample_callbacks_[i](indices, error);
+  }
+
  protected:
+  vector<UpdateSampleCallback> update_sample_callbacks_;
+
   // Helpers for Init.
   /// @brief Append a new input or top blob to the net.
   void AppendTop(const NetParameter& param, const int layer_id,
                  const int top_id, set<string>* available_blobs,
+
                  map<string, int>* blob_name_to_idx);
   /// @brief Append a new bottom blob to the net.
   int AppendBottom(const NetParameter& param, const int layer_id,
@@ -298,12 +349,21 @@ class Net {
   /// the weight decay multipliers for learnable_params_
   vector<float> params_weight_decay_;
   vector<bool> has_params_decay_;
+  
+  /// Do a spectral update on this param?
+  vector<bool> params_spectral_update_;
+  
   /// The bytes of memory used by this net
   size_t memory_used_;
   /// Whether to compute and display debug info for the net.
   bool debug_info_;
   /// The root net that actually holds the shared layers in data parallelism
   const Net* const root_net_;
+  
+  Solver<Dtype> *solver_;
+  int iter_;
+  int test_iter_count_;
+  
   DISABLE_COPY_AND_ASSIGN(Net);
 };
 

@@ -44,6 +44,7 @@ def to_proto(*tops):
     """Generate a NetParameter that contains all layers needed to compute
     all arguments."""
 
+
     layers = OrderedDict()
     autonames = Counter()
     for top in tops:
